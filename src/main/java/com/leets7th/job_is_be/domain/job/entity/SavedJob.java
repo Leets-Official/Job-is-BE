@@ -3,7 +3,7 @@ package com.leets7th.job_is_be.domain.job.entity;
 import com.leets7th.job_is_be.domain.user.entity.User;
 import com.leets7th.job_is_be.global.base.BaseEntity;
 import jakarta.persistence.*;
-        import lombok.AccessLevel;
+import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
