@@ -31,8 +31,7 @@ dependencies {
 	annotationProcessor 'org.projectlombok:lombok'
 
 	// PostgreSQL
-	runtimeOnly 'org.postgresql:postgresql'
-	runtimeOnly 'com.h2database:h2'
+	implementation 'org.postgresql:postgresql'
 
 	implementation 'org.springframework.boot:spring-boot-starter-cache'
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
