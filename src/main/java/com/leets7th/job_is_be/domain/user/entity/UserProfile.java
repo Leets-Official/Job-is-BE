@@ -1,0 +1,79 @@
+package com.leets7th.job_is_be.domain.user.entity;
+
+
+import com.leets7th.job_is_be.domain.user.enums.CareerLevel;
+import com.leets7th.job_is_be.global.base.BaseEntity;
+import jakarta.persistence.*;
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
+
+/**
+ * 사용자 프로필. User와 1:1 관계
+ */
+@Entity
+@Table(name = "user_profiles", uniqueConstraints = {
+        @UniqueConstraint(name = "uk_user_profiles_user", columnNames = "user_id")
+})
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class UserProfile extends BaseEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "career_level", nullable = false, length = 20)
+    private CareerLevel careerLevel;
+
+    @Column(name = "preference_note", length = 500)
+    private String preferenceNote; // 선호 조건 텍스트 (재택 우선 등)
+
+    @Column(name = "exclude_keywords", length = 500)
+    private String excludeKeywords; // 제외 조건 (야근 없는 곳 등)
+
+    @Column(name = "tech_stack", length = 500)
+    private String techStack; // 보유/선호 기술 스택, comma-separated
+
+    @Column(name = "is_job_test_completed", nullable = false)
+    private boolean jobTestCompleted;
+
+    @Column(name = "job_test_completed_at")
+    private LocalDateTime jobTestCompletedAt;
+
+    @Column(name = "onboarding_completed", nullable = false)
+    private boolean onboardingCompleted;
+
+    @Column(name = "onboarding_completed_at")
+    private LocalDateTime onboardingCompletedAt;
+
+    @Builder
+    public UserProfile(User user, CareerLevel careerLevel, String preferenceNote,
+                       String excludeKeywords, String techStack) {
+        this.user = user;
+        this.careerLevel = careerLevel;
+        this.preferenceNote = preferenceNote;
+        this.excludeKeywords = excludeKeywords;
+        this.techStack = techStack;
+        this.jobTestCompleted = false;
+        this.onboardingCompleted = false;
+    }
+
+    public void completeOnboarding(LocalDateTime now) {
+        this.onboardingCompleted = true;
+        this.onboardingCompletedAt = now;
+    }
+
+    public void completeJobTest(LocalDateTime now) {
+        this.jobTestCompleted = true;
+        this.jobTestCompletedAt = now;
+    }
+}
