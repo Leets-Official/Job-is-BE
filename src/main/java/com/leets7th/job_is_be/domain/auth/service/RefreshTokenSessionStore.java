@@ -1,6 +1,7 @@
 package com.leets7th.job_is_be.domain.auth.service;
 
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
@@ -8,12 +9,22 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.util.HexFormat;
+import java.util.List;
 
 @Component
 public class RefreshTokenSessionStore {
 
     private static final String KEY_PREFIX = "auth:refresh:";
     private static final String VALUE_SEPARATOR = ":";
+    private static final DefaultRedisScript<Long> ROTATE_SCRIPT = new DefaultRedisScript<>("""
+            local current = redis.call('GET', KEYS[1])
+            if not current or current ~= ARGV[1] then
+                return 0
+            end
+            redis.call('SET', KEYS[2], ARGV[2], 'PX', ARGV[3])
+            redis.call('DEL', KEYS[1])
+            return 1
+            """, Long.class);
 
     private final StringRedisTemplate redisTemplate;
 
@@ -42,8 +53,30 @@ public class RefreshTokenSessionStore {
         );
     }
 
+    public boolean rotate(
+            String oldSessionId,
+            Long userId,
+            String oldRefreshToken,
+            String newSessionId,
+            String newRefreshToken,
+            Duration ttl
+    ) {
+        Long result = redisTemplate.execute(
+                ROTATE_SCRIPT,
+                List.of(key(oldSessionId), key(newSessionId)),
+                storedValue(userId, oldRefreshToken),
+                storedValue(userId, newRefreshToken),
+                String.valueOf(ttl.toMillis())
+        );
+        return Long.valueOf(1L).equals(result);
+    }
+
     private String key(String sessionId) {
         return KEY_PREFIX + sessionId;
+    }
+
+    private String storedValue(Long userId, String refreshToken) {
+        return userId + VALUE_SEPARATOR + hash(refreshToken);
     }
 
     private String hash(String value) {

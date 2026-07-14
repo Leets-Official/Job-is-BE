@@ -43,20 +43,21 @@ public class AuthService {
         }
 
         JwtTokenProvider.RefreshTokenClaims claims = decodeRefreshToken(refreshToken);
-        if (!sessionStore.consume(claims.sessionId(), claims.userId(), refreshToken)) {
-            throw new GeneralException(ErrorStatus.REFRESH_SESSION_NOT_FOUND);
-        }
         if (!userRepository.existsById(claims.userId())) {
             throw new GeneralException(ErrorStatus.USER_NOT_FOUND);
         }
 
         JwtTokenProvider.TokenPair tokenPair = tokenProvider.issueTokenPair(claims.userId());
-        sessionStore.save(
-                tokenPair.refreshSessionId(),
+        if (!sessionStore.rotate(
+                claims.sessionId(),
                 claims.userId(),
+                refreshToken,
+                tokenPair.refreshSessionId(),
                 tokenPair.refreshToken(),
                 tokenPair.refreshTokenTtl()
-        );
+        )) {
+            throw new GeneralException(ErrorStatus.REFRESH_SESSION_NOT_FOUND);
+        }
 
         return new ReissueResult(
                 new TokenReissueResponse(
