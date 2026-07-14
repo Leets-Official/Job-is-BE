@@ -2,7 +2,7 @@ package com.leets7th.job_is_be.global.exception;
 
 import com.leets7th.job_is_be.global.base.BaseStatus;
 import com.leets7th.job_is_be.global.response.ApiResponse;
-import com.leets7th.job_is_be.global.ststus.ErrorStatus;
+import com.leets7th.job_is_be.global.status.ErrorStatus;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
