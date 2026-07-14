@@ -1,4 +1,4 @@
-package com.leets7th.job_is_be.global.ststus;
+package com.leets7th.job_is_be.global.status;
 
 import com.leets7th.job_is_be.global.base.BaseStatus;
 import lombok.AllArgsConstructor;

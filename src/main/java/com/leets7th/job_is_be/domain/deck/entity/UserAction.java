@@ -10,9 +10,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
-
-
 @Entity
 @Table(name = "user_actions")
 @Getter
@@ -41,17 +38,13 @@ public class UserAction extends BaseEntity {
     @Column(name = "source_screen", length = 20)
     private String sourceScreen; // 이벤트 발생 화면 ID (REC-03, EXP-03 등)
 
-    @Column(name = "created_at", nullable = false)
-    private LocalDateTime createdAt;
-
     @Builder
     public UserAction(User user, Job job, ActionType actionType, String reasonCode,
-                      String sourceScreen, LocalDateTime createdAt) {
+                      String sourceScreen) {
         this.user = user;
         this.job = job;
         this.actionType = actionType;
         this.reasonCode = reasonCode;
         this.sourceScreen = sourceScreen;
-        this.createdAt = createdAt;
     }
 }

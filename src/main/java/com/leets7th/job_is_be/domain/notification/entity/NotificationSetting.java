@@ -10,7 +10,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 /**
  * 알림/발송 수신 설정
@@ -47,9 +46,6 @@ public class NotificationSetting extends BaseEntity {
     @Column(name = "email_verified", nullable = false)
     private boolean emailVerified;
 
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
     @Builder
     public NotificationSetting(User user, String sendSlot) {
         this.user = user;
@@ -58,23 +54,19 @@ public class NotificationSetting extends BaseEntity {
         this.emailVerified = false;
     }
 
-    public void changeSlot(String slot, LocalDateTime now) {
+    public void changeSlot(String slot) {
         this.sendSlot = slot;
-        this.updatedAt = now;
     }
 
-    public void snooze(LocalDate until, LocalDateTime now) {
+    public void snooze(LocalDate until) {
         this.snoozeUntil = until;
-        this.updatedAt = now;
     }
 
-    public void unsubscribe(LocalDateTime now) {
+    public void unsubscribe() {
         this.emailSubscribed = false;
-        this.updatedAt = now;
     }
 
     public void resetEmailVerification() {
         this.emailVerified = false;
     }
 }
-
