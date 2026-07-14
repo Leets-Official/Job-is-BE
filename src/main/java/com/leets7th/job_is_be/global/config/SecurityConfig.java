@@ -1,6 +1,7 @@
 package com.leets7th.job_is_be.global.config;
 
 import com.leets7th.job_is_be.global.response.ApiResponse;
+import com.leets7th.job_is_be.global.properties.JwtProperties;
 import com.leets7th.job_is_be.global.status.ErrorStatus;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -11,6 +12,9 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
@@ -18,15 +22,37 @@ import java.io.IOException;
 @Configuration
 public class SecurityConfig {
 
+    private static final RequestMatcher REFRESH_COOKIE_CSRF_MATCHER = request -> {
+        if (!"POST".equalsIgnoreCase(request.getMethod())) {
+            return false;
+        }
+        String path = request.getRequestURI().substring(request.getContextPath().length());
+        return "/api/auth/token/reissue".equals(path) || "/api/auth/logout".equals(path);
+    };
+
+    @Bean
+    public CookieCsrfTokenRepository csrfTokenRepository(JwtProperties jwtProperties) {
+        CookieCsrfTokenRepository repository = CookieCsrfTokenRepository.withHttpOnlyFalse();
+        repository.setCookieCustomizer(cookie -> cookie
+                .path("/")
+                .secure(jwtProperties.cookieSecure())
+                .sameSite(jwtProperties.cookieSameSite()));
+        return repository;
+    }
+
     @Bean
     public SecurityFilterChain filterChain(
             HttpSecurity http,
             @Qualifier("accessTokenDecoder") JwtDecoder accessTokenDecoder,
+            CookieCsrfTokenRepository csrfTokenRepository,
             ObjectMapper objectMapper
     ) throws Exception {
         http
                 .cors(Customizer.withDefaults())
-                .csrf(csrf -> csrf.disable())
+                .csrf(csrf -> csrf
+                        .csrfTokenRepository(csrfTokenRepository)
+                        .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
+                        .requireCsrfProtectionMatcher(REFRESH_COOKIE_CSRF_MATCHER))
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .formLogin(form -> form.disable())
@@ -38,6 +64,7 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/health",
                                 "/",
+                                "/api/auth/csrf",
                                 "/api/auth/oauth/**",
                                 "/api/auth/token/reissue",
                                 "/api/auth/logout"
