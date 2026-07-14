@@ -49,15 +49,11 @@ public class Deck extends BaseEntity {
     @Column(name = "completed_at")
     private LocalDateTime completedAt; // 전량 처리 완료 시점 (REC-05)
 
-    @Column(name = "created_at", nullable = false)
-    private LocalDateTime createdAt;
-
     @Builder
-    public Deck(User user, LocalDate deckDate, String slot, LocalDateTime createdAt) {
+    public Deck(User user, LocalDate deckDate, String slot) {
         this.user = user;
         this.deckDate = deckDate;
         this.slot = slot;
-        this.createdAt = createdAt;
     }
 
     public void markFirstOpened(LocalDateTime now) {
