@@ -11,9 +11,11 @@ spring:
       hibernate:
         default_batch_fetch_size: 100
 
-  sql:
-    init:
-      mode: always
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/postgres}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:1234}
 
   data:
     redis:
@@ -24,7 +26,6 @@ spring:
       timeout: 2s
       repositories:
         enabled: false
-
 
 server:
   shutdown: graceful
