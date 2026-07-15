@@ -51,8 +51,8 @@ public class BriefingService {
         String slot = resolveSlot(LocalTime.now());
         String greeting = resolveGreeting(slot);
 
-        // 공고 리뷰 수 조회
-        long reviewedCount = jobRepository.countByPostedAtBetween(
+        // 오늘 새로 등록된 전체 공고 수 조회
+        long todayNewJobCount = jobRepository.countByPostedAtBetween(
                 today.atStartOfDay(), today.plusDays(1).atStartOfDay());
 
         // 오늘의 Deck 조회
@@ -62,7 +62,7 @@ public class BriefingService {
 
         return new BriefingResponse(
                 greeting,
-                reviewedCount,
+                todayNewJobCount,
                 cards.size(),
                 resolveTheme(cards),
                 deck.map(Deck::getId).orElse(null),

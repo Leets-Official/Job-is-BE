@@ -61,7 +61,7 @@ class BriefingServiceTest {
         BriefingResponse response = briefingService.getTodayBriefing(1L);
 
         assertThat(response.curatedCount()).isEqualTo(0);
-        assertThat(response.reviewedCount()).isEqualTo(847L);
+        assertThat(response.todayNewJobCount()).isEqualTo(847L);
         assertThat(response.deckId()).isNull();
         assertThat(response.theme()).isEqualTo("오늘의 맞춤 공고를 준비했습니다.");
     }

@@ -7,7 +7,7 @@ import java.time.LocalDate;
  */
 public record BriefingResponse(
         String greeting,
-        long reviewedCount,
+        long todayNewJobCount,
         int curatedCount,
         String theme,
         Long deckId,
