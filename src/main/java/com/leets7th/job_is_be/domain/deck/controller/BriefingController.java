@@ -20,6 +20,7 @@ public class BriefingController {
 
     @GetMapping("/today/{userId}")
     public ResponseEntity<ApiResponse<BriefingResponse>> getTodayBriefing(
+            //TODO 인증관련 세팅 후 userDetail 또는 Authentication 객체에서 userId 가져오기
             @PathVariable Long userId
     ) {
         BriefingResponse response = briefingService.getTodayBriefing(userId);
