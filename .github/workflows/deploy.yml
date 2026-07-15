@@ -64,7 +64,25 @@ jobs:
     needs: build-and-push
     runs-on: ubuntu-latest
     environment: development
+    env:
+      AWS_REGION: us-east-1
+      SG_ID: sg-04b6e6175adabdb30
     steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Whitelist runner IP for SSH
+        run: |
+          RUNNER_IP=$(curl -s https://api.ipify.org)
+          echo "RUNNER_IP=$RUNNER_IP" >> "$GITHUB_ENV"
+          aws ec2 authorize-security-group-ingress \
+            --group-id "$SG_ID" \
+            --protocol tcp --port 22 --cidr "${RUNNER_IP}/32"
+
       - name: Deploy to EC2 (dev)
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -75,3 +93,10 @@ jobs:
             cd /srv/jobis-dev
             docker compose pull
             docker compose up -d
+
+      - name: Revoke runner IP from SSH
+        if: always()
+        run: |
+          aws ec2 revoke-security-group-ingress \
+            --group-id "$SG_ID" \
+            --protocol tcp --port 22 --cidr "${RUNNER_IP}/32"
