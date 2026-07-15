@@ -16,6 +16,7 @@ import java.time.Duration;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -60,15 +61,29 @@ class AuthServiceTest {
         );
 
         when(tokenProvider.decodeRefreshToken(oldRefreshToken)).thenReturn(claims);
-        when(sessionStore.consume("old-session", 1L, oldRefreshToken)).thenReturn(true);
         when(userRepository.existsById(1L)).thenReturn(true);
         when(tokenProvider.issueTokenPair(1L)).thenReturn(newPair);
+        when(sessionStore.rotate(
+                "old-session",
+                1L,
+                oldRefreshToken,
+                "new-session",
+                "new-refresh-token",
+                Duration.ofDays(14)
+        )).thenReturn(true);
 
         AuthService.ReissueResult result = authService.reissue(oldRefreshToken);
 
         assertEquals("new-access-token", result.response().accessToken());
         assertEquals("new-refresh-token", result.refreshToken());
-        verify(sessionStore).save("new-session", 1L, "new-refresh-token", Duration.ofDays(14));
+        verify(sessionStore).rotate(
+                "old-session",
+                1L,
+                oldRefreshToken,
+                "new-session",
+                "new-refresh-token",
+                Duration.ofDays(14)
+        );
     }
 
     @Test
@@ -76,7 +91,23 @@ class AuthServiceTest {
         String refreshToken = "refresh-token";
         when(tokenProvider.decodeRefreshToken(refreshToken))
                 .thenReturn(new JwtTokenProvider.RefreshTokenClaims(1L, "session"));
-        when(sessionStore.consume("session", 1L, refreshToken)).thenReturn(false);
+        when(userRepository.existsById(1L)).thenReturn(true);
+        JwtTokenProvider.TokenPair newPair = new JwtTokenProvider.TokenPair(
+                "new-access-token",
+                "new-refresh-token",
+                "new-session",
+                900,
+                Duration.ofDays(14)
+        );
+        when(tokenProvider.issueTokenPair(1L)).thenReturn(newPair);
+        when(sessionStore.rotate(
+                "session",
+                1L,
+                refreshToken,
+                "new-session",
+                "new-refresh-token",
+                Duration.ofDays(14)
+        )).thenReturn(false);
 
         GeneralException exception = assertThrows(
                 GeneralException.class,
@@ -84,6 +115,29 @@ class AuthServiceTest {
         );
 
         assertEquals(ErrorStatus.REFRESH_SESSION_NOT_FOUND, exception.getErrorStatus());
+    }
+
+    @Test
+    void keepsRefreshSessionWhenUserLookupFails() {
+        String refreshToken = "refresh-token";
+        when(tokenProvider.decodeRefreshToken(refreshToken))
+                .thenReturn(new JwtTokenProvider.RefreshTokenClaims(1L, "session"));
+        when(userRepository.existsById(1L)).thenReturn(false);
+
+        GeneralException exception = assertThrows(
+                GeneralException.class,
+                () -> authService.reissue(refreshToken)
+        );
+
+        assertEquals(ErrorStatus.USER_NOT_FOUND, exception.getErrorStatus());
+        verify(sessionStore, never()).rotate(
+                org.mockito.ArgumentMatchers.anyString(),
+                org.mockito.ArgumentMatchers.anyLong(),
+                org.mockito.ArgumentMatchers.anyString(),
+                org.mockito.ArgumentMatchers.anyString(),
+                org.mockito.ArgumentMatchers.anyString(),
+                org.mockito.ArgumentMatchers.any()
+        );
     }
 
     @Test

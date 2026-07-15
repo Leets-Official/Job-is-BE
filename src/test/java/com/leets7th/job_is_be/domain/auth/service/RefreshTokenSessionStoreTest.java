@@ -8,9 +8,12 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.data.redis.core.script.RedisScript;
 
 import java.time.Duration;
+import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
@@ -29,7 +32,6 @@ class RefreshTokenSessionStoreTest {
 
     @BeforeEach
     void setUp() {
-        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
         sessionStore = new RefreshTokenSessionStore(redisTemplate);
     }
 
@@ -38,6 +40,7 @@ class RefreshTokenSessionStoreTest {
         String rawToken = "raw-refresh-token";
         Duration ttl = Duration.ofDays(14);
         ArgumentCaptor<String> valueCaptor = ArgumentCaptor.forClass(String.class);
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
 
         sessionStore.save("session-id", 1L, rawToken, ttl);
         verify(valueOperations).set(
@@ -54,5 +57,41 @@ class RefreshTokenSessionStoreTest {
 
         assertTrue(sessionStore.consume("session-id", 1L, rawToken));
         assertFalse(sessionStore.consume("session-id", 1L, rawToken));
+    }
+
+    @Test
+    void rotatesRefreshSessionWithSingleRedisScript() {
+        Duration ttl = Duration.ofDays(14);
+        ArgumentCaptor<List<String>> keysCaptor = ArgumentCaptor.forClass(List.class);
+        ArgumentCaptor<String> oldValueCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> newValueCaptor = ArgumentCaptor.forClass(String.class);
+
+        when(redisTemplate.execute(
+                org.mockito.ArgumentMatchers.<RedisScript<Long>>any(),
+                org.mockito.ArgumentMatchers.anyList(),
+                org.mockito.ArgumentMatchers.<String>any(),
+                org.mockito.ArgumentMatchers.<String>any(),
+                org.mockito.ArgumentMatchers.<String>any()
+        )).thenReturn(1L);
+
+        assertTrue(sessionStore.rotate(
+                "old-session",
+                1L,
+                "old-refresh-token",
+                "new-session",
+                "new-refresh-token",
+                ttl
+        ));
+
+        verify(redisTemplate).execute(
+                org.mockito.ArgumentMatchers.<RedisScript<Long>>any(),
+                keysCaptor.capture(),
+                oldValueCaptor.capture(),
+                newValueCaptor.capture(),
+                org.mockito.ArgumentMatchers.eq(String.valueOf(ttl.toMillis()))
+        );
+        assertEquals(List.of("auth:refresh:old-session", "auth:refresh:new-session"), keysCaptor.getValue());
+        assertFalse(oldValueCaptor.getValue().contains("old-refresh-token"));
+        assertFalse(newValueCaptor.getValue().contains("new-refresh-token"));
     }
 }
