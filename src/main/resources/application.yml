@@ -11,6 +11,10 @@ spring:
       hibernate:
         default_batch_fetch_size: 100
 
+  sql:
+    init:
+      mode: always
+
   data:
     redis:
       host: ${REDIS_HOST:localhost}
@@ -41,7 +45,6 @@ app:
       redirect-uri: ${GOOGLE_REDIRECT_URI:}
       token-uri: https://oauth2.googleapis.com/token
       user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
-
 jwt:
   secret: ${JWT_SECRET:}
   issuer: ${JWT_ISSUER:job-is-be}
