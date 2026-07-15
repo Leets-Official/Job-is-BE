@@ -65,10 +65,9 @@ public class SecurityConfig {
                                 "/health",
                                 "/",
                                 "/api/auth/csrf",
-                                "/api/auth/oauth/**",
-                                "/api/auth/token/reissue",
-                                "/api/auth/logout"
+                                "/api/auth/oauth/**"
                         ).permitAll()
+                        .requestMatchers(REFRESH_COOKIE_CSRF_MATCHER).permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
