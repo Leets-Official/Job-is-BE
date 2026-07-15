@@ -1,4 +1,9 @@
 spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/jobisbe
+    username: postgres
+    password: 1234
+
   application:
     name: job-is-be
 
@@ -7,9 +12,16 @@ spring:
 
   jpa:
     open-in-view: false
+    defer-datasource-initialization: true
+    hibernate:
+      ddl-auto: update # [확인 및 추가] 이 줄이 빠져있다면 꼭 넣어주세요!
     properties:
       hibernate:
         default_batch_fetch_size: 100
+
+    sql:
+      init:
+        mode: always
 
 
 server:
@@ -42,3 +54,4 @@ springdoc:
   api-docs:
     path: /v3/api-docs
     enabled: true
+
