@@ -1,9 +1,4 @@
 spring:
-  datasource:
-    url: jdbc:postgresql://localhost:5432/jobisbe
-    username: postgres
-    password: 1234
-
   application:
     name: job-is-be
 
@@ -12,16 +7,19 @@ spring:
 
   jpa:
     open-in-view: false
-    defer-datasource-initialization: true
-    hibernate:
-      ddl-auto: update # [확인 및 추가] 이 줄이 빠져있다면 꼭 넣어주세요!
     properties:
       hibernate:
         default_batch_fetch_size: 100
 
-    sql:
-      init:
-        mode: always
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      connect-timeout: 2s
+      timeout: 2s
+      repositories:
+        enabled: false
 
 
 server:
@@ -44,6 +42,16 @@ app:
       token-uri: https://oauth2.googleapis.com/token
       user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
 
+jwt:
+  secret: ${JWT_SECRET:}
+  issuer: ${JWT_ISSUER:job-is-be}
+  access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:15m}
+  refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:14d}
+  cookie-name: ${JWT_COOKIE_NAME:refreshToken}
+  cookie-path: ${JWT_COOKIE_PATH:/api/auth}
+  cookie-secure: ${JWT_COOKIE_SECURE}
+  cookie-same-site: ${JWT_COOKIE_SAME_SITE:Lax}
+
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
@@ -54,4 +62,3 @@ springdoc:
   api-docs:
     path: /v3/api-docs
     enabled: true
-
