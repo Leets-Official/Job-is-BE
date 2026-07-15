@@ -11,8 +11,6 @@ import org.springframework.security.oauth2.jwt.JwtException;
 import javax.crypto.SecretKey;
 import java.time.Clock;
 import java.time.Duration;
-import java.time.Instant;
-import java.time.ZoneOffset;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -43,7 +41,7 @@ class JwtTokenProviderTest {
                 config.jwtEncoder(secretKey),
                 tokenDecoder,
                 properties,
-                Clock.fixed(Instant.parse("2026-07-15T00:00:00Z"), ZoneOffset.UTC)
+                Clock.systemUTC()
         );
     }
 
