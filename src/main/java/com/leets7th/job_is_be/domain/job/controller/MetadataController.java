@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
-@Tag(name = "Metadata", description = "지역 및 직무 카테고리 메타데이터 조회 API")
+@Tag(name = "Metadata", description = "지역, 직무, 경력 수준 카테고리 메타데이터 조회 API")
 @RestController
 @RequestMapping("/api/jobs/filters")
 @RequiredArgsConstructor

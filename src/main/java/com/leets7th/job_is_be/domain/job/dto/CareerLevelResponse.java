@@ -5,7 +5,7 @@ import lombok.Getter;
 
 @Getter
 public class CareerLevelResponse {
-    private final String key;          // "NEWCOMER", "JUNIOR" 등
+    private final String key;          // "ENTRY", "JUNIOR", "EXPERIENCED"
     private final String description;  // "신입", "주니어" 등
     private final Integer minYears;    // SQL career_min 매핑
     private final Integer maxYears;    // SQL career_max 매핑
