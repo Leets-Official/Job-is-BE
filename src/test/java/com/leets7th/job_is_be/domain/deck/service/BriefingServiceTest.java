@@ -1,6 +1,7 @@
 package com.leets7th.job_is_be.domain.deck.service;
 
 import com.leets7th.job_is_be.domain.deck.dto.BriefingResponse;
+import com.leets7th.job_is_be.domain.deck.dto.CardResponse;
 import com.leets7th.job_is_be.domain.deck.entity.Card;
 import com.leets7th.job_is_be.domain.deck.entity.Deck;
 import com.leets7th.job_is_be.domain.deck.repository.CardRepository;
@@ -39,6 +40,8 @@ class BriefingServiceTest {
     private DeckRepository deckRepository;
     @Mock
     private CardRepository cardRepository;
+    @Mock
+    private CardService cardService;
 
     @InjectMocks
     private BriefingService briefingService;
@@ -54,26 +57,25 @@ class BriefingServiceTest {
     @Test
     void 오늘_덱이_없으면_추린_건수는_0이고_기본_테마를_반환한다() {
         when(userRepository.existsById(1L)).thenReturn(true);
-        when(jobRepository.countByPostedAtBetween(any(), any())).thenReturn(847L);
-        when(deckRepository.findByUserIdAndDeckDateAndSlot(anyLong(), any(LocalDate.class), any(String.class)))
+        when(jobRepository.countApplicable(any(), any())).thenReturn(847L);
+        when(deckRepository.findByUserIdAndDeckDate(anyLong(), any(LocalDate.class)))
                 .thenReturn(Optional.empty());
 
         BriefingResponse response = briefingService.getTodayBriefing(1L);
 
         assertThat(response.curatedCount()).isEqualTo(0);
-        assertThat(response.todayNewJobCount()).isEqualTo(847L);
-        assertThat(response.deckId()).isNull();
+        assertThat(response.applicableCount()).isEqualTo(847L);
         assertThat(response.theme()).isEqualTo("오늘의 맞춤 공고를 준비했습니다.");
     }
 
     @Test
     void 덱이_있으면_카드_수와_최빈_직무_테마를_반환한다() {
         when(userRepository.existsById(1L)).thenReturn(true);
-        when(jobRepository.countByPostedAtBetween(any(), any())).thenReturn(847L);
+        when(jobRepository.countApplicable(any(), any())).thenReturn(847L);
 
         User user = User.builder().socialId("s").socialType(SocialType.KAKAO).email("a@a.com").build();
-        Deck deck = Deck.builder().user(user).deckDate(LocalDate.now()).slot("07:30").build();
-        when(deckRepository.findByUserIdAndDeckDateAndSlot(anyLong(), any(LocalDate.class), any(String.class)))
+        Deck deck = Deck.builder().user(user).deckDate(LocalDate.now()).build();
+        when(deckRepository.findByUserIdAndDeckDate(anyLong(), any(LocalDate.class)))
                 .thenReturn(Optional.of(deck));
 
         JobCategory dataCategory = JobCategory.builder().name("데이터 분석가").build();
@@ -94,5 +96,34 @@ class BriefingServiceTest {
 
         assertThat(response.curatedCount()).isEqualTo(3);
         assertThat(response.theme()).isEqualTo("오늘은 데이터 분석가 직무 위주로 골랐습니다.");
+    }
+
+    @Test
+    void 브리핑_현황_조회시_오늘_덱이_없으면_예외를_던진다() {
+        when(userRepository.existsById(1L)).thenReturn(true);
+        when(deckRepository.findByUserIdAndDeckDate(anyLong(), any(LocalDate.class)))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> briefingService.getTodayBriefingStatus(1L))
+                .isInstanceOf(GeneralException.class);
+    }
+
+    @Test
+    void 브리핑_현황_조회시_오늘_덱의_카드_목록을_반환한다() {
+        when(userRepository.existsById(1L)).thenReturn(true);
+
+        User user = User.builder().socialId("s").socialType(SocialType.KAKAO).email("a@a.com").build();
+        Deck deck = Deck.builder().user(user).deckDate(LocalDate.now()).build();
+        when(deckRepository.findByUserIdAndDeckDate(anyLong(), any(LocalDate.class)))
+                .thenReturn(Optional.of(deck));
+
+        CardResponse card = new CardResponse(1L, 2L, null, "주니어 백엔드 엔지니어", "추천 이유", null,
+                List.of("Java"), "클라우드 데이터 플랫폼", "서울", List.of("신입"), null, "요약", 1, null);
+        when(cardService.getDeckCards(deck.getId())).thenReturn(List.of(card));
+
+        List<CardResponse> response = briefingService.getTodayBriefingStatus(1L);
+
+        assertThat(response).hasSize(1);
+        assertThat(response.get(0).jobTitle()).isEqualTo("주니어 백엔드 엔지니어");
     }
 }

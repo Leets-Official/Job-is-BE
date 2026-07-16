@@ -1,11 +1,13 @@
 package com.leets7th.job_is_be.domain.deck.service;
 
 import com.leets7th.job_is_be.domain.deck.dto.BriefingResponse;
+import com.leets7th.job_is_be.domain.deck.dto.CardResponse;
 import com.leets7th.job_is_be.domain.deck.entity.Card;
 import com.leets7th.job_is_be.domain.deck.entity.Deck;
 import com.leets7th.job_is_be.domain.deck.repository.CardRepository;
 import com.leets7th.job_is_be.domain.deck.repository.DeckRepository;
 import com.leets7th.job_is_be.domain.job.entity.JobCategory;
+import com.leets7th.job_is_be.domain.job.enums.JobStatus;
 import com.leets7th.job_is_be.domain.job.repository.JobRepository;
 import com.leets7th.job_is_be.domain.user.repository.UserRepository;
 import com.leets7th.job_is_be.global.exception.GeneralException;
@@ -15,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Comparator;
 import java.util.List;
@@ -40,9 +43,11 @@ public class BriefingService {
     private final JobRepository jobRepository;
     private final DeckRepository deckRepository;
     private final CardRepository cardRepository;
+    private final CardService cardService;
 
-    // 안내 문구 출력
+    // REC-01 안내 문구 출력
     public BriefingResponse getTodayBriefing(Long userId) {
+
         if (!userRepository.existsById(userId)) {
             throw new GeneralException(ErrorStatus.USER_NOT_FOUND);
         }
@@ -51,24 +56,32 @@ public class BriefingService {
         String slot = resolveSlot(LocalTime.now());
         String greeting = resolveGreeting(slot);
 
-        // 오늘 새로 등록된 전체 공고 수 조회
-        long todayNewJobCount = jobRepository.countByPostedAtBetween(
-                today.atStartOfDay(), today.plusDays(1).atStartOfDay());
+        // 지원가능 건수 — 마감되지 않은 전체 공고 수 조회
+        long applicableCount = jobRepository.countApplicable(JobStatus.ACTIVE, LocalDateTime.now());
 
         // 오늘의 Deck 조회
-        Optional<Deck> deck = deckRepository.findByUserIdAndDeckDateAndSlot(userId, today, slot);
+        Optional<Deck> deck = deckRepository.findByUserIdAndDeckDate(userId, today);
         List<Card> cards = deck.map(d -> cardRepository.findByDeckId(d.getId()))
                 .orElse(List.of());
 
         return new BriefingResponse(
                 greeting,
-                todayNewJobCount,
+                applicableCount,
                 cards.size(),
-                resolveTheme(cards),
-                deck.map(Deck::getId).orElse(null),
-                slot,
-                today
+                resolveTheme(cards)
         );
+    }
+
+    // REC-02 브리핑 덱 — 오늘 덱 카드 목록 조회
+    public List<CardResponse> getTodayBriefingStatus(Long userId) {
+        if (!userRepository.existsById(userId)) {
+            throw new GeneralException(ErrorStatus.USER_NOT_FOUND);
+        }
+
+        Deck deck = deckRepository.findByUserIdAndDeckDate(userId, LocalDate.now())
+                .orElseThrow(() -> new GeneralException(ErrorStatus.DECK_NOT_FOUND));
+
+        return cardService.getDeckCards(deck.getId());
     }
 
     // 시간대 별 인사문구 추출
