@@ -1,40 +1,105 @@
 package com.leets7th.job_is_be.domain.job.entity;
 
-import com.leets7th.job_is_be.global.base.BaseEntity;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
-// 기업 정보
+import java.time.LocalDateTime;
+
+// 기업 정보. 크롤러(원티드+잡코리아 메타)가 이 테이블을 직접 적재/갱신하므로 앱은 읽기 전용으로만 사용
 @Entity
 @Table(name = "companies")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Company extends BaseEntity {
+public class Company {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 200)
+    @Column(length = 200)
     private String name;
 
-    @Column(length = 1000)
+    @Column(name = "normalized_name", length = 200)
+    private String normalizedName;
+
+    @Column(name = "registration_number", length = 50)
+    private String registrationNumber;
+
+    @Column(name = "wanted_company_id")
+    private Long wantedCompanyId;
+
+    @Column(name = "jobkorea_gno_ref")
+    private Long jobkoreaGnoRef;
+
+    @Column(name = "employee_count")
+    private Integer employeeCount;
+
+    @Column(name = "company_type", length = 50)
+    private String companyType;
+
+    @Column(length = 100)
+    private String industry;
+
+    @Column(name = "stock_status", length = 50)
+    private String stockStatus;
+
+    @Column(name = "hq_address", length = 500)
+    private String hqAddress;
+
+    @Column(length = 500)
+    private String homepage;
+
+    @Column(length = 2000)
     private String description;
 
-    @Column(name = "logo_url", length = 500)
-    private String logoUrl;
+    @Column(name = "enrichment_status", length = 50)
+    private String enrichmentStatus;
 
-    @Column(length = 50)
-    private String source; // 데이터 출처 (원티드 등)
+    @Column(name = "name_match")
+    private Boolean nameMatch;
+
+    @Column(name = "rejected_name", length = 200)
+    private String rejectedName;
+
+    @Column(name = "enriched_at")
+    private LocalDateTime enrichedAt;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "raw_jobkorea")
+    private String rawJobkorea;
 
     @Builder
-    public Company(String name, String description, String logoUrl, String source) {
+    public Company(String name, String normalizedName, String registrationNumber,
+                   Long wantedCompanyId, Long jobkoreaGnoRef, Integer employeeCount, String companyType,
+                   String industry, String stockStatus, String hqAddress, String homepage,
+                   String description, String enrichmentStatus, Boolean nameMatch, String rejectedName,
+                   LocalDateTime enrichedAt, String rawJobkorea) {
         this.name = name;
+        this.normalizedName = normalizedName;
+        this.registrationNumber = registrationNumber;
+        this.wantedCompanyId = wantedCompanyId;
+        this.jobkoreaGnoRef = jobkoreaGnoRef;
+        this.employeeCount = employeeCount;
+        this.companyType = companyType;
+        this.industry = industry;
+        this.stockStatus = stockStatus;
+        this.hqAddress = hqAddress;
+        this.homepage = homepage;
         this.description = description;
-        this.logoUrl = logoUrl;
-        this.source = source;
+        this.enrichmentStatus = enrichmentStatus;
+        this.nameMatch = nameMatch;
+        this.rejectedName = rejectedName;
+        this.enrichedAt = enrichedAt;
+        this.rawJobkorea = rawJobkorea;
     }
 }

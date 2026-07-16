@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
  * 채용 공고
  */
 @Entity
-@Table(name = "jobs")
+@Table(name = "jobs", uniqueConstraints = @UniqueConstraint(name = "uk_jobs_source_external_id", columnNames = {"source", "external_id"}))
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Job extends BaseEntity {
@@ -54,6 +54,9 @@ public class Job extends BaseEntity {
     @Column(length = 50)
     private String source; // 원티드 등 원문 출처
 
+    @Column(name = "external_id")
+    private Long externalId; // 원문 출처 내 공고 id. (source, externalId)로 크롤링 동기화 시 upsert 매칭
+
     @Column(name = "source_url", length = 500)
     private String sourceUrl;
 
@@ -73,7 +76,7 @@ public class Job extends BaseEntity {
     @Builder
     public Job(Company company, JobCategory jobCategory, Region region, String title,
                String careerLevel, String employmentType, boolean remoteAvailable,
-               boolean salaryDisclosed, String source, String sourceUrl,
+               boolean salaryDisclosed, String source, Long externalId, String sourceUrl,
                LocalDateTime postedAt, LocalDateTime deadlineAt, String editorNote) {
         this.company = company;
         this.jobCategory = jobCategory;
@@ -84,6 +87,7 @@ public class Job extends BaseEntity {
         this.remoteAvailable = remoteAvailable;
         this.salaryDisclosed = salaryDisclosed;
         this.source = source;
+        this.externalId = externalId;
         this.sourceUrl = sourceUrl;
         this.postedAt = postedAt;
         this.deadlineAt = deadlineAt;
@@ -101,5 +105,20 @@ public class Job extends BaseEntity {
 
     public boolean isOpenEnded() {
         return this.deadlineAt == null;
+    }
+
+    // 크롤링 재수집 시 (source, externalId)로 매칭된 기존 공고에 최신 원문 내용을 반영
+    public void syncFrom(Company company, String title, String careerLevel, String employmentType,
+                          boolean remoteAvailable, String sourceUrl,
+                          LocalDateTime postedAt, LocalDateTime deadlineAt, JobStatus status) {
+        this.company = company;
+        this.title = title;
+        this.careerLevel = careerLevel;
+        this.employmentType = employmentType;
+        this.remoteAvailable = remoteAvailable;
+        this.sourceUrl = sourceUrl;
+        this.postedAt = postedAt;
+        this.deadlineAt = deadlineAt;
+        this.status = status;
     }
 }
