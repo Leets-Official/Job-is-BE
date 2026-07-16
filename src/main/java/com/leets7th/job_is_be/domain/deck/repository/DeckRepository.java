@@ -8,5 +8,5 @@ import java.util.Optional;
 
 public interface DeckRepository extends JpaRepository<Deck, Long> {
 
-    Optional<Deck> findByUserIdAndDeckDateAndSlot(Long userId, LocalDate deckDate, String slot);
+    Optional<Deck> findByUserIdAndDeckDate(Long userId, LocalDate deckDate);
 }
