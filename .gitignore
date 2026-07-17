@@ -46,4 +46,4 @@ application-prod.yml
 !.env.example
 
 ## Cluade ##
-.claude/
+.cluade/
