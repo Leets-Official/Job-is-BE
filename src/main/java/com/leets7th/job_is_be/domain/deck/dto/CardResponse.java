@@ -6,7 +6,7 @@ import com.leets7th.job_is_be.domain.job.entity.Company;
 import com.leets7th.job_is_be.domain.job.entity.Job;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,7 +16,7 @@ import java.util.List;
 public record CardResponse(
         Long cardId,
         Long jobId,
-        LocalDateTime postedAt,   // 공고 올라온 날짜
+        OffsetDateTime postedAt,   // 공고 올라온 날짜
         String jobTitle,          // 공고명
         String reason,            // 추천 이유
         BigDecimal fitScore,      // 적합도
@@ -24,7 +24,7 @@ public record CardResponse(
         String jobScope,          // 공고 범위 (ex. 클라우드 데이터 플랫폼)
         String companyLocation,   // 회사 위치
         List<String> tags,        // 태그 (ex. 신입, 서울 강남, 연봉 비공개)
-        LocalDateTime deadlineAt, // 마감 일자 (NULL이면 상시)
+        OffsetDateTime deadlineAt, // 마감 일자 (NULL이면 상시)
         String summary,           // 한눈에 요약
         Integer position,
         DeckItemStatus status

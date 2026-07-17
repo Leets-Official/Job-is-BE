@@ -16,7 +16,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 // 원티드 공고 원문(크롤러 적재). 앱은 읽기 전용으로만 사용, jobs 테이블로의 동기화는 JobPostingConverter가 담당
@@ -101,10 +101,10 @@ public class JobPosting {
     private Boolean isRemote;
 
     @Column(name = "due_time")
-    private LocalDateTime dueTime;
+    private OffsetDateTime dueTime;
 
     @Column(name = "confirm_time")
-    private LocalDateTime confirmTime;
+    private OffsetDateTime confirmTime;
 
     @Column(length = 20)
     private String status;
@@ -137,7 +137,7 @@ public class JobPosting {
     private String raw;
 
     @Column(name = "collected_at")
-    private LocalDateTime collectedAt;
+    private OffsetDateTime collectedAt;
 
     @Builder
     public JobPosting(String source, Long externalId, String sourceUrl, Company company, String position,
@@ -145,10 +145,10 @@ public class JobPosting {
                        String benefits, String categoryParent, List<String> categoryChild, Integer careerMin,
                        Integer careerMax, Boolean isNewbie, Boolean isExpert, String employmentType,
                        String locationCountry, String locationCity, String locationDistrict, String locationFull,
-                       Double geoLat, Double geoLng, Boolean isRemote, LocalDateTime dueTime,
-                       LocalDateTime confirmTime, String status, String hireRounds, List<String> skillTags,
+                       Double geoLat, Double geoLng, Boolean isRemote, OffsetDateTime dueTime,
+                       OffsetDateTime confirmTime, String status, String hireRounds, List<String> skillTags,
                        List<Integer> skillTagIds, Boolean skillsInferred, String thumbnailUrl,
-                       List<String> imageUrls, String rewardTotal, String raw, LocalDateTime collectedAt) {
+                       List<String> imageUrls, String rewardTotal, String raw, OffsetDateTime collectedAt) {
         this.source = source;
         this.externalId = externalId;
         this.sourceUrl = sourceUrl;

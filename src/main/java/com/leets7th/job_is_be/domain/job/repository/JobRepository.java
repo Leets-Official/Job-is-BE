@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -16,13 +16,13 @@ public interface JobRepository extends JpaRepository<Job, Long> {
     // 지원 가능 건수 — 마감되지 않은(상시 포함) ACTIVE 공고 수
     @Query("SELECT COUNT(j) FROM Job j WHERE j.status = :status "
             + "AND (j.deadlineAt IS NULL OR j.deadlineAt > :now)")
-    long countApplicable(@Param("status") JobStatus status, @Param("now") LocalDateTime now);
+    long countApplicable(@Param("status") JobStatus status, @Param("now") OffsetDateTime now);
 
     // 지원 가능한 공고 중 최신순 N건 — 추천엔진 붙기 전 임시 후보 소싱용
     @Query("SELECT j FROM Job j WHERE j.status = :status "
             + "AND (j.deadlineAt IS NULL OR j.deadlineAt > :now) "
             + "ORDER BY j.postedAt DESC")
-    List<Job> findApplicableJobs(@Param("status") JobStatus status, @Param("now") LocalDateTime now, Pageable pageable);
+    List<Job> findApplicableJobs(@Param("status") JobStatus status, @Param("now") OffsetDateTime now, Pageable pageable);
 
     Optional<Job> findBySourceAndExternalId(String source, Long externalId);
 
