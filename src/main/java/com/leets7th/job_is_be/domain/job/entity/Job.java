@@ -70,11 +70,46 @@ public class Job extends BaseEntity {
     @Column(name = "editor_note", length = 1000)
     private String editorNote; // Editor's Note (DET-01)
 
+    // 기획 schema.sql 에서 요구하는 사항
+
+    @Column(name = "external_id")
+    private Long externalId; // 원티드 wd id
+
+    @Column(columnDefinition = "TEXT")
+    private String intro; // 팀/회사 소개
+
+    @Column(name = "main_tasks", columnDefinition = "TEXT")
+    private String mainTasks; // 담당업무
+
+    @Column(columnDefinition = "TEXT")
+    private String requirements; // 자격요건
+
+    @Column(name = "preferred_points", columnDefinition = "TEXT")
+    private String preferredPoints; // 우대사항
+
+    @Column(columnDefinition = "TEXT")
+    private String benefits; // 복지/문화
+
+    @Column(name = "career_min")
+    private Integer careerMin; // 경력 최소 연수
+
+    @Column(name = "career_max")
+    private Integer careerMax; // 경력 최대 연수
+
+    @Column(name = "reward_total")
+    private String rewardTotal; // 추천 보상금
+
+    @Column(name = "thumbnail_url", length = 500)
+    private String thumbnailUrl; // 카드 썸네일 URL
+
     @Builder
     public Job(Company company, JobCategory jobCategory, Region region, String title,
                String careerLevel, String employmentType, boolean remoteAvailable,
                boolean salaryDisclosed, String source, String sourceUrl,
-               LocalDateTime postedAt, LocalDateTime deadlineAt, String editorNote) {
+               LocalDateTime postedAt, LocalDateTime deadlineAt, String editorNote,
+               Long externalId, String intro, String mainTasks, String requirements,
+               String preferredPoints, String benefits, Integer careerMin, Integer careerMax, // <- 괄호() 안에 이 파라미터들이 반드시 있어야 합니다.
+               String rewardTotal, String thumbnailUrl) {
         this.company = company;
         this.jobCategory = jobCategory;
         this.region = region;
@@ -89,6 +124,17 @@ public class Job extends BaseEntity {
         this.deadlineAt = deadlineAt;
         this.editorNote = editorNote;
         this.status = JobStatus.ACTIVE;
+        // 기획 schema.sql 에서 요구하는 사항
+        this.externalId = externalId;
+        this.intro = intro;
+        this.mainTasks = mainTasks;
+        this.requirements = requirements;
+        this.preferredPoints = preferredPoints;
+        this.benefits = benefits;
+        this.careerMin = careerMin;
+        this.careerMax = careerMax;
+        this.rewardTotal = rewardTotal;
+        this.thumbnailUrl = thumbnailUrl;
     }
 
     public void expire() {
