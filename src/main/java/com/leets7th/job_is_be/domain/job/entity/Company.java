@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 // 기업 정보. 크롤러(원티드+잡코리아 메타)가 이 테이블을 직접 적재/갱신하므로 앱은 읽기 전용으로만 사용
 @Entity
@@ -78,7 +78,7 @@ public class Company {
     private String rejectedName;
 
     @Column(name = "enriched_at")
-    private LocalDateTime enrichedAt;
+    private OffsetDateTime enrichedAt;
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "raw_jobkorea")
@@ -89,7 +89,7 @@ public class Company {
                    Long wantedCompanyId, Long jobkoreaGnoRef, Integer employeeCount, String companyType,
                    String industry, String stockStatus, String hqAddress, String homepage,
                    String description, String enrichmentStatus, Boolean nameMatch, String rejectedName,
-                   LocalDateTime enrichedAt, String rawJobkorea, String source, String logoUrl) {
+                   OffsetDateTime enrichedAt, String rawJobkorea, String source, String logoUrl) {
         this.name = name;
         this.normalizedName = normalizedName;
         this.registrationNumber = registrationNumber;
@@ -106,6 +106,20 @@ public class Company {
         this.nameMatch = nameMatch;
         this.rejectedName = rejectedName;
         this.enrichedAt = enrichedAt;
+        this.rawJobkorea = rawJobkorea;
+        this.source = source;
+        this.logoUrl = logoUrl;
+        this.name = name;
+        this.normalizedName = normalizedName;
+        this.registrationNumber = registrationNumber;
+        this.companyType = companyType;
+        this.industry = industry;
+        this.stockStatus = stockStatus;
+        this.hqAddress = hqAddress;
+        this.homepage = homepage;
+        this.description = description;
+        this.enrichmentStatus = enrichmentStatus;
+        this.rejectedName = rejectedName;
         this.rawJobkorea = rawJobkorea;
         this.source = source;
         this.logoUrl = logoUrl;

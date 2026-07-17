@@ -9,7 +9,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 /**
  * 사용자별 일일 추천 덱 헤더
@@ -41,10 +41,10 @@ public class Deck extends BaseEntity {
     private String emptyReason; // no_candidates, onboarding_incomplete, pre_slot (REC-07)
 
     @Column(name = "first_opened_at")
-    private LocalDateTime firstOpenedAt; // 재방문 판별 기준 (REC-06)
+    private OffsetDateTime firstOpenedAt; // 재방문 판별 기준 (REC-06)
 
     @Column(name = "completed_at")
-    private LocalDateTime completedAt; // 전량 처리 완료 시점 (REC-05)
+    private OffsetDateTime completedAt; // 전량 처리 완료 시점 (REC-05)
 
     @Builder
     public Deck(User user, LocalDate deckDate) {
@@ -52,13 +52,13 @@ public class Deck extends BaseEntity {
         this.deckDate = deckDate;
     }
 
-    public void markFirstOpened(LocalDateTime now) {
+    public void markFirstOpened(OffsetDateTime now) {
         if (this.firstOpenedAt == null) {
             this.firstOpenedAt = now;
         }
     }
 
-    public void complete(LocalDateTime now) {
+    public void complete(OffsetDateTime now) {
         this.completedAt = now;
     }
 

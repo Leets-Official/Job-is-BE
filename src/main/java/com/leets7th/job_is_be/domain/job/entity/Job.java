@@ -9,7 +9,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 /**
  * 채용 공고
@@ -61,10 +61,10 @@ public class Job extends BaseEntity {
     private String sourceUrl;
 
     @Column(name = "posted_at")
-    private LocalDateTime postedAt;
+    private OffsetDateTime postedAt;
 
     @Column(name = "deadline_at")
-    private LocalDateTime deadlineAt; // NULL이면 "상시" 표시 (§4.4)
+    private OffsetDateTime deadlineAt; // NULL이면 "상시" 표시 (§4.4)
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
@@ -106,11 +106,10 @@ public class Job extends BaseEntity {
     public Job(Company company, JobCategory jobCategory, Region region, String title,
                String careerLevel, String employmentType, boolean remoteAvailable,
                boolean salaryDisclosed, String source, String sourceUrl,
-               LocalDateTime postedAt, LocalDateTime deadlineAt, String editorNote,
+               OffsetDateTime postedAt, OffsetDateTime deadlineAt, String editorNote,
                Long externalId, String intro, String mainTasks, String requirements,
-               String preferredPoints, String benefits, Integer careerMin, Integer careerMax, // <- 괄호() 안에 이 파라미터들이 반드시 있어야 합니다.
+               String preferredPoints, String benefits, Integer careerMin, Integer careerMax,
                String rewardTotal, String thumbnailUrl) {
-
         this.company = company;
         this.jobCategory = jobCategory;
         this.region = region;
@@ -152,7 +151,7 @@ public class Job extends BaseEntity {
     // 크롤링 재수집 시 (source, externalId)로 매칭된 기존 공고에 최신 원문 내용을 반영
     public void syncFrom(Company company, String title, String careerLevel, String employmentType,
                           boolean remoteAvailable, String sourceUrl,
-                          LocalDateTime postedAt, LocalDateTime deadlineAt, JobStatus status) {
+                          OffsetDateTime postedAt, OffsetDateTime deadlineAt, JobStatus status) {
         this.company = company;
         this.title = title;
         this.careerLevel = careerLevel;
