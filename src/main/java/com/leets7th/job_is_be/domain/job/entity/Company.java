@@ -59,6 +59,12 @@ public class Company {
     @Column(length = 500)
     private String homepage;
 
+    @Column(name = "source", length = 50)
+    private String source;
+
+    @Column(name = "logo_url", length = 500)
+    private String logoUrl;
+
     @Column(length = 2000)
     private String description;
 
@@ -83,7 +89,7 @@ public class Company {
                    Long wantedCompanyId, Long jobkoreaGnoRef, Integer employeeCount, String companyType,
                    String industry, String stockStatus, String hqAddress, String homepage,
                    String description, String enrichmentStatus, Boolean nameMatch, String rejectedName,
-                   LocalDateTime enrichedAt, String rawJobkorea) {
+                   LocalDateTime enrichedAt, String rawJobkorea, String source, String logoUrl) {
         this.name = name;
         this.normalizedName = normalizedName;
         this.registrationNumber = registrationNumber;
@@ -101,5 +107,7 @@ public class Company {
         this.rejectedName = rejectedName;
         this.enrichedAt = enrichedAt;
         this.rawJobkorea = rawJobkorea;
+        this.source = source;
+        this.logoUrl = logoUrl;
     }
 }
