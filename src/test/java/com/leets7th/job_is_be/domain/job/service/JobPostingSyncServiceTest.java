@@ -13,10 +13,15 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.SliceImpl;
+
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -37,6 +42,27 @@ class JobPostingSyncServiceTest {
     }
 
     @Test
+    void 애플리케이션_시작_직후_job_postings가_jobs로_동기화된다() {
+        Company company = Company.builder().name("래브라도랩스").build();
+        JobPosting posting = JobPosting.builder()
+                .source("wanted").externalId(999L).sourceUrl("https://wanted.example/999")
+                .company(company).position("프론트엔드 엔지니어").employmentType("정규직")
+                .isRemote(false).status("active")
+                .build();
+
+        Slice<JobPosting> slice = new SliceImpl<>(List.of(posting), PageRequest.of(0, 200), false);
+        when(jobPostingRepository.findAll(any())).thenReturn(slice);
+        when(jobRepository.findBySourceAndExternalId("wanted", 999L)).thenReturn(Optional.empty());
+
+        syncService.syncOnStartup();
+
+        ArgumentCaptor<Job> captor = ArgumentCaptor.forClass(Job.class);
+        verify(jobRepository).save(captor.capture());
+        assertThat(captor.getValue().getExternalId()).isEqualTo(999L);
+        assertThat(captor.getValue().getTitle()).isEqualTo("프론트엔드 엔지니어");
+    }
+
+    @Test
     void 매칭되는_Job이_없으면_새로_생성해서_저장한다() {
         Company company = Company.builder().name("래브라도랩스").build();
         JobPosting posting = JobPosting.builder()
@@ -45,7 +71,8 @@ class JobPostingSyncServiceTest {
                 .isRemote(false).status("active")
                 .build();
 
-        when(jobPostingRepository.findAll()).thenReturn(List.of(posting));
+        Slice<JobPosting> slice = new SliceImpl<>(List.of(posting), PageRequest.of(0, 200), false);
+        when(jobPostingRepository.findAll(any())).thenReturn(slice);
         when(jobRepository.findBySourceAndExternalId("wanted", 123L)).thenReturn(Optional.empty());
 
         syncService.sync();
@@ -65,7 +92,8 @@ class JobPostingSyncServiceTest {
                 .isRemote(true).status("active")
                 .build();
 
-        when(jobPostingRepository.findAll()).thenReturn(List.of(posting));
+        Slice<JobPosting> slice = new SliceImpl<>(List.of(posting), PageRequest.of(0, 200), false);
+        when(jobPostingRepository.findAll(any())).thenReturn(slice);
         when(jobRepository.findBySourceAndExternalId("wanted", 123L)).thenReturn(Optional.of(existing));
 
         syncService.sync();
