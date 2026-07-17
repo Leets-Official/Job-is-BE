@@ -45,7 +45,7 @@ public class RecommendationService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new GeneralException(ErrorStatus.USER_NOT_FOUND));
 
-        LocalDate today = LocalDate.now();
+        LocalDate today = OffsetDateTime.now().toLocalDate();
         Deck deck = deckRepository.findByUserIdAndDeckDate(userId, today)
                 .orElseGet(() -> deckRepository.save(Deck.builder().user(user).deckDate(today).build()));
 

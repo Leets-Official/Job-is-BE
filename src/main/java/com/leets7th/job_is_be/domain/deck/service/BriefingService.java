@@ -81,7 +81,7 @@ public class BriefingService {
             throw new GeneralException(ErrorStatus.USER_NOT_FOUND);
         }
 
-        Deck deck = deckRepository.findByUserIdAndDeckDate(userId, LocalDate.now())
+        Deck deck = deckRepository.findByUserIdAndDeckDate(userId, OffsetDateTime.now().toLocalDate())
                 .orElseThrow(() -> new GeneralException(ErrorStatus.DECK_NOT_FOUND));
 
         return cardService.getDeckCards(deck.getId());

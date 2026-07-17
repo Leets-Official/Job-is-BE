@@ -8,7 +8,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 /**
  * 직무 성향 퀴즈/테스트 결과
@@ -37,20 +37,20 @@ public class PersonalityTest extends BaseEntity {
     private String resultTags; // 결과 태그(JSON/CSV), 추천 선호 태그 시드
 
     @Column(name = "started_at", nullable = false)
-    private LocalDateTime startedAt;
+    private OffsetDateTime startedAt;
 
     @Column(name = "completed_at")
-    private LocalDateTime completedAt;
+    private OffsetDateTime completedAt;
 
     @Builder
-    public PersonalityTest(User user, String source, LocalDateTime startedAt) {
+    public PersonalityTest(User user, String source, OffsetDateTime startedAt) {
         this.user = user;
         this.source = source;
         this.startedAt = startedAt;
         this.completed = false;
     }
 
-    public void complete(String resultTags, LocalDateTime now) {
+    public void complete(String resultTags, OffsetDateTime now) {
         this.completed = true;
         this.resultTags = resultTags;
         this.completedAt = now;
