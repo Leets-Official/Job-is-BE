@@ -1,28 +1,11 @@
 package com.leets7th.job_is_be.domain.job.service;
 
-import com.leets7th.job_is_be.domain.job.converter.JobPostingConverter;
-import com.leets7th.job_is_be.domain.job.entity.Company;
-import com.leets7th.job_is_be.domain.job.entity.Job;
-import com.leets7th.job_is_be.domain.job.entity.JobPosting;
-import com.leets7th.job_is_be.domain.job.repository.JobPostingRepository;
-import com.leets7th.job_is_be.domain.job.repository.JobRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Slice;
-import org.springframework.data.domain.SliceImpl;
-
-import java.util.List;
-import java.util.Optional;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -30,76 +13,34 @@ import static org.mockito.Mockito.when;
 class JobPostingSyncServiceTest {
 
     @Mock
-    private JobPostingRepository jobPostingRepository;
-    @Mock
-    private JobRepository jobRepository;
+    private JobSyncPageProcessor pageProcessor;
 
     private JobPostingSyncService syncService;
 
     @BeforeEach
     void setUp() {
-        syncService = new JobPostingSyncService(jobPostingRepository, jobRepository, new JobPostingConverter());
+        syncService = new JobPostingSyncService(pageProcessor);
     }
 
     @Test
-    void 애플리케이션_시작_직후_job_postings가_jobs로_동기화된다() {
-        Company company = Company.builder().name("래브라도랩스").build();
-        JobPosting posting = JobPosting.builder()
-                .source("wanted").externalId(999L).sourceUrl("https://wanted.example/999")
-                .company(company).position("프론트엔드 엔지니어").employmentType("정규직")
-                .isRemote(false).status("active")
-                .build();
+    void sync는_페이지가_없을_때까지_processPage를_반복_호출한다() {
+        when(pageProcessor.processPage(0)).thenReturn(true);
+        when(pageProcessor.processPage(1)).thenReturn(true);
+        when(pageProcessor.processPage(2)).thenReturn(false);
 
-        Slice<JobPosting> slice = new SliceImpl<>(List.of(posting), PageRequest.of(0, 200), false);
-        when(jobPostingRepository.findAll(any())).thenReturn(slice);
-        when(jobRepository.findBySourceAndExternalId("wanted", 999L)).thenReturn(Optional.empty());
+        syncService.sync();
+
+        verify(pageProcessor).processPage(0);
+        verify(pageProcessor).processPage(1);
+        verify(pageProcessor).processPage(2);
+    }
+
+    @Test
+    void syncOnStartup은_sync를_호출한다() {
+        when(pageProcessor.processPage(0)).thenReturn(false);
 
         syncService.syncOnStartup();
 
-        ArgumentCaptor<Job> captor = ArgumentCaptor.forClass(Job.class);
-        verify(jobRepository).save(captor.capture());
-        assertThat(captor.getValue().getExternalId()).isEqualTo(999L);
-        assertThat(captor.getValue().getTitle()).isEqualTo("프론트엔드 엔지니어");
-    }
-
-    @Test
-    void 매칭되는_Job이_없으면_새로_생성해서_저장한다() {
-        Company company = Company.builder().name("래브라도랩스").build();
-        JobPosting posting = JobPosting.builder()
-                .source("wanted").externalId(123L).sourceUrl("https://wanted.example/123")
-                .company(company).position("백엔드 엔지니어").employmentType("정규직")
-                .isRemote(false).status("active")
-                .build();
-
-        Slice<JobPosting> slice = new SliceImpl<>(List.of(posting), PageRequest.of(0, 200), false);
-        when(jobPostingRepository.findAll(any())).thenReturn(slice);
-        when(jobRepository.findBySourceAndExternalId("wanted", 123L)).thenReturn(Optional.empty());
-
-        syncService.sync();
-
-        ArgumentCaptor<Job> captor = ArgumentCaptor.forClass(Job.class);
-        verify(jobRepository).save(captor.capture());
-        assertThat(captor.getValue().getTitle()).isEqualTo("백엔드 엔지니어");
-        assertThat(captor.getValue().getExternalId()).isEqualTo(123L);
-        assertThat(captor.getValue().getCompany()).isEqualTo(company);
-    }
-
-    @Test
-    void 매칭되는_Job이_있으면_저장_없이_기존_엔티티를_갱신한다() {
-        Job existing = Job.builder().source("wanted").externalId(123L).title("old title").build();
-        JobPosting posting = JobPosting.builder()
-                .source("wanted").externalId(123L).position("new title").employmentType("정규직")
-                .isRemote(true).status("active")
-                .build();
-
-        Slice<JobPosting> slice = new SliceImpl<>(List.of(posting), PageRequest.of(0, 200), false);
-        when(jobPostingRepository.findAll(any())).thenReturn(slice);
-        when(jobRepository.findBySourceAndExternalId("wanted", 123L)).thenReturn(Optional.of(existing));
-
-        syncService.sync();
-
-        verify(jobRepository, never()).save(org.mockito.ArgumentMatchers.any());
-        assertThat(existing.getTitle()).isEqualTo("new title");
-        assertThat(existing.isRemoteAvailable()).isTrue();
+        verify(pageProcessor).processPage(0);
     }
 }
