@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
  * 채용 공고
  */
 @Entity
-@Table(name = "jobs")
+@Table(name = "jobs", uniqueConstraints = @UniqueConstraint(name = "uk_jobs_source_external_id", columnNames = {"source", "external_id"}))
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Job extends BaseEntity {
@@ -54,6 +54,9 @@ public class Job extends BaseEntity {
     @Column(length = 50)
     private String source; // 원티드 등 원문 출처
 
+    @Column(name = "external_id")
+    private Long externalId; // 원문 출처 내 공고 id. (source, externalId)로 크롤링 동기화 시 upsert 매칭
+
     @Column(name = "source_url", length = 500)
     private String sourceUrl;
 
@@ -71,9 +74,6 @@ public class Job extends BaseEntity {
     private String editorNote; // Editor's Note (DET-01)
 
     // 기획 schema.sql 에서 요구하는 사항
-
-    @Column(name = "external_id")
-    private Long externalId; // 원티드 wd id
 
     @Column(columnDefinition = "TEXT")
     private String intro; // 팀/회사 소개
@@ -110,6 +110,7 @@ public class Job extends BaseEntity {
                Long externalId, String intro, String mainTasks, String requirements,
                String preferredPoints, String benefits, Integer careerMin, Integer careerMax, // <- 괄호() 안에 이 파라미터들이 반드시 있어야 합니다.
                String rewardTotal, String thumbnailUrl) {
+
         this.company = company;
         this.jobCategory = jobCategory;
         this.region = region;
@@ -119,13 +120,12 @@ public class Job extends BaseEntity {
         this.remoteAvailable = remoteAvailable;
         this.salaryDisclosed = salaryDisclosed;
         this.source = source;
+        this.externalId = externalId;
         this.sourceUrl = sourceUrl;
         this.postedAt = postedAt;
         this.deadlineAt = deadlineAt;
         this.editorNote = editorNote;
         this.status = JobStatus.ACTIVE;
-        // 기획 schema.sql 에서 요구하는 사항
-        this.externalId = externalId;
         this.intro = intro;
         this.mainTasks = mainTasks;
         this.requirements = requirements;
@@ -147,5 +147,20 @@ public class Job extends BaseEntity {
 
     public boolean isOpenEnded() {
         return this.deadlineAt == null;
+    }
+
+    // 크롤링 재수집 시 (source, externalId)로 매칭된 기존 공고에 최신 원문 내용을 반영
+    public void syncFrom(Company company, String title, String careerLevel, String employmentType,
+                          boolean remoteAvailable, String sourceUrl,
+                          LocalDateTime postedAt, LocalDateTime deadlineAt, JobStatus status) {
+        this.company = company;
+        this.title = title;
+        this.careerLevel = careerLevel;
+        this.employmentType = employmentType;
+        this.remoteAvailable = remoteAvailable;
+        this.sourceUrl = sourceUrl;
+        this.postedAt = postedAt;
+        this.deadlineAt = deadlineAt;
+        this.status = status;
     }
 }
