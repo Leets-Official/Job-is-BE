@@ -17,8 +17,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.OffsetDateTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -52,12 +52,15 @@ public class BriefingService {
             throw new GeneralException(ErrorStatus.USER_NOT_FOUND);
         }
 
-        LocalDate today = LocalDate.now();
-        String slot = resolveSlot(LocalTime.now());
+
+
+        OffsetDateTime now = OffsetDateTime.now();
+        LocalDate today = now.toLocalDate();
+        String slot = resolveSlot(now.toLocalTime());
         String greeting = resolveGreeting(slot);
 
         // 지원가능 건수 — 마감되지 않은 전체 공고 수 조회
-        long applicableCount = jobRepository.countApplicable(JobStatus.ACTIVE, LocalDateTime.now());
+        long applicableCount = jobRepository.countApplicable(JobStatus.ACTIVE, now);
 
         // 오늘의 Deck 조회
         Optional<Deck> deck = deckRepository.findByUserIdAndDeckDate(userId, today);

@@ -18,7 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -58,7 +58,7 @@ public class RecommendationService {
 
     private void fillWithPlaceholderCards(Deck deck) {
         List<Job> jobs = jobRepository.findApplicableJobs(
-                JobStatus.ACTIVE, LocalDateTime.now(), PageRequest.of(0, DECK_SIZE));
+                JobStatus.ACTIVE, OffsetDateTime.now(), PageRequest.of(0, DECK_SIZE));
 
         List<Card> cards = new ArrayList<>();
         for (int i = 0; i < jobs.size(); i++) {

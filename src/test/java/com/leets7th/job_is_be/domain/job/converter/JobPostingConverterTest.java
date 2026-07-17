@@ -5,7 +5,7 @@ import com.leets7th.job_is_be.domain.job.entity.JobPosting;
 import com.leets7th.job_is_be.domain.job.enums.JobStatus;
 import org.junit.jupiter.api.Test;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -28,7 +28,7 @@ class JobPostingConverterTest {
     void 마감일이_지난_공고는_EXPIRED로_변환된다() {
         JobPosting posting = JobPosting.builder()
                 .source("wanted").externalId(1L).position("백엔드 엔지니어").status("active")
-                .dueTime(LocalDateTime.now().minusDays(1))
+                .dueTime(OffsetDateTime.now().minusDays(1))
                 .build();
 
         Job job = converter.createFrom(posting);

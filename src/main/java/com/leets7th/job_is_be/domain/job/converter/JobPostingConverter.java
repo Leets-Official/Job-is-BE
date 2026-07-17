@@ -5,7 +5,7 @@ import com.leets7th.job_is_be.domain.job.entity.JobPosting;
 import com.leets7th.job_is_be.domain.job.enums.JobStatus;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 // job_postings 원문(JobPosting) -> 서빙용 Job 매핑. jobCategory/region은 마스터 데이터 정규화가
 // 별도로 필요해 이번 스코프에서는 채우지 않음
@@ -49,7 +49,7 @@ public class JobPostingConverter {
         if (!"active".equalsIgnoreCase(posting.getStatus())) {
             return JobStatus.REMOVED;
         }
-        if (posting.getDueTime() != null && posting.getDueTime().isBefore(LocalDateTime.now())) {
+        if (posting.getDueTime() != null && posting.getDueTime().isBefore(OffsetDateTime.now())) {
             return JobStatus.EXPIRED;
         }
         return JobStatus.ACTIVE;
