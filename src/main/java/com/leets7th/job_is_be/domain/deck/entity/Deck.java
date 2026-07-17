@@ -18,8 +18,8 @@ import java.time.LocalDateTime;
 @Table(
         name = "decks",
         uniqueConstraints = @UniqueConstraint(
-                name = "uk_decks_user_date_slot",
-                columnNames = {"user_id", "deck_date", "slot"}
+                name = "uk_decks_user_date",
+                columnNames = {"user_id", "deck_date"}
         )
 )
 @Getter
@@ -37,9 +37,6 @@ public class Deck extends BaseEntity {
     @Column(name = "deck_date", nullable = false)
     private LocalDate deckDate;
 
-    @Column(nullable = false, length = 10)
-    private String slot; // 07:30, 12:30, 18:30 (SET-01)
-
     @Column(name = "empty_reason", length = 30)
     private String emptyReason; // no_candidates, onboarding_incomplete, pre_slot (REC-07)
 
@@ -50,10 +47,9 @@ public class Deck extends BaseEntity {
     private LocalDateTime completedAt; // 전량 처리 완료 시점 (REC-05)
 
     @Builder
-    public Deck(User user, LocalDate deckDate, String slot) {
+    public Deck(User user, LocalDate deckDate) {
         this.user = user;
         this.deckDate = deckDate;
-        this.slot = slot;
     }
 
     public void markFirstOpened(LocalDateTime now) {
