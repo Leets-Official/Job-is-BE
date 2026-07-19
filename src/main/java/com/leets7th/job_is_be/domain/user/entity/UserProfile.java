@@ -46,12 +46,14 @@ public class UserProfile extends BaseEntity {
     @Column(name = "is_job_test_completed", nullable = false)
     private boolean jobTestCompleted;
 
+    // TODO: LocalDateTime → OffsetDateTime으로 통일 필요 (BaseEntity와 타입 불일치)
     @Column(name = "job_test_completed_at")
     private LocalDateTime jobTestCompletedAt;
 
     @Column(name = "onboarding_completed", nullable = false)
     private boolean onboardingCompleted;
 
+    // TODO: LocalDateTime → OffsetDateTime으로 통일 필요 (BaseEntity와 타입 불일치)
     @Column(name = "onboarding_completed_at")
     private LocalDateTime onboardingCompletedAt;
 
