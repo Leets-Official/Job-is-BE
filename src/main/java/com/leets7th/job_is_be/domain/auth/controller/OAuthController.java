@@ -14,6 +14,7 @@ import com.leets7th.job_is_be.global.status.SuccessStatus;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -77,7 +78,7 @@ public class OAuthController {
                     stateCookieManager.extract(request)
             );
             URI location = UriComponentsBuilder.fromUri(properties.frontendSuccessUri())
-                    .queryParam("code", result.loginCode())
+                    .fragment("code=" + result.loginCode())
                     .build()
                     .encode()
                     .toUri();
@@ -91,7 +92,7 @@ public class OAuthController {
         }
     }
 
-    @PostMapping("/exchange")
+    @PostMapping(value = "/exchange", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ApiResponse<OAuthExchangeResponse>> exchange(
             @RequestBody OAuthExchangeRequest request
     ) {

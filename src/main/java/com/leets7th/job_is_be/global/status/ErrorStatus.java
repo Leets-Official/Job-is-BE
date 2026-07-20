@@ -38,6 +38,7 @@ public enum ErrorStatus implements BaseStatus {
     SOCIAL_ACCOUNT_CONFLICT(HttpStatus.CONFLICT, "AUTH_409_1", "이미 다른 소셜 계정으로 가입된 이메일입니다."),
     WITHDRAWAL_RESTORE_EXPIRED(HttpStatus.FORBIDDEN, "AUTH_403_1", "계정 복구 가능 기간이 지났습니다."),
     OAUTH_PROVIDER_ERROR(HttpStatus.BAD_GATEWAY, "AUTH_502_1", "소셜 로그인 서버 연동에 실패했습니다."),
+    OAUTH_USER_INFO_INVALID(HttpStatus.BAD_GATEWAY, "AUTH_502_2", "소셜 로그인 사용자 정보가 올바르지 않습니다."),
     OAUTH_NOT_CONFIGURED(HttpStatus.SERVICE_UNAVAILABLE, "AUTH_503_1", "소셜 로그인 설정이 완료되지 않았습니다."),
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER_404_1", "사용자를 찾을 수 없습니다."),
 

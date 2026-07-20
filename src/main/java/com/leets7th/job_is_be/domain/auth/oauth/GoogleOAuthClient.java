@@ -5,7 +5,7 @@ import com.leets7th.job_is_be.domain.user.enums.SocialType;
 import com.leets7th.job_is_be.global.exception.GeneralException;
 import com.leets7th.job_is_be.global.properties.OAuthProperties;
 import com.leets7th.job_is_be.global.status.ErrorStatus;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
@@ -22,12 +22,10 @@ public class GoogleOAuthClient implements SocialOAuthClient {
     private final OAuthProperties.Provider properties;
     private final RestClient restClient;
 
-    @Autowired
-    public GoogleOAuthClient(OAuthProperties oauthProperties) {
-        this(oauthProperties, RestClient.create());
-    }
-
-    GoogleOAuthClient(OAuthProperties oauthProperties, RestClient restClient) {
+    public GoogleOAuthClient(
+            OAuthProperties oauthProperties,
+            @Qualifier("oauthRestClient") RestClient restClient
+    ) {
         this.properties = oauthProperties.google();
         this.restClient = restClient;
     }

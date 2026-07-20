@@ -1,7 +1,9 @@
 package com.leets7th.job_is_be.domain.auth.oauth;
 
 import com.leets7th.job_is_be.domain.user.enums.SocialType;
+import com.leets7th.job_is_be.global.exception.GeneralException;
 import com.leets7th.job_is_be.global.properties.OAuthProperties;
+import com.leets7th.job_is_be.global.status.ErrorStatus;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
@@ -13,6 +15,7 @@ import java.time.Duration;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.client.ExpectedCount.once;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
@@ -34,7 +37,7 @@ class SocialOAuthClientTest {
                 .andExpect(method(HttpMethod.GET))
                 .andExpect(header("Authorization", "Bearer kakao-access"))
                 .andRespond(withSuccess(
-                        "{\"id\":12345,\"kakao_account\":{\"email\":\"user@example.com\"}}",
+                        "{\"id\":12345,\"kakao_account\":{\"email\":\"user@example.com\",\"is_email_verified\":true}}",
                         MediaType.APPLICATION_JSON
                 ));
 
@@ -43,6 +46,28 @@ class SocialOAuthClientTest {
         assertEquals("12345", userInfo.socialId());
         assertEquals(SocialType.KAKAO, userInfo.socialType());
         assertEquals("user@example.com", userInfo.email());
+        server.verify();
+    }
+
+    @Test
+    void rejectsKakaoAccountWithUnverifiedEmail() {
+        RestClient.Builder builder = RestClient.builder();
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+        KakaoOAuthClient client = new KakaoOAuthClient(properties(), builder.build());
+        server.expect(once(), requestTo("https://provider.example/kakao/token"))
+                .andRespond(withSuccess("{\"access_token\":\"kakao-access\"}", MediaType.APPLICATION_JSON));
+        server.expect(once(), requestTo("https://provider.example/kakao/user"))
+                .andRespond(withSuccess(
+                        "{\"id\":12345,\"kakao_account\":{\"email\":\"user@example.com\",\"is_email_verified\":false}}",
+                        MediaType.APPLICATION_JSON
+                ));
+
+        GeneralException exception = assertThrows(
+                GeneralException.class,
+                () -> client.getUserInfo("authorization-code")
+        );
+
+        assertEquals(ErrorStatus.OAUTH_EMAIL_REQUIRED, exception.getErrorStatus());
         server.verify();
     }
 
@@ -106,6 +131,8 @@ class SocialOAuthClientTest {
                 URI.create("http://localhost:5173/oauth/callback"),
                 Duration.ofMinutes(5),
                 Duration.ofMinutes(1),
+                Duration.ofSeconds(3),
+                Duration.ofSeconds(5),
                 kakao,
                 google
         );

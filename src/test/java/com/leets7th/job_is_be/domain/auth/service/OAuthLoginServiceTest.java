@@ -179,6 +179,33 @@ class OAuthLoginServiceTest {
         );
 
         assertEquals(ErrorStatus.OAUTH_STATE_INVALID, exception.getErrorStatus());
+        verify(clientRegistry, never()).get(SocialType.GOOGLE);
+    }
+
+    @Test
+    void rejectsProviderUserInfoWithoutEmail() {
+        prepareOAuth(new OAuthUserInfo("social-id", SocialType.GOOGLE, " "));
+
+        GeneralException exception = assertThrows(
+                GeneralException.class,
+                () -> loginService.login("google", "code", "state", "state")
+        );
+
+        assertEquals(ErrorStatus.OAUTH_USER_INFO_INVALID, exception.getErrorStatus());
+        verify(userRepository, never()).findBySocialIdAndSocialType(any(), any());
+    }
+
+    @Test
+    void rejectsProviderUserInfoWithoutSocialId() {
+        prepareOAuth(new OAuthUserInfo(" ", SocialType.GOOGLE, "user@example.com"));
+
+        GeneralException exception = assertThrows(
+                GeneralException.class,
+                () -> loginService.login("google", "code", "state", "state")
+        );
+
+        assertEquals(ErrorStatus.OAUTH_USER_INFO_INVALID, exception.getErrorStatus());
+        verify(userRepository, never()).findBySocialIdAndSocialType(any(), any());
     }
 
     private void prepareOAuth(OAuthUserInfo userInfo) {

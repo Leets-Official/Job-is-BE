@@ -74,6 +74,7 @@ public class OAuthLoginService {
         }
 
         OAuthUserInfo userInfo = clientRegistry.get(socialType).getUserInfo(code);
+        validateUserInfo(userInfo);
         LoginUser loginUser = findOrCreateUser(userInfo);
         Long userId = loginUser.user().getId();
         JwtTokenProvider.TokenPair tokenPair = tokenProvider.issueTokenPair(userId);
@@ -119,6 +120,17 @@ public class OAuthLoginService {
                 ),
                 payload.refreshToken()
         );
+    }
+
+    private void validateUserInfo(OAuthUserInfo userInfo) {
+        if (userInfo == null
+                || userInfo.socialId() == null
+                || userInfo.socialId().isBlank()
+                || userInfo.socialType() == null
+                || userInfo.email() == null
+                || userInfo.email().isBlank()) {
+            throw new GeneralException(ErrorStatus.OAUTH_USER_INFO_INVALID);
+        }
     }
 
     private LoginUser findOrCreateUser(OAuthUserInfo userInfo) {

@@ -98,6 +98,8 @@ class OAuthLoginCodeStoreTest {
                 URI.create("http://localhost/failure"),
                 Duration.ofMinutes(5),
                 Duration.ofMinutes(1),
+                Duration.ofSeconds(3),
+                Duration.ofSeconds(5),
                 provider,
                 provider
         );

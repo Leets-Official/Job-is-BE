@@ -38,6 +38,8 @@ app:
     frontend-failure-uri: ${OAUTH_FRONTEND_FAILURE_URI:http://localhost:5173/oauth/callback}
     state-ttl: ${OAUTH_STATE_TTL:5m}
     login-code-ttl: ${OAUTH_LOGIN_CODE_TTL:1m}
+    connect-timeout: ${OAUTH_CONNECT_TIMEOUT:3s}
+    read-timeout: ${OAUTH_READ_TIMEOUT:5s}
     kakao:
       client-id: ${KAKAO_CLIENT_ID:}
       client-secret: ${KAKAO_CLIENT_SECRET:}

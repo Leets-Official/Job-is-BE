@@ -70,7 +70,7 @@ class OAuthControllerTest {
 
         assertEquals(HttpStatus.FOUND, response.getStatusCode());
         assertEquals(
-                "http://localhost:5173/oauth/callback?code=login-code",
+                "http://localhost:5173/oauth/callback#code=login-code",
                 response.getHeaders().getLocation().toString()
         );
         verify(cookieManager, never()).create(org.mockito.ArgumentMatchers.anyString());
@@ -139,6 +139,8 @@ class OAuthControllerTest {
                 URI.create("http://localhost:5173/oauth/callback"),
                 Duration.ofMinutes(5),
                 Duration.ofMinutes(1),
+                Duration.ofSeconds(3),
+                Duration.ofSeconds(5),
                 provider,
                 provider
         );

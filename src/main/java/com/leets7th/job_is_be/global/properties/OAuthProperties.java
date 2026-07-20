@@ -12,6 +12,8 @@ public record OAuthProperties(
         URI frontendFailureUri,
         Duration stateTtl,
         Duration loginCodeTtl,
+        Duration connectTimeout,
+        Duration readTimeout,
         Provider kakao,
         Provider google
 ) {
@@ -23,14 +25,12 @@ public record OAuthProperties(
         if (loginCodeTtl == null || loginCodeTtl.isNegative() || loginCodeTtl.isZero()) {
             throw new IllegalArgumentException("OAuth login code TTL must be positive");
         }
-    }
-
-    public Provider getProvider(String provider) {
-        return switch (provider.toLowerCase()) {
-            case "kakao" -> kakao;
-            case "google" -> google;
-            default -> throw new IllegalArgumentException("Unsupported OAuth provider: " + provider);
-        };
+        if (connectTimeout == null || connectTimeout.isNegative() || connectTimeout.isZero()) {
+            throw new IllegalArgumentException("OAuth connect timeout must be positive");
+        }
+        if (readTimeout == null || readTimeout.isNegative() || readTimeout.isZero()) {
+            throw new IllegalArgumentException("OAuth read timeout must be positive");
+        }
     }
 
     public record Provider(

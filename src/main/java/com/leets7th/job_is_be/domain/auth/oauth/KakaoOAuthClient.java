@@ -5,7 +5,7 @@ import com.leets7th.job_is_be.domain.user.enums.SocialType;
 import com.leets7th.job_is_be.global.exception.GeneralException;
 import com.leets7th.job_is_be.global.properties.OAuthProperties;
 import com.leets7th.job_is_be.global.status.ErrorStatus;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
@@ -22,12 +22,10 @@ public class KakaoOAuthClient implements SocialOAuthClient {
     private final OAuthProperties.Provider properties;
     private final RestClient restClient;
 
-    @Autowired
-    public KakaoOAuthClient(OAuthProperties oauthProperties) {
-        this(oauthProperties, RestClient.create());
-    }
-
-    KakaoOAuthClient(OAuthProperties oauthProperties, RestClient restClient) {
+    public KakaoOAuthClient(
+            OAuthProperties oauthProperties,
+            @Qualifier("oauthRestClient") RestClient restClient
+    ) {
         this.properties = oauthProperties.kakao();
         this.restClient = restClient;
     }
@@ -65,8 +63,9 @@ public class KakaoOAuthClient implements SocialOAuthClient {
             if (user == null || user.id() == null) {
                 throw new GeneralException(ErrorStatus.OAUTH_PROVIDER_ERROR);
             }
-            String email = user.kakaoAccount() == null ? null : user.kakaoAccount().email();
-            validateEmail(email);
+            KakaoAccount account = user.kakaoAccount();
+            String email = account == null ? null : account.email();
+            validateEmail(email, account == null ? null : account.emailVerified());
             return new OAuthUserInfo(user.id().toString(), SocialType.KAKAO, email);
         } catch (GeneralException e) {
             throw e;
@@ -101,8 +100,8 @@ public class KakaoOAuthClient implements SocialOAuthClient {
         }
     }
 
-    private void validateEmail(String email) {
-        if (email == null || email.isBlank()) {
+    private void validateEmail(String email, Boolean emailVerified) {
+        if (email == null || email.isBlank() || !Boolean.TRUE.equals(emailVerified)) {
             throw new GeneralException(ErrorStatus.OAUTH_EMAIL_REQUIRED);
         }
     }
@@ -118,6 +117,9 @@ public class KakaoOAuthClient implements SocialOAuthClient {
     ) {
     }
 
-    private record KakaoAccount(String email) {
+    private record KakaoAccount(
+            String email,
+            @JsonProperty("is_email_verified") Boolean emailVerified
+    ) {
     }
 }
