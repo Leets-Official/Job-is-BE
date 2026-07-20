@@ -9,7 +9,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 /**
  * 사용자별 일일 추천 덱 헤더
@@ -18,8 +18,8 @@ import java.time.LocalDateTime;
 @Table(
         name = "decks",
         uniqueConstraints = @UniqueConstraint(
-                name = "uk_decks_user_date_slot",
-                columnNames = {"user_id", "deck_date", "slot"}
+                name = "uk_decks_user_date",
+                columnNames = {"user_id", "deck_date"}
         )
 )
 @Getter
@@ -37,32 +37,28 @@ public class Deck extends BaseEntity {
     @Column(name = "deck_date", nullable = false)
     private LocalDate deckDate;
 
-    @Column(nullable = false, length = 10)
-    private String slot; // 07:30, 12:30, 18:30 (SET-01)
-
     @Column(name = "empty_reason", length = 30)
     private String emptyReason; // no_candidates, onboarding_incomplete, pre_slot (REC-07)
 
     @Column(name = "first_opened_at")
-    private LocalDateTime firstOpenedAt; // 재방문 판별 기준 (REC-06)
+    private OffsetDateTime firstOpenedAt; // 재방문 판별 기준 (REC-06)
 
     @Column(name = "completed_at")
-    private LocalDateTime completedAt; // 전량 처리 완료 시점 (REC-05)
+    private OffsetDateTime completedAt; // 전량 처리 완료 시점 (REC-05)
 
     @Builder
-    public Deck(User user, LocalDate deckDate, String slot) {
+    public Deck(User user, LocalDate deckDate) {
         this.user = user;
         this.deckDate = deckDate;
-        this.slot = slot;
     }
 
-    public void markFirstOpened(LocalDateTime now) {
+    public void markFirstOpened(OffsetDateTime now) {
         if (this.firstOpenedAt == null) {
             this.firstOpenedAt = now;
         }
     }
 
-    public void complete(LocalDateTime now) {
+    public void complete(OffsetDateTime now) {
         this.completedAt = now;
     }
 
