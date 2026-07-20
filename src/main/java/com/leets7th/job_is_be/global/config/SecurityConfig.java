@@ -93,6 +93,8 @@ public class SecurityConfig {
                         // 대신 CSRF 검증을 반드시 통과해야 한다.
                         .requestMatchers(REFRESH_COOKIE_CSRF_MATCHER).permitAll()
 
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+
                         // 나머지 API는 Access Token 인증 필요
                         .anyRequest().authenticated()
                 )
