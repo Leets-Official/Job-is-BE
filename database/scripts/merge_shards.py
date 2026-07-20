@@ -40,10 +40,18 @@ def main(shards_dir, out_dir):
     st = Counter(c.get("enrichment_status") for c in comps.values())
     sk = sum(1 for p in posts.values() if p.get("skill_tags"))
     th = sum(1 for p in posts.values() if p.get("thumbnail_url"))
+
     print(f"=== 병합 완료 → {out_dir}/ ===")
-    print(f"공고 {np}건  (skill {sk}={100*sk//np}% / thumbnail {th}={100*th//np}%)")
+
+    #np가 0일 때를 대비
+    sk_pct = 100 * sk // np if np > 0 else 0
+    th_pct = 100 * th // np if np > 0 else 0
+    print(f"공고 {np}건  (skill {sk}={sk_pct}% / thumbnail {th}={th_pct}%)")
     print(f"기업 {nc}곳  보강: " + " ".join(f"{k}={v}" for k, v in st.most_common()))
-    print(f"  enriched 비율: {100*st.get('enriched',0)//nc}%")
+
+    #nc가 0일 때를 대비
+    enr_pct = 100 * st.get('enriched', 0) // nc if nc > 0 else 0
+    print(f"  enriched 비율: {enr_pct}%")
 
 
 if __name__ == "__main__":

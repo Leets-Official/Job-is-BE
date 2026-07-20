@@ -118,10 +118,16 @@ def normalize(init, job=None):
     rew = init.get("reward") or {}
     name = c.get("company_name")
 
-    # 상세 API 전용 보강: skill_tags(정형+id), 이미지, 위경도
+    # kill_tags(정형+id), 이미지, 위경도
     skills = job.get("skill_tags") or []
-    skill_titles = [s.get("title") for s in skills if isinstance(s, dict) and s.get("title")]
-    skill_ids = [s.get("id") for s in skills if isinstance(s, dict) and s.get("id")]
+
+    # title과 id가 둘 다 제대로 있는 쌍만 먼저 추출
+    pairs = [(s["title"], s["id"]) for s in skills if isinstance(s, dict) and s.get("title") and s.get("id")]
+
+    # 추출된 쌍을 기반으로 리스트 분리
+    skill_titles = [p[0] for p in pairs]
+    skill_ids = [p[1] for p in pairs]
+
     images = _images(job)
     geo = ((job.get("address") or {}).get("geo_location") or {}).get("location") or {}
 

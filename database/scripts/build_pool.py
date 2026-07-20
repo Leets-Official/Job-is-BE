@@ -42,6 +42,8 @@ if __name__ == "__main__":
     ap.add_argument("--per-tag-max", type=int, default=400)
     ap.add_argument("--out", default="../out/shards")
     a = ap.parse_args()
+    if a.shards <= 0:
++        ap.error("--shards must be greater than zero")
     os.makedirs(a.out, exist_ok=True)
     pool = build_pool(a.per_tag_max)
     json.dump(pool, open(os.path.join(a.out, "pool.json"), "w"))

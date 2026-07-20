@@ -33,7 +33,8 @@ def run(shard_file, cap, delay, out_dir, label, max_candidates):
             try:
                 meta = enrich(p["company"]["name"], max_candidates=max_candidates)
             except Exception as e:
-                meta = {"enrichment_status": "not_found", "error": str(e)}
+                print(f"Error enriching company {p['company']['name']}: {str(e)}")
+                meta = {"enrichment_status": "pending", "error": str(e)}
             comp["industry"] = meta.get("industry") or comp.get("industry_name")
             for k in META_KEYS:
                 if k in meta:

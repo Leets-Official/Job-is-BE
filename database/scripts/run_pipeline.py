@@ -51,12 +51,13 @@ def run(target, per_tag, delay, out_dir):
             try:
                 meta = enrich(p["company"]["name"])   # 잡코리아 보강
             except Exception as e:
-                meta = {"enrichment_status": "not_found", "error": str(e)}
+                print(f"Error enriching company {p['company']['name']}: {str(e)}")
+                meta = {"enrichment_status": "pending", "error": str(e)}
             # 원티드 기본 + 잡코리아 메타 병합 (잡코리아 industry 가 있으면 우선)
             comp["industry"] = meta.get("industry") or comp.get("industry_name")
             for k in ("jobkorea_gno_ref", "employee_count", "company_type",
                       "stock_status", "hq_address", "name_match",
-                      "enrichment_status", "raw_jobkorea"):
+                      "enrichment_status", "raw_jobkorea", "rejected_name"):
                 if k in meta:
                     comp[k] = meta[k]
             comp.setdefault("enrichment_status", "not_found")

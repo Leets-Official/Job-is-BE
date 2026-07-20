@@ -106,8 +106,11 @@ def main():
         text = " ".join(p.get(f) or "" for f in fields)
         found = extract(text, matchers)
         if found:
-            p["skill_tags"] = list(found.keys())
-            p["skill_tag_ids"] = [i for i in found.values() if i is not None]
+            # id가 None이 아닌 (tag, id) 쌍만 남김
+            valid_found = {k: v for k, v in found.items() if v is not None}
+            # 정제된 데이터로 대입
+            p["skill_tags"] = list(valid_found.keys())
+            p["skill_tag_ids"] = list(valid_found.values())
             p["skills_inferred"] = True
             filled += 1
             add_counter.update(found.keys())
@@ -118,11 +121,17 @@ def main():
 
     after = sum(1 for p in posts if p.get("skill_tags"))
     n = len(posts)
-    print("\n=== dry-run 검수 표본 (position → 추출 스킬) ===")
-    for pos, sk in samples:
-        print(f"  {pos:36} {sk}")
-    print(f"\n추가로 많이 잡힌 스킬 top20: {add_counter.most_common(20)}")
-    print(f"\nskill 커버리지: {before}/{n}({100*before//n}%) → {after}/{n}({100*after//n}%)  (+{filled}건 보강)")
+
+    if n == 0:
+        print("\n=== dry-run 검수 표본 (position → 추출 스킬) ===")
+        print("데이터가 없습니다.")
+        print(f"\nskill 커버리지: 0/0(0%) → 0/0(0%)  (+{filled}건 보강)")
+    else:
+        print("\n=== dry-run 검수 표본 (position → 추출 스킬) ===")
+        for pos, sk in samples:
+            print(f"  {pos:36} {sk}")
+        print(f"\n추가로 많이 잡힌 스킬 top20: {add_counter.most_common(20)}")
+        print(f"\nskill 커버리지: {before}/{n}({100*before//n}%) → {after}/{n}({100*after//n}%)  (+{filled}건 보강)")
 
     if a.apply:
         shutil.copy(a.inp, a.inp + ".bak")
