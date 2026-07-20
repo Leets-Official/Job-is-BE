@@ -86,6 +86,7 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/health",
                                 "/api/auth/csrf",
+                                "/api/auth/dev/**",
                                 "/api/auth/oauth/**"
                         ).permitAll()
 
