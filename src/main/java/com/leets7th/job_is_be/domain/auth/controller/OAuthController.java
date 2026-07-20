@@ -1,18 +1,24 @@
 package com.leets7th.job_is_be.domain.auth.controller;
 
+import com.leets7th.job_is_be.domain.auth.dto.OAuthExchangeRequest;
+import com.leets7th.job_is_be.domain.auth.dto.OAuthExchangeResponse;
 import com.leets7th.job_is_be.domain.auth.service.OAuthLoginService;
 import com.leets7th.job_is_be.domain.auth.service.RefreshTokenCookieManager;
 import com.leets7th.job_is_be.domain.auth.oauth.OAuthStateCookieManager;
 import com.leets7th.job_is_be.global.base.BaseStatus;
 import com.leets7th.job_is_be.global.exception.GeneralException;
 import com.leets7th.job_is_be.global.properties.OAuthProperties;
+import com.leets7th.job_is_be.global.response.ApiResponse;
 import com.leets7th.job_is_be.global.status.ErrorStatus;
+import com.leets7th.job_is_be.global.status.SuccessStatus;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -71,15 +77,13 @@ public class OAuthController {
                     stateCookieManager.extract(request)
             );
             URI location = UriComponentsBuilder.fromUri(properties.frontendSuccessUri())
-                    .queryParam("status", "success")
-                    .queryParam("isNewUser", result.newUser())
+                    .queryParam("code", result.loginCode())
                     .build()
                     .encode()
                     .toUri();
 
             return ResponseEntity.status(HttpStatus.FOUND)
                     .header(HttpHeaders.LOCATION, location.toString())
-                    .header(HttpHeaders.SET_COOKIE, cookieManager.create(result.refreshToken()).toString())
                     .header(HttpHeaders.SET_COOKIE, stateCookieManager.clear().toString())
                     .build();
         } catch (GeneralException e) {
@@ -87,10 +91,26 @@ public class OAuthController {
         }
     }
 
+    @PostMapping("/exchange")
+    public ResponseEntity<ApiResponse<OAuthExchangeResponse>> exchange(
+            @RequestBody OAuthExchangeRequest request
+    ) {
+        OAuthLoginService.ExchangeResult result = oauthLoginService.exchange(request.loginCode());
+
+        return ResponseEntity
+                .status(SuccessStatus.OAUTH_EXCHANGE_SUCCESS.getHttpStatus())
+                .header(HttpHeaders.SET_COOKIE, cookieManager.create(result.refreshToken()).toString())
+                .body(new ApiResponse<>(
+                        true,
+                        SuccessStatus.OAUTH_EXCHANGE_SUCCESS.getCode(),
+                        SuccessStatus.OAUTH_EXCHANGE_SUCCESS.getMessage(),
+                        result.response()
+                ));
+    }
+
     private ResponseEntity<Void> redirectFailure(BaseStatus errorStatus) {
         URI location = UriComponentsBuilder.fromUri(properties.frontendFailureUri())
-                .queryParam("status", "error")
-                .queryParam("code", errorStatus.getCode())
+                .queryParam("error", errorStatus.getCode())
                 .build()
                 .encode()
                 .toUri();

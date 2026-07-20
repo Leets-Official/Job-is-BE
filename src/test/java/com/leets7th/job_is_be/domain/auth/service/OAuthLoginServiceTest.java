@@ -1,6 +1,7 @@
 package com.leets7th.job_is_be.domain.auth.service;
 
 import com.leets7th.job_is_be.domain.auth.oauth.OAuthClientRegistry;
+import com.leets7th.job_is_be.domain.auth.oauth.OAuthLoginCodeStore;
 import com.leets7th.job_is_be.domain.auth.oauth.OAuthStateStore;
 import com.leets7th.job_is_be.domain.auth.oauth.OAuthUserInfo;
 import com.leets7th.job_is_be.domain.auth.oauth.SocialOAuthClient;
@@ -10,6 +11,7 @@ import com.leets7th.job_is_be.domain.user.enums.SocialType;
 import com.leets7th.job_is_be.domain.user.enums.UserStatus;
 import com.leets7th.job_is_be.domain.user.enums.WithdrawalStatus;
 import com.leets7th.job_is_be.domain.user.repository.UserRepository;
+import com.leets7th.job_is_be.domain.user.repository.UserProfileRepository;
 import com.leets7th.job_is_be.domain.user.repository.UserWithdrawalRepository;
 import com.leets7th.job_is_be.global.exception.GeneralException;
 import com.leets7th.job_is_be.global.jwt.JwtTokenProvider;
@@ -30,6 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -39,9 +42,11 @@ class OAuthLoginServiceTest {
     @Mock private OAuthClientRegistry clientRegistry;
     @Mock private OAuthStateStore stateStore;
     @Mock private UserRepository userRepository;
+    @Mock private UserProfileRepository userProfileRepository;
     @Mock private UserWithdrawalRepository userWithdrawalRepository;
     @Mock private JwtTokenProvider tokenProvider;
     @Mock private RefreshTokenSessionStore sessionStore;
+    @Mock private OAuthLoginCodeStore loginCodeStore;
     @Mock private SocialOAuthClient oauthClient;
 
     private OAuthLoginService loginService;
@@ -52,14 +57,16 @@ class OAuthLoginServiceTest {
                 clientRegistry,
                 stateStore,
                 userRepository,
+                userProfileRepository,
                 userWithdrawalRepository,
                 tokenProvider,
-                sessionStore
+                sessionStore,
+                loginCodeStore
         );
     }
 
     @Test
-    void createsNewUserAndRefreshSession() {
+    void createsNewUserAndLoginCode() {
         OAuthUserInfo userInfo = new OAuthUserInfo("social-id", SocialType.GOOGLE, "USER@EXAMPLE.COM");
         User savedUser = user("social-id", SocialType.GOOGLE, "user@example.com", 1L);
         prepareOAuth(userInfo);
@@ -68,12 +75,19 @@ class OAuthLoginServiceTest {
         when(userRepository.findByEmailIgnoreCase("user@example.com")).thenReturn(Optional.empty());
         when(userRepository.save(any(User.class))).thenReturn(savedUser);
         when(tokenProvider.issueTokenPair(1L)).thenReturn(tokenPair());
+        when(loginCodeStore.create(any(OAuthLoginCodeStore.LoginPayload.class)))
+                .thenReturn("login-code");
 
         OAuthLoginService.OAuthLoginResult result = loginService.login("google", "code", "state", "state");
 
-        assertTrue(result.newUser());
-        assertEquals("refresh", result.refreshToken());
-        verify(sessionStore).save("session", 1L, "refresh", Duration.ofDays(14));
+        assertEquals("login-code", result.loginCode());
+        verify(loginCodeStore).create(any(OAuthLoginCodeStore.LoginPayload.class));
+        verify(sessionStore, never()).save(
+                org.mockito.ArgumentMatchers.anyString(),
+                org.mockito.ArgumentMatchers.anyLong(),
+                org.mockito.ArgumentMatchers.anyString(),
+                org.mockito.ArgumentMatchers.any()
+        );
     }
 
     @Test
@@ -108,12 +122,50 @@ class OAuthLoginServiceTest {
         when(userWithdrawalRepository.findFirstByUserIdAndStatusOrderByRequestedAtDesc(
                 1L, WithdrawalStatus.PENDING)).thenReturn(Optional.of(withdrawal));
         when(tokenProvider.issueTokenPair(1L)).thenReturn(tokenPair());
+        when(loginCodeStore.create(any(OAuthLoginCodeStore.LoginPayload.class)))
+                .thenReturn("login-code");
 
         OAuthLoginService.OAuthLoginResult result = loginService.login("kakao", "code", "state", "state");
 
-        assertFalse(result.newUser());
+        assertEquals("login-code", result.loginCode());
         assertEquals(UserStatus.ACTIVE, user.getStatus());
         assertEquals(WithdrawalStatus.RESTORED, withdrawal.getStatus());
+    }
+
+    @Test
+    void exchangesLoginCodeForAccessTokenAndRefreshSession() {
+        OAuthLoginCodeStore.LoginPayload payload = new OAuthLoginCodeStore.LoginPayload(
+                1L,
+                true,
+                false,
+                "access",
+                "refresh",
+                "session",
+                900,
+                Duration.ofDays(14).toSeconds()
+        );
+        when(loginCodeStore.consume("login-code")).thenReturn(Optional.of(payload));
+
+        OAuthLoginService.ExchangeResult result = loginService.exchange("login-code");
+
+        assertEquals("access", result.response().accessToken());
+        assertEquals(1L, result.response().userId());
+        assertTrue(result.response().isNewUser());
+        assertFalse(result.response().onboardingCompleted());
+        assertEquals("refresh", result.refreshToken());
+        verify(sessionStore).save("session", 1L, "refresh", Duration.ofDays(14));
+    }
+
+    @Test
+    void rejectsExpiredOrConsumedLoginCode() {
+        when(loginCodeStore.consume("expired-code")).thenReturn(Optional.empty());
+
+        GeneralException exception = assertThrows(
+                GeneralException.class,
+                () -> loginService.exchange("expired-code")
+        );
+
+        assertEquals(ErrorStatus.OAUTH_LOGIN_CODE_INVALID, exception.getErrorStatus());
     }
 
     @Test

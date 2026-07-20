@@ -1,6 +1,8 @@
 package com.leets7th.job_is_be.domain.auth.service;
 
+import com.leets7th.job_is_be.domain.auth.dto.OAuthExchangeResponse;
 import com.leets7th.job_is_be.domain.auth.oauth.OAuthClientRegistry;
+import com.leets7th.job_is_be.domain.auth.oauth.OAuthLoginCodeStore;
 import com.leets7th.job_is_be.domain.auth.oauth.OAuthStateStore;
 import com.leets7th.job_is_be.domain.auth.oauth.OAuthUserInfo;
 import com.leets7th.job_is_be.domain.auth.oauth.SocialOAuthClient;
@@ -10,6 +12,7 @@ import com.leets7th.job_is_be.domain.user.enums.SocialType;
 import com.leets7th.job_is_be.domain.user.enums.UserStatus;
 import com.leets7th.job_is_be.domain.user.enums.WithdrawalStatus;
 import com.leets7th.job_is_be.domain.user.repository.UserRepository;
+import com.leets7th.job_is_be.domain.user.repository.UserProfileRepository;
 import com.leets7th.job_is_be.domain.user.repository.UserWithdrawalRepository;
 import com.leets7th.job_is_be.global.exception.GeneralException;
 import com.leets7th.job_is_be.global.jwt.JwtTokenProvider;
@@ -27,24 +30,30 @@ public class OAuthLoginService {
     private final OAuthClientRegistry clientRegistry;
     private final OAuthStateStore stateStore;
     private final UserRepository userRepository;
+    private final UserProfileRepository userProfileRepository;
     private final UserWithdrawalRepository userWithdrawalRepository;
     private final JwtTokenProvider tokenProvider;
     private final RefreshTokenSessionStore refreshTokenSessionStore;
+    private final OAuthLoginCodeStore loginCodeStore;
 
     public OAuthLoginService(
             OAuthClientRegistry clientRegistry,
             OAuthStateStore stateStore,
             UserRepository userRepository,
+            UserProfileRepository userProfileRepository,
             UserWithdrawalRepository userWithdrawalRepository,
             JwtTokenProvider tokenProvider,
-            RefreshTokenSessionStore refreshTokenSessionStore
+            RefreshTokenSessionStore refreshTokenSessionStore,
+            OAuthLoginCodeStore loginCodeStore
     ) {
         this.clientRegistry = clientRegistry;
         this.stateStore = stateStore;
         this.userRepository = userRepository;
+        this.userProfileRepository = userProfileRepository;
         this.userWithdrawalRepository = userWithdrawalRepository;
         this.tokenProvider = tokenProvider;
         this.refreshTokenSessionStore = refreshTokenSessionStore;
+        this.loginCodeStore = loginCodeStore;
     }
 
     public AuthorizationRequest createAuthorizationRequest(String provider) {
@@ -66,15 +75,50 @@ public class OAuthLoginService {
 
         OAuthUserInfo userInfo = clientRegistry.get(socialType).getUserInfo(code);
         LoginUser loginUser = findOrCreateUser(userInfo);
-        JwtTokenProvider.TokenPair tokenPair = tokenProvider.issueTokenPair(loginUser.user().getId());
-        refreshTokenSessionStore.save(
-                tokenPair.refreshSessionId(),
-                loginUser.user().getId(),
-                tokenPair.refreshToken(),
-                tokenPair.refreshTokenTtl()
+        Long userId = loginUser.user().getId();
+        JwtTokenProvider.TokenPair tokenPair = tokenProvider.issueTokenPair(userId);
+        boolean onboardingCompleted = userProfileRepository.findByUserId(userId)
+                .map(profile -> profile.isOnboardingCompleted())
+                .orElse(false);
+        String loginCode = loginCodeStore.create(
+                new OAuthLoginCodeStore.LoginPayload(
+                        userId,
+                        loginUser.newUser(),
+                        onboardingCompleted,
+                        tokenPair.accessToken(),
+                        tokenPair.refreshToken(),
+                        tokenPair.refreshSessionId(),
+                        tokenPair.accessTokenExpiresIn(),
+                        tokenPair.refreshTokenTtl().toSeconds()
+                )
         );
 
-        return new OAuthLoginResult(tokenPair.refreshToken(), loginUser.newUser());
+        return new OAuthLoginResult(loginCode);
+    }
+
+    public ExchangeResult exchange(String loginCode) {
+        if (loginCode == null || loginCode.isBlank()) {
+            throw new GeneralException(ErrorStatus.OAUTH_LOGIN_CODE_MISSING);
+        }
+
+        OAuthLoginCodeStore.LoginPayload payload = loginCodeStore.consume(loginCode)
+                .orElseThrow(() -> new GeneralException(ErrorStatus.OAUTH_LOGIN_CODE_INVALID));
+        refreshTokenSessionStore.save(
+                payload.refreshSessionId(),
+                payload.userId(),
+                payload.refreshToken(),
+                payload.refreshTokenTtl()
+        );
+
+        return new ExchangeResult(
+                new OAuthExchangeResponse(
+                        payload.accessToken(),
+                        payload.userId(),
+                        payload.newUser(),
+                        payload.onboardingCompleted()
+                ),
+                payload.refreshToken()
+        );
     }
 
     private LoginUser findOrCreateUser(OAuthUserInfo userInfo) {
@@ -120,7 +164,10 @@ public class OAuthLoginService {
     private record LoginUser(User user, boolean newUser) {
     }
 
-    public record OAuthLoginResult(String refreshToken, boolean newUser) {
+    public record OAuthLoginResult(String loginCode) {
+    }
+
+    public record ExchangeResult(OAuthExchangeResponse response, String refreshToken) {
     }
 
     public record AuthorizationRequest(URI uri, String state) {
