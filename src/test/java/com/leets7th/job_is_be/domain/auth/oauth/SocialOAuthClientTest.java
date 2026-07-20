@@ -105,6 +105,7 @@ class SocialOAuthClientTest {
                 URI.create("http://localhost:5173/oauth/callback"),
                 URI.create("http://localhost:5173/oauth/callback"),
                 Duration.ofMinutes(5),
+                Duration.ofMinutes(1),
                 kakao,
                 google
         );

@@ -11,6 +11,7 @@ public record OAuthProperties(
         URI frontendSuccessUri,
         URI frontendFailureUri,
         Duration stateTtl,
+        Duration loginCodeTtl,
         Provider kakao,
         Provider google
 ) {
@@ -18,6 +19,9 @@ public record OAuthProperties(
     public OAuthProperties {
         if (stateTtl == null || stateTtl.isNegative() || stateTtl.isZero()) {
             throw new IllegalArgumentException("OAuth state TTL must be positive");
+        }
+        if (loginCodeTtl == null || loginCodeTtl.isNegative() || loginCodeTtl.isZero()) {
+            throw new IllegalArgumentException("OAuth login code TTL must be positive");
         }
     }
 
