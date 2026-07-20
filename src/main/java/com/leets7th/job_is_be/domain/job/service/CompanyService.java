@@ -17,7 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class CompanyService {
     private final CompanyRepository companyRepository;
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional
     public Company getOrCreateCompany(CrawledCompanyDto companyDto) {
         if (companyDto == null || companyDto.getName() == null) return null;
 

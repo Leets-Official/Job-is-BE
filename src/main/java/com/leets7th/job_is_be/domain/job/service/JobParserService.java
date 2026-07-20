@@ -53,25 +53,47 @@ public class JobParserService {
         processFile(crawlerProperties.getJobOutputPath(), "공고", (line) -> {
             CrawledJobDto jobDto = objectMapper.readValue(line, CrawledJobDto.class);
 
-            Company company = companyService.getOrCreateCompany(jobDto.getCompany());
-            JobCategory jobCategory = jobCategoryRepository.findByName(jobDto.getCategoryName()).orElse(null);
-            Region region = regionRepository.findByName(jobDto.getRegionName()).orElse(null);
+            Company company = companyService.getOrCreateCompany(jobDto.company());
+            JobCategory jobCategory = jobCategoryRepository.findByName(jobDto.categoryName()).orElse(null);
+            Region region = regionRepository.findByName(jobDto.regionName()).orElse(null);
 
-            Job job = Job.builder()
-                    .title(jobDto.getTitle())
-                    .sourceUrl(jobDto.getDetailUrl())
-                    .rewardTotal(jobDto.getReward())
-                    .company(company)
-                    .intro(jobDto.getIntro())
-                    .mainTasks(jobDto.getMainTasks())
-                    .requirements(jobDto.getRequirements())
-                    .preferredPoints(jobDto.getPreferredPoints())
-                    .benefits(jobDto.getBenefits())
-                    .careerMin(jobDto.getCareerMin())
-                    .careerMax(jobDto.getCareerMax())
-                    .jobCategory(jobCategory)
-                    .region(region)
-                    .build();
+            java.util.Optional<Job> existingJob = jobRepository.findBySourceAndExternalId(jobDto.source(), jobDto.externalId());
+
+            Job job;
+            if (existingJob.isPresent()) {
+                job = existingJob.get();
+                job.syncFrom(
+                        company,
+                        jobDto.title(),
+                        jobDto.careerLevel(),
+                        jobDto.employmentType(),
+                        jobDto.remoteAvailable(),
+                        jobDto.detailUrl(),
+                        jobDto.postedAt(),
+                        jobDto.deadlineAt(),
+                        com.leets7th.job_is_be.domain.job.enums.JobStatus.ACTIVE
+                );
+            } else {
+                job = Job.builder()
+                        .title(jobDto.title())
+                        .sourceUrl(jobDto.detailUrl())
+                        .rewardTotal(jobDto.reward())
+                        .company(company)
+                        .intro(jobDto.intro())
+                        .mainTasks(jobDto.mainTasks())
+                        .requirements(jobDto.requirements())
+                        .preferredPoints(jobDto.preferredPoints())
+                        .benefits(jobDto.benefits())
+                        .careerMin(jobDto.careerMin())
+                        .careerMax(jobDto.careerMax())
+                        .jobCategory(jobCategory)
+                        .region(region)
+                        .source(jobDto.source())
+                        .externalId(jobDto.externalId())
+                        .skills(jobDto.skills() != null ? String.join(",", jobDto.skills()) : null)
+                        .categories(jobDto.categories() != null ? String.join(",", jobDto.categories()) : null)
+                        .build();
+            }
 
             jobRepository.save(job);
         });
@@ -96,6 +118,7 @@ public class JobParserService {
             }
         } catch (Exception e) {
             log.error("{} 처리 중 오류 발생: ", type, e);
+            throw new RuntimeException(type + " 처리 중 예외 발생으로 데이터 적재를 중단하고 롤백합니다.", e);
         }
     }
 

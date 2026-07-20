@@ -24,8 +24,9 @@ public abstract class BaseEntity {
     // 저장 전 자동으로 호출되어 null 방지
     @PrePersist
     public void onPrePersist() {
-        this.createdAt = OffsetDateTime.now();
-        this.updatedAt = OffsetDateTime.now();
+        OffsetDateTime now = OffsetDateTime.now();
+        this.createdAt = now;
+        this.updatedAt = now;
     }
 
     // 업데이트 전 자동으로 호출

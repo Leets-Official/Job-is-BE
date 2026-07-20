@@ -102,6 +102,12 @@ public class Job extends BaseEntity {
     @Column(name = "thumbnail_url", length = 500)
     private String thumbnailUrl; // 카드 썸네일 URL
 
+    @Column(name = "skills", columnDefinition = "TEXT")
+    private String skills;
+
+    @Column(name = "categories", columnDefinition = "TEXT")
+    private String categories;
+
     @Builder
     public Job(Company company, JobCategory jobCategory, Region region, String title,
                String careerLevel, String employmentType, boolean remoteAvailable,
@@ -109,7 +115,8 @@ public class Job extends BaseEntity {
                OffsetDateTime postedAt, OffsetDateTime deadlineAt, String editorNote,
                Long externalId, String intro, String mainTasks, String requirements,
                String preferredPoints, String benefits, Integer careerMin, Integer careerMax,
-               String rewardTotal, String thumbnailUrl) {
+               String rewardTotal, String thumbnailUrl,
+               String skills, String categories) {
         this.company = company;
         this.jobCategory = jobCategory;
         this.region = region;
@@ -134,6 +141,8 @@ public class Job extends BaseEntity {
         this.careerMax = careerMax;
         this.rewardTotal = rewardTotal;
         this.thumbnailUrl = thumbnailUrl;
+        this.skills = skills;
+        this.categories = categories;
     }
 
     public void expire() {

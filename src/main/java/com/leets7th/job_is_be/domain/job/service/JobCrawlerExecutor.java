@@ -26,7 +26,9 @@ public class JobCrawlerExecutor {
         command.add(crawlerProperties.getScriptPath());
 
         command.add("--out");
-        command.add("C:\\LeetsJobis\\database\\out");
+        // 설정값 기반, 부모 디렉토리 경로를 동적 추출하여 대입
+        String outputPath = new java.io.File(crawlerProperties.getCompanyOutputPath()).getParent();
+        command.add(outputPath);
 
         try {
             ProcessBuilder processBuilder = new ProcessBuilder(command);
@@ -46,9 +48,10 @@ public class JobCrawlerExecutor {
             int exitCode = process.waitFor();
             if (exitCode == 0) {
                 log.info("파이썬 크롤링 파이프라인 실행 완료 (Exit Code: 0)");
+                jobParserService.parseAndSave();
             } else {
                 log.error("파이썬 크롤링 파이프라인 실행 실패 (Exit Code: {})", exitCode);
-                jobParserService.parseAndSave();
+                throw new RuntimeException("크롤링 파이프라인 실행 실패: Exit Code " + exitCode);
             }
 
         } catch (Exception e) {
