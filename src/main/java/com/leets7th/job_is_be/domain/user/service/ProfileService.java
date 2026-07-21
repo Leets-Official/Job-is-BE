@@ -14,12 +14,14 @@ import com.leets7th.job_is_be.domain.user.repository.UserJobCategoryRepository;
 import com.leets7th.job_is_be.domain.user.repository.UserProfileRepository;
 import com.leets7th.job_is_be.domain.user.repository.UserRegionRepository;
 import com.leets7th.job_is_be.domain.user.repository.UserRepository;
+import com.leets7th.job_is_be.domain.user.enums.OnboardingStep;
 import com.leets7th.job_is_be.global.exception.GeneralException;
 import com.leets7th.job_is_be.global.status.ErrorStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.time.LocalDateTime;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -103,6 +105,31 @@ public class ProfileService {
             throw new GeneralException(ErrorStatus.PROFILE_ALREADY_COMPLETED);
         }
         return toDraftResponse(profile, findJobCategories(userId), findRegion(userId));
+    }
+
+    @Transactional
+    public void completeOnboarding(Long userId) {
+        UserProfile profile = userProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new GeneralException(ErrorStatus.PROFILE_NOT_FOUND));
+        if (profile.isOnboardingCompleted()) {
+            throw new GeneralException(ErrorStatus.PROFILE_ALREADY_COMPLETED);
+        }
+        if (profile.getOnboardingStep() != OnboardingStep.REVIEW) {
+            throw new GeneralException(ErrorStatus.PROFILE_ONBOARDING_NOT_READY);
+        }
+
+        List<UserJobCategory> jobCategories = findJobCategories(userId);
+        long primaryCount = jobCategories.stream().filter(UserJobCategory::isPrimary).count();
+        boolean missingRequiredValue = jobCategories.isEmpty()
+                || jobCategories.size() > MAX_JOB_CATEGORIES
+                || primaryCount != 1
+                || findRegion(userId) == null
+                || profile.getCareerLevel() == null;
+        if (missingRequiredValue) {
+            throw new GeneralException(ErrorStatus.PROFILE_REQUIRED_FIELDS_MISSING);
+        }
+
+        profile.completeOnboarding(LocalDateTime.now());
     }
 
     private List<JobCategory> resolveJobCategories(List<Long> requestedIds, Long primaryId) {
