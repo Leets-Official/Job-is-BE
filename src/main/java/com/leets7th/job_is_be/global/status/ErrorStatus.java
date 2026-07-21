@@ -28,6 +28,7 @@ public enum ErrorStatus implements BaseStatus {
     REFRESH_TOKEN_MISSING(HttpStatus.UNAUTHORIZED, "AUTH_401_1", "Refresh Token이 없습니다."),
     REFRESH_TOKEN_INVALID(HttpStatus.UNAUTHORIZED, "AUTH_401_2", "유효하지 않은 Refresh Token입니다."),
     REFRESH_SESSION_NOT_FOUND(HttpStatus.UNAUTHORIZED, "AUTH_401_3", "Refresh Token 세션이 만료되었거나 로그아웃되었습니다."),
+    DEV_LOGIN_USER_ID_REQUIRED(HttpStatus.BAD_REQUEST, "AUTH_400_1", "개발자 로그인에 사용할 userId가 필요합니다."),
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER_404_1", "사용자를 찾을 수 없습니다."),
 
     /**
