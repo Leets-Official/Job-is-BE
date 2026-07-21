@@ -9,6 +9,7 @@ import com.leets7th.job_is_be.domain.user.repository.UserRepository;
 import com.leets7th.job_is_be.global.exception.GeneralException;
 import com.leets7th.job_is_be.global.status.ErrorStatus;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,11 +34,15 @@ public class JobService {
         Job job = jobRepository.findById(jobId)
                 .orElseThrow(() -> new GeneralException(ErrorStatus.JOB_NOT_FOUND));
 
-        savedJobRepository.save(SavedJob.builder()
-                .user(user)
-                .job(job)
-                .savedAt(OffsetDateTime.now())
-                .build());
+        try {
+            savedJobRepository.save(SavedJob.builder()
+                    .user(user)
+                    .job(job)
+                    .savedAt(OffsetDateTime.now())
+                    .build());
+        } catch (DataIntegrityViolationException e) {
+            throw new GeneralException(ErrorStatus.JOB_ALREADY_SAVED);
+        }
     }
 
     @Transactional
