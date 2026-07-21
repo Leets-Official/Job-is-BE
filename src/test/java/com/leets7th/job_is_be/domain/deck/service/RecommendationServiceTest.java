@@ -75,7 +75,7 @@ class RecommendationServiceTest {
 
         CardResponse response = new CardResponse(1L, 2L, null, "백엔드 엔지니어", "TODO", null,
                 List.of(), null, null, List.of(), null, null, 1, null);
-        when(cardService.getDeckCards(any())).thenReturn(List.of(response));
+        when(cardService.getDeckCards(any(), any())).thenReturn(List.of(response));
 
         List<CardResponse> result = recommendationService.generateTodayDeck(1L);
 
@@ -97,7 +97,7 @@ class RecommendationServiceTest {
 
         Card existingCard = Card.builder().deck(deck).position(1).build();
         when(cardRepository.findByDeckId(any())).thenReturn(List.of(existingCard));
-        when(cardService.getDeckCards(any())).thenReturn(List.of());
+        when(cardService.getDeckCards(any(), any())).thenReturn(List.of());
 
         recommendationService.generateTodayDeck(1L);
 
