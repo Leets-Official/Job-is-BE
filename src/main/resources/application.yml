@@ -31,6 +31,11 @@ server:
   shutdown: graceful
 
 app:
+  aws:
+    s3:
+      bucket: ${AWS_S3_BUCKET:jobis-assets}
+      region: ${AWS_REGION:us-east-1}
+      presigned-url-expiration: ${AWS_S3_PRESIGNED_URL_EXPIRATION:5m}
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173}
   oauth:
