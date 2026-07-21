@@ -10,7 +10,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -25,15 +24,6 @@ import java.util.List;
 public class CardController {
 
     private final CardService cardService;
-
-    @GetMapping("/{deckId}/cards")
-    public ResponseEntity<ApiResponse<List<CardResponse>>> getDeckCards(
-            @PathVariable Long deckId,
-            @AuthenticationPrincipal Jwt jwt
-    ) {
-        List<CardResponse> response = cardService.getDeckCards(deckId, Long.valueOf(jwt.getSubject()));
-        return ApiResponse.success(SuccessStatus.DECK_CARDS_SUCCESS, response);
-    }
 
     @PostMapping("/{deckId}/cards/{cardId}/dismiss")
     public ResponseEntity<ApiResponse<CardResponse>> dismissCard(
