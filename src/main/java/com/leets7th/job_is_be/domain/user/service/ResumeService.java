@@ -1,0 +1,179 @@
+package com.leets7th.job_is_be.domain.user.service;
+
+import com.leets7th.job_is_be.domain.user.dto.PresignedUrlRequest;
+import com.leets7th.job_is_be.domain.user.dto.PresignedUrlResponse;
+import com.leets7th.job_is_be.domain.user.dto.ResumeConfirmRequest;
+import com.leets7th.job_is_be.domain.user.dto.ResumeResponse;
+import com.leets7th.job_is_be.domain.user.dto.ResumeUploadResponse;
+import com.leets7th.job_is_be.domain.user.entity.Resume;
+import com.leets7th.job_is_be.domain.user.entity.User;
+import com.leets7th.job_is_be.domain.user.enums.ResumeCategory;
+import com.leets7th.job_is_be.domain.user.enums.ResumeFileFormat;
+import com.leets7th.job_is_be.domain.user.repository.ResumeRepository;
+import com.leets7th.job_is_be.domain.user.repository.UserRepository;
+import com.leets7th.job_is_be.global.exception.GeneralException;
+import com.leets7th.job_is_be.global.properties.AwsS3Properties;
+import com.leets7th.job_is_be.global.status.ErrorStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
+import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
+import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.S3Exception;
+import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
+import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Service
+public class ResumeService {
+
+    private static final long MAX_FILE_SIZE_BYTES = 10L * 1024 * 1024; // 10MB
+
+    private final ResumeRepository resumeRepository;
+    private final UserRepository userRepository;
+    private final S3Client s3Client;
+    private final S3Presigner s3Presigner;
+    private final AwsS3Properties awsS3Properties;
+
+    public ResumeService(
+            ResumeRepository resumeRepository,
+            UserRepository userRepository,
+            S3Client s3Client,
+            S3Presigner s3Presigner,
+            AwsS3Properties awsS3Properties
+    ) {
+        this.resumeRepository = resumeRepository;
+        this.userRepository = userRepository;
+        this.s3Client = s3Client;
+        this.s3Presigner = s3Presigner;
+        this.awsS3Properties = awsS3Properties;
+    }
+
+    public PresignedUrlResponse issuePresignedUrl(Long userId, PresignedUrlRequest request) {
+        parseFileFormat(request.fileName()); // 확장자 검증 (PDF/DOCX/HWP/HWPX 아니면 예외)
+        String objectKey = buildObjectKey(userId, request.category());
+
+        PutObjectRequest objectRequest = PutObjectRequest.builder()
+                .bucket(awsS3Properties.bucket())
+                .key(objectKey)
+                .contentType(request.contentType())
+                .build();
+
+        PutObjectPresignRequest presignRequest = PutObjectPresignRequest.builder()
+                .signatureDuration(awsS3Properties.presignedUrlExpiration())
+                .putObjectRequest(objectRequest)
+                .build();
+
+        PresignedPutObjectRequest presignedRequest = s3Presigner.presignPutObject(presignRequest);
+
+        return new PresignedUrlResponse(
+                presignedRequest.url().toString(),
+                objectKey,
+                awsS3Properties.presignedUrlExpiration().toSeconds()
+        );
+    }
+
+    @Transactional
+    public ResumeUploadResponse confirmUpload(Long userId, ResumeConfirmRequest request) {
+        User user = getUser(userId);
+        ResumeFileFormat fileFormat = parseFileFormat(request.fileName());
+
+        String expectedObjectKey = buildObjectKey(userId, request.category());
+        if (!expectedObjectKey.equals(request.objectKey())) {
+            throw new GeneralException(ErrorStatus.RESUME_OBJECT_KEY_MISMATCH);
+        }
+
+        HeadObjectResponse headObjectResponse = headObjectOrThrow(request.objectKey());
+        if (headObjectResponse.contentLength() > MAX_FILE_SIZE_BYTES) {
+            deleteObject(request.objectKey());
+            throw new GeneralException(ErrorStatus.RESUME_FILE_TOO_LARGE);
+        }
+
+        LocalDateTime uploadedAt = LocalDateTime.now();
+        Resume resume = resumeRepository.findByUserAndCategory(user, request.category())
+                .map(existing -> {
+                    existing.replace(request.fileName(), fileFormat, uploadedAt);
+                    return existing;
+                })
+                .orElseGet(() -> resumeRepository.save(Resume.builder()
+                        .user(user)
+                        .category(request.category())
+                        .fileName(request.fileName())
+                        .fileFormat(fileFormat)
+                        .s3Key(request.objectKey())
+                        .uploadedAt(uploadedAt)
+                        .build()));
+
+        return new ResumeUploadResponse(resume.getId());
+    }
+
+    @Transactional(readOnly = true)
+    public List<ResumeResponse> getFiles(Long userId) {
+        User user = getUser(userId);
+        return resumeRepository.findAllByUser(user).stream()
+                .map(ResumeResponse::from)
+                .toList();
+    }
+
+    @Transactional
+    public void deleteFile(Long userId, Long fileId) {
+        User user = getUser(userId);
+        Resume resume = resumeRepository.findByIdAndUser(fileId, user)
+                .orElseThrow(() -> new GeneralException(ErrorStatus.RESUME_NOT_FOUND));
+
+        deleteObject(resume.getS3Key());
+        resumeRepository.delete(resume);
+    }
+
+    private User getUser(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new GeneralException(ErrorStatus.USER_NOT_FOUND));
+    }
+
+    private ResumeFileFormat parseFileFormat(String fileName) {
+        int lastDot = fileName.lastIndexOf('.');
+        if (lastDot < 0 || lastDot == fileName.length() - 1) {
+            throw new GeneralException(ErrorStatus.RESUME_INVALID_FILE_FORMAT);
+        }
+
+        try {
+            return ResumeFileFormat.fromExtension(fileName.substring(lastDot + 1));
+        } catch (IllegalArgumentException e) {
+            throw new GeneralException(ErrorStatus.RESUME_INVALID_FILE_FORMAT);
+        }
+    }
+
+    private String buildObjectKey(Long userId, ResumeCategory category) {
+        return "profile/" + userId + "/" + category.name();
+    }
+
+    private HeadObjectResponse headObjectOrThrow(String objectKey) {
+        try {
+            return s3Client.headObject(HeadObjectRequest.builder()
+                    .bucket(awsS3Properties.bucket())
+                    .key(objectKey)
+                    .build());
+        } catch (NoSuchKeyException e) {
+            throw new GeneralException(ErrorStatus.RESUME_UPLOAD_NOT_FOUND);
+        } catch (S3Exception e) {
+            // HeadObject 404는 body가 없어 SDK 버전에 따라 NoSuchKeyException 대신 S3Exception(404)로 올 수 있음
+            if (e.statusCode() == 404) {
+                throw new GeneralException(ErrorStatus.RESUME_UPLOAD_NOT_FOUND);
+            }
+            throw e;
+        }
+    }
+
+    private void deleteObject(String objectKey) {
+        s3Client.deleteObject(DeleteObjectRequest.builder()
+                .bucket(awsS3Properties.bucket())
+                .key(objectKey)
+                .build());
+    }
+}
