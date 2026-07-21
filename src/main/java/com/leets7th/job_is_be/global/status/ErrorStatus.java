@@ -45,7 +45,14 @@ public enum ErrorStatus implements BaseStatus {
     /**
      * Deck
      */
-    DECK_NOT_FOUND(HttpStatus.NOT_FOUND, "DECK_404_1", "덱을 찾을 수 없습니다.");
+    DECK_NOT_FOUND(HttpStatus.NOT_FOUND, "DECK_404_1", "덱을 찾을 수 없습니다."),
+
+    /**
+     * Job
+     */
+    JOB_NOT_FOUND(HttpStatus.NOT_FOUND, "JOB_404_1", "공고를 찾을 수 없습니다."),
+    JOB_ALREADY_SAVED(HttpStatus.CONFLICT, "JOB_409_1", "이미 저장된 공고입니다."),
+    JOB_NOT_SAVED(HttpStatus.NOT_FOUND, "JOB_404_2", "저장되지 않은 공고입니다.");
 
     private final HttpStatus httpStatus;
     private final String code;

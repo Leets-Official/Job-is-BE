@@ -25,6 +25,12 @@ public class JobPostingConverter {
                 .sourceUrl(posting.getSourceUrl())
                 .postedAt(posting.getConfirmTime())
                 .deadlineAt(posting.getDueTime())
+                .locationFull(posting.getLocationFull())
+                .mainTasks(posting.getMainTasks())
+                .requirements(posting.getRequirements())
+                .preferredPoints(posting.getPreferredPoints())
+                .skillTags(posting.getSkillTags())
+                .skillsInferred(posting.getSkillsInferred())
                 .build();
         applyStatus(job, resolveStatus(posting));
         return job;
@@ -34,7 +40,9 @@ public class JobPostingConverter {
         job.syncFrom(posting.getCompany(), posting.getPosition(), resolveCareerLevel(posting),
                 posting.getEmploymentType(), Boolean.TRUE.equals(posting.getIsRemote()),
                 posting.getSourceUrl(), posting.getConfirmTime(), posting.getDueTime(),
-                resolveStatus(posting));
+                resolveStatus(posting),
+                posting.getLocationFull(), posting.getMainTasks(), posting.getRequirements(),
+                posting.getPreferredPoints(), posting.getSkillTags(), posting.getSkillsInferred());
     }
 
     private void applyStatus(Job job, JobStatus status) {
