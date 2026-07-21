@@ -38,9 +38,11 @@ public class Resume extends BaseEntity {
     @Column(name = "is_active", nullable = false)
     private boolean active;
 
+    // TODO: LocalDateTime → OffsetDateTime으로 통일 필요 (BaseEntity와 타입 불일치)
     @Column(name = "uploaded_at", nullable = false)
     private LocalDateTime uploadedAt;
 
+    // TODO: LocalDateTime → OffsetDateTime으로 통일 필요 (BaseEntity와 타입 불일치)
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 

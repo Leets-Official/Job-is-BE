@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -83,6 +84,23 @@ class AuthControllerIntegrationTest {
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.isSuccess").value(false))
                 .andExpect(jsonPath("$.code").value("COMM_403"));
+    }
+
+    @Test
+    void oauthExchangeDoesNotRequireCsrfToken() throws Exception {
+        mockMvc.perform(post("/api/auth/oauth/exchange")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("AUTH_400_5"));
+    }
+
+    @Test
+    void oauthExchangeRejectsFormContentType() throws Exception {
+        mockMvc.perform(post("/api/auth/oauth/exchange")
+                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                        .param("loginCode", "login-code"))
+                .andExpect(status().isUnsupportedMediaType());
     }
 
     private CsrfCredentials issueCsrfToken() throws Exception {

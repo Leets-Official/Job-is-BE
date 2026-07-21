@@ -14,7 +14,7 @@ import org.springframework.util.StringUtils;
 import java.util.List;
 
 import static com.leets7th.job_is_be.domain.job.entity.QJob.job;
-import static com.leets7th.job_is_be.domain.company.entity.QCompany.company; // 회사 엔티티 경로에 맞게 조절
+import static com.leets7th.job_is_be.domain.job.entity.QCompany.company; // 회사 엔티티 경로에 맞게 조절
 
 @RequiredArgsConstructor
 public class JobRepositoryCustomImpl implements JobRepositoryCustom {
@@ -27,12 +27,12 @@ public class JobRepositoryCustomImpl implements JobRepositoryCustom {
                 .select(Projections.constructor(JobSummaryResponse.class,
                         job.id,
                         company.name,
-                        job.position,
+                        job.title,
                         job.careerLevel,
                         job.employmentType,
                         job.remoteAvailable,
                         job.deadlineAt, // 기존 엔티티 필드명(dueTime 또는 deadlineAt)에 맞춤
-                        job.thumbnailUrl,
+                        job.sourceUrl,
                         job.skillTags
                 ))
                 .from(job)
@@ -64,12 +64,12 @@ public class JobRepositoryCustomImpl implements JobRepositoryCustom {
     }
 
     private BooleanExpression keywordEq(String keyword) {
-        return StringUtils.hasText(keyword) ? job.position.containsIgnoreCase(keyword)
+        return StringUtils.hasText(keyword) ? job.title.containsIgnoreCase(keyword)
                 .or(company.name.containsIgnoreCase(keyword)) : null;
     }
 
     private BooleanExpression categoryChildEq(String categoryChild) {
-        return StringUtils.hasText(categoryChild) ? job.categoryChild.eq(categoryChild) : null;
+        return StringUtils.hasText(categoryChild) ? job.jobCategory.name.eq(categoryChild) : null;
     }
 
     private BooleanExpression skillTagEq(String skillTag) {
@@ -77,6 +77,6 @@ public class JobRepositoryCustomImpl implements JobRepositoryCustom {
     }
 
     private BooleanExpression regionEq(String region) {
-        return StringUtils.hasText(region) ? job.region.containsIgnoreCase(region) : null;
+        return StringUtils.hasText(region) ? job.region.name.containsIgnoreCase(region) : null;
     }
 }

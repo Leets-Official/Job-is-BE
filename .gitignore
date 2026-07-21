@@ -45,5 +45,5 @@ application-prod.yml
 .env.*
 !.env.example
 
-## Cluade ##
-.cluade/
+## Claude ##
+.claude/
