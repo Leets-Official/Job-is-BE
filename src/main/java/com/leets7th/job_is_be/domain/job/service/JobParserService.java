@@ -11,6 +11,8 @@ import com.leets7th.job_is_be.domain.job.repository.JobCategoryRepository;
 import com.leets7th.job_is_be.domain.job.repository.JobRepository;
 import com.leets7th.job_is_be.domain.job.repository.RegionRepository;
 import com.leets7th.job_is_be.global.config.CrawlerProperties;
+import com.leets7th.job_is_be.global.exception.GeneralException;
+import com.leets7th.job_is_be.global.status.ErrorStatus;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -52,6 +54,12 @@ public class JobParserService {
 
         processFile(crawlerProperties.getJobOutputPath(), "공고", (line) -> {
             CrawledJobDto jobDto = objectMapper.readValue(line, CrawledJobDto.class);
+
+            //title이 null이거나 빈 값인 경우 스킵
+            if (jobDto.title() == null || jobDto.title().isBlank()) {
+                log.warn("공고 제목(title)이 누락되어 저장을 건너뜁니다. (externalId: {})", jobDto.externalId());
+                return;
+            }
 
             Company company = companyService.getOrCreateCompany(jobDto.company());
             JobCategory jobCategory = jobCategoryRepository.findByName(jobDto.categoryName()).orElse(null);
@@ -111,14 +119,23 @@ public class JobParserService {
             log.error("{} 파일이 존재하지 않습니다: {}", type, path);
             return;
         }
+
+        int lineNumber = 0;
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             String line;
             while ((line = reader.readLine()) != null) {
+                lineNumber++;
+
+                // 빈 줄 제외
+                if (line.trim().isEmpty()) {
+                    continue;
+                }
+
                 processor.accept(line);
             }
         } catch (Exception e) {
-            log.error("{} 처리 중 오류 발생: ", type, e);
-            throw new RuntimeException(type + " 처리 중 예외 발생으로 데이터 적재를 중단하고 롤백합니다.", e);
+            log.error("{} 처리 중 오류 발생 [라인 번호: {}] - 원인: {}", type, lineNumber, e.getMessage(), e);
+            throw new GeneralException(ErrorStatus.INTERNAL_SERVER_ERROR);
         }
     }
 

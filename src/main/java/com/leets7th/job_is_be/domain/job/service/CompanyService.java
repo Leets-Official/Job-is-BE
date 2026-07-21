@@ -7,7 +7,6 @@ import lombok.Builder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
@@ -19,19 +18,18 @@ public class CompanyService {
 
     @Transactional
     public Company getOrCreateCompany(CrawledCompanyDto companyDto) {
-        if (companyDto == null || companyDto.getName() == null) return null;
+        if (companyDto == null || companyDto.name() == null) return null;
 
-        return companyRepository.findByName(companyDto.getName())
+        return companyRepository.findByName(companyDto.name())
                 .orElseGet(() -> {
-                    // [이곳에 추가] 저장 직전에 로그를 출력하여 어떤 값이 null인지 확인
                     log.info("저장할 회사 정보: name={}, source={}, logo={}",
-                            companyDto.getName(), "wanted", companyDto.getLogoUrl());
+                            companyDto.name(), "wanted", companyDto.logoUrl());
 
                     return companyRepository.saveAndFlush(
                             Company.builder()
-                                    .name(companyDto.getName())
-                                    .logoUrl(companyDto.getLogoUrl())
-                                    .description(companyDto.getDescription())
+                                    .name(companyDto.name())
+                                    .logoUrl(companyDto.logoUrl())
+                                    .description(companyDto.description())
                                     .source("wanted")
                                     .build()
                     );

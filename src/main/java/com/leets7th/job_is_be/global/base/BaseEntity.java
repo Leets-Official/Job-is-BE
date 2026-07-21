@@ -6,7 +6,7 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import java.time.OffsetDateTime;
+import java.time.LocalDateTime; // OffsetDateTime -> LocalDateTime 변경
 
 @MappedSuperclass
 @Getter
@@ -15,23 +15,20 @@ public abstract class BaseEntity {
 
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
-    private OffsetDateTime createdAt;
+    private LocalDateTime createdAt;
 
     @LastModifiedDate
     @Column(name = "updated_at", nullable = false)
-    private OffsetDateTime updatedAt;
-
-    // 저장 전 자동으로 호출되어 null 방지
+    private LocalDateTime updatedAt;
     @PrePersist
     public void onPrePersist() {
-        OffsetDateTime now = OffsetDateTime.now();
+        LocalDateTime now = LocalDateTime.now();
         this.createdAt = now;
         this.updatedAt = now;
     }
 
-    // 업데이트 전 자동으로 호출
     @PreUpdate
     public void onPreUpdate() {
-        this.updatedAt = OffsetDateTime.now();
+        this.updatedAt = LocalDateTime.now();
     }
 }

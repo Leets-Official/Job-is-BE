@@ -1,5 +1,6 @@
 package com.leets7th.job_is_be.domain.job.entity;
 
+import com.leets7th.job_is_be.global.base.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -20,7 +21,7 @@ import java.time.OffsetDateTime;
 @Table(name = "companies")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Company {
+public class Company extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -65,7 +66,7 @@ public class Company {
     @Column(name = "logo_url", length = 500)
     private String logoUrl;
 
-    @Column(length = 2000)
+    @Column(columnDefinition = "TEXT") // erd 규격 많이 어기는데, 1000자 넘기면 자르는 걸로 바꿀까요?
     private String description;
 
     @Column(name = "enrichment_status", length = 50)
