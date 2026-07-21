@@ -11,7 +11,7 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 
-public interface JobRepository extends JpaRepository<Job, Long> {
+public interface JobRepository extends JpaRepository<Job, Long>, JobRepositoryCustom {
 
     // 지원 가능 건수 — 마감되지 않은(상시 포함) ACTIVE 공고 수
     @Query("SELECT COUNT(j) FROM Job j WHERE j.status = :status "
