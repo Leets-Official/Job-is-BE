@@ -77,8 +77,6 @@ class ResumeServiceTest {
     @Test
     void 파일명_확장자가_유효하면_Presigned_URL을_발급한다() throws Exception {
         resumeService = newService();
-        User user = user(1L);
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
 
         PresignedPutObjectRequest presignedRequest = mock(PresignedPutObjectRequest.class);
         when(presignedRequest.url()).thenReturn(URI.create("https://s3.example.com/upload").toURL());
