@@ -43,6 +43,17 @@ public enum ErrorStatus implements BaseStatus {
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER_404_1", "사용자를 찾을 수 없습니다."),
 
     /**
+     * Profile
+     */
+    PROFILE_ONBOARDING_STEP_REQUIRED(HttpStatus.BAD_REQUEST, "PROFILE_400_1", "온보딩 진행 단계가 필요합니다."),
+    PROFILE_JOB_CATEGORY_COUNT_INVALID(HttpStatus.BAD_REQUEST, "PROFILE_400_2", "관심 직무는 중복 없이 최대 3개까지 선택할 수 있습니다."),
+    PROFILE_PRIMARY_JOB_CATEGORY_INVALID(HttpStatus.BAD_REQUEST, "PROFILE_400_3", "대표 관심 직무는 선택한 관심 직무에 포함되어야 합니다."),
+    PROFILE_VALUE_TOO_LONG(HttpStatus.BAD_REQUEST, "PROFILE_400_4", "프로필 입력값이 허용 길이를 초과했습니다."),
+    PROFILE_JOB_CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "PROFILE_404_2", "선택한 관심 직무를 찾을 수 없습니다."),
+    PROFILE_REGION_NOT_FOUND(HttpStatus.NOT_FOUND, "PROFILE_404_3", "선택한 희망 지역을 찾을 수 없습니다."),
+    PROFILE_ALREADY_COMPLETED(HttpStatus.CONFLICT, "PROFILE_409_1", "이미 온보딩을 완료한 프로필입니다."),
+
+    /**
      * Deck
      */
     DECK_NOT_FOUND(HttpStatus.NOT_FOUND, "DECK_404_1", "덱을 찾을 수 없습니다.");

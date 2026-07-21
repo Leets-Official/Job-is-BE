@@ -1,0 +1,51 @@
+package com.leets7th.job_is_be.domain.user.controller;
+
+import com.leets7th.job_is_be.domain.user.dto.ProfileDraftRequest;
+import com.leets7th.job_is_be.domain.user.dto.ProfileDraftResponse;
+import com.leets7th.job_is_be.domain.user.service.ProfileService;
+import com.leets7th.job_is_be.global.response.ApiResponse;
+import com.leets7th.job_is_be.global.status.SuccessStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping("/api/profile")
+public class ProfileController {
+
+    private final ProfileService profileService;
+
+    public ProfileController(ProfileService profileService) {
+        this.profileService = profileService;
+    }
+
+    @GetMapping("/draft")
+    public ResponseEntity<ApiResponse<ProfileDraftResponse>> getDraft(
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        return ApiResponse.success(
+                SuccessStatus.PROFILE_DRAFT_GET_SUCCESS,
+                profileService.getDraft(userId(jwt))
+        );
+    }
+
+    @PutMapping("/draft")
+    public ResponseEntity<ApiResponse<ProfileDraftResponse>> saveDraft(
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestBody ProfileDraftRequest request
+    ) {
+        return ApiResponse.success(
+                SuccessStatus.PROFILE_DRAFT_SAVE_SUCCESS,
+                profileService.saveDraft(userId(jwt), request)
+        );
+    }
+
+    private Long userId(Jwt jwt) {
+        return Long.valueOf(jwt.getSubject());
+    }
+}

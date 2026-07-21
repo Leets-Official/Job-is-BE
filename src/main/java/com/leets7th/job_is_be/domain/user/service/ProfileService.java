@@ -1,0 +1,210 @@
+package com.leets7th.job_is_be.domain.user.service;
+
+import com.leets7th.job_is_be.domain.job.entity.JobCategory;
+import com.leets7th.job_is_be.domain.job.entity.Region;
+import com.leets7th.job_is_be.domain.job.repository.JobCategoryRepository;
+import com.leets7th.job_is_be.domain.job.repository.RegionRepository;
+import com.leets7th.job_is_be.domain.user.dto.ProfileDraftRequest;
+import com.leets7th.job_is_be.domain.user.dto.ProfileDraftResponse;
+import com.leets7th.job_is_be.domain.user.entity.User;
+import com.leets7th.job_is_be.domain.user.entity.UserJobCategory;
+import com.leets7th.job_is_be.domain.user.entity.UserProfile;
+import com.leets7th.job_is_be.domain.user.entity.UserRegion;
+import com.leets7th.job_is_be.domain.user.repository.UserJobCategoryRepository;
+import com.leets7th.job_is_be.domain.user.repository.UserProfileRepository;
+import com.leets7th.job_is_be.domain.user.repository.UserRegionRepository;
+import com.leets7th.job_is_be.domain.user.repository.UserRepository;
+import com.leets7th.job_is_be.global.exception.GeneralException;
+import com.leets7th.job_is_be.global.status.ErrorStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+@Service
+public class ProfileService {
+
+    private static final int MAX_JOB_CATEGORIES = 3;
+
+    private final UserRepository userRepository;
+    private final UserProfileRepository userProfileRepository;
+    private final UserJobCategoryRepository userJobCategoryRepository;
+    private final UserRegionRepository userRegionRepository;
+    private final JobCategoryRepository jobCategoryRepository;
+    private final RegionRepository regionRepository;
+    private final ProfileValueCodec valueCodec;
+
+    public ProfileService(
+            UserRepository userRepository,
+            UserProfileRepository userProfileRepository,
+            UserJobCategoryRepository userJobCategoryRepository,
+            UserRegionRepository userRegionRepository,
+            JobCategoryRepository jobCategoryRepository,
+            RegionRepository regionRepository,
+            ProfileValueCodec valueCodec
+    ) {
+        this.userRepository = userRepository;
+        this.userProfileRepository = userProfileRepository;
+        this.userJobCategoryRepository = userJobCategoryRepository;
+        this.userRegionRepository = userRegionRepository;
+        this.jobCategoryRepository = jobCategoryRepository;
+        this.regionRepository = regionRepository;
+        this.valueCodec = valueCodec;
+    }
+
+    @Transactional
+    public ProfileDraftResponse saveDraft(Long userId, ProfileDraftRequest request) {
+        if (request == null || request.onboardingStep() == null) {
+            throw new GeneralException(ErrorStatus.PROFILE_ONBOARDING_STEP_REQUIRED);
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new GeneralException(ErrorStatus.USER_NOT_FOUND));
+        UserProfile profile = userProfileRepository.findByUserId(userId)
+                .orElseGet(() -> UserProfile.builder()
+                        .user(user)
+                        .onboardingStep(request.onboardingStep())
+                        .build());
+        if (profile.isOnboardingCompleted()) {
+            throw new GeneralException(ErrorStatus.PROFILE_ALREADY_COMPLETED);
+        }
+
+        List<JobCategory> jobCategories = resolveJobCategories(
+                request.jobCategoryIds(),
+                request.primaryJobCategoryId()
+        );
+        Region region = resolveRegion(request.regionId());
+        profile.updateDraft(
+                request.careerLevel(),
+                request.onboardingStep(),
+                valueCodec.encode(request.preferenceNotes()),
+                valueCodec.encode(request.excludeKeywords()),
+                valueCodec.encode(request.techStacks())
+        );
+        userProfileRepository.save(profile);
+        replaceJobCategories(user, jobCategories, request.primaryJobCategoryId());
+        replaceRegion(user, region);
+
+        return toDraftResponse(profile, findJobCategories(userId), findRegion(userId));
+    }
+
+    @Transactional(readOnly = true)
+    public ProfileDraftResponse getDraft(Long userId) {
+        UserProfile profile = userProfileRepository.findByUserId(userId).orElse(null);
+        if (profile == null) {
+            return null;
+        }
+        if (profile.isOnboardingCompleted()) {
+            throw new GeneralException(ErrorStatus.PROFILE_ALREADY_COMPLETED);
+        }
+        return toDraftResponse(profile, findJobCategories(userId), findRegion(userId));
+    }
+
+    private List<JobCategory> resolveJobCategories(List<Long> requestedIds, Long primaryId) {
+        List<Long> ids = requestedIds == null ? List.of() : requestedIds;
+        LinkedHashSet<Long> uniqueIds = new LinkedHashSet<>(ids);
+        if (uniqueIds.size() != ids.size() || uniqueIds.size() > MAX_JOB_CATEGORIES) {
+            throw new GeneralException(ErrorStatus.PROFILE_JOB_CATEGORY_COUNT_INVALID);
+        }
+        if (uniqueIds.isEmpty()) {
+            if (primaryId != null) {
+                throw new GeneralException(ErrorStatus.PROFILE_PRIMARY_JOB_CATEGORY_INVALID);
+            }
+            return List.of();
+        }
+        if (primaryId == null || !uniqueIds.contains(primaryId)) {
+            throw new GeneralException(ErrorStatus.PROFILE_PRIMARY_JOB_CATEGORY_INVALID);
+        }
+
+        Map<Long, JobCategory> categories = jobCategoryRepository.findAllById(uniqueIds).stream()
+                .collect(Collectors.toMap(JobCategory::getId, Function.identity()));
+        if (categories.size() != uniqueIds.size()) {
+            throw new GeneralException(ErrorStatus.PROFILE_JOB_CATEGORY_NOT_FOUND);
+        }
+        return uniqueIds.stream().map(categories::get).toList();
+    }
+
+    private Region resolveRegion(Long regionId) {
+        if (regionId == null) {
+            return null;
+        }
+        return regionRepository.findById(regionId)
+                .orElseThrow(() -> new GeneralException(ErrorStatus.PROFILE_REGION_NOT_FOUND));
+    }
+
+    private void replaceJobCategories(User user, List<JobCategory> categories, Long primaryId) {
+        userJobCategoryRepository.deleteAllByUserId(user.getId());
+        userJobCategoryRepository.flush();
+        List<UserJobCategory> selections = categories.stream()
+                .map(category -> UserJobCategory.builder()
+                        .user(user)
+                        .jobCategory(category)
+                        .primary(category.getId().equals(primaryId))
+                        .build())
+                .toList();
+        userJobCategoryRepository.saveAll(selections);
+    }
+
+    private void replaceRegion(User user, Region region) {
+        userRegionRepository.deleteAllByUserId(user.getId());
+        userRegionRepository.flush();
+        if (region != null) {
+            userRegionRepository.save(UserRegion.builder()
+                    .user(user)
+                    .region(region)
+                    .build());
+        }
+    }
+
+    private List<UserJobCategory> findJobCategories(Long userId) {
+        return userJobCategoryRepository.findAllByUserId(userId);
+    }
+
+    private UserRegion findRegion(Long userId) {
+        return userRegionRepository.findByUserId(userId).orElse(null);
+    }
+
+    private ProfileDraftResponse toDraftResponse(
+            UserProfile profile,
+            List<UserJobCategory> selections,
+            UserRegion userRegion
+    ) {
+        List<UserJobCategory> orderedSelections = new ArrayList<>(selections);
+        orderedSelections.sort((left, right) -> {
+            if (left.isPrimary() != right.isPrimary()) {
+                return left.isPrimary() ? -1 : 1;
+            }
+            return left.getJobCategory().getId().compareTo(right.getJobCategory().getId());
+        });
+
+        List<ProfileDraftResponse.JobCategoryItem> jobCategories = orderedSelections.stream()
+                .map(selection -> new ProfileDraftResponse.JobCategoryItem(
+                        selection.getJobCategory().getId(),
+                        selection.getJobCategory().getName(),
+                        selection.isPrimary()
+                ))
+                .toList();
+        ProfileDraftResponse.RegionItem region = userRegion == null
+                ? null
+                : new ProfileDraftResponse.RegionItem(
+                        userRegion.getRegion().getId(),
+                        userRegion.getRegion().getName()
+                );
+
+        return new ProfileDraftResponse(
+                profile.getOnboardingStep(),
+                jobCategories,
+                region,
+                profile.getCareerLevel(),
+                valueCodec.decode(profile.getPreferenceNote()),
+                valueCodec.decode(profile.getExcludeKeywords()),
+                valueCodec.decode(profile.getTechStack()),
+                profile.isJobTestCompleted()
+        );
+    }
+}
