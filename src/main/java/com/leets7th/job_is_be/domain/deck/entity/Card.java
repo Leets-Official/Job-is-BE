@@ -47,6 +47,9 @@ public class Card extends BaseEntity {
     @Column(nullable = false, length = 20)
     private DeckItemStatus status;
 
+    @Column(name = "reason_submitted", nullable = false)
+    private boolean reasonSubmitted; // 관심없음 사유 제출 여부 (DET-03), 관심없음 사이클마다 초기화
+
     @Builder
     public Card(Deck deck, Job job, Integer position, BigDecimal fitScore, String reason, String summary) {
         this.deck = deck;
@@ -64,5 +67,15 @@ public class Card extends BaseEntity {
 
     public void dismiss() {
         this.status = DeckItemStatus.DISMISSED;
+        this.reasonSubmitted = false;
+    }
+
+    public void undismiss() {
+        this.status = DeckItemStatus.PENDING;
+        this.reasonSubmitted = false;
+    }
+
+    public void markReasonSubmitted() {
+        this.reasonSubmitted = true;
     }
 }
