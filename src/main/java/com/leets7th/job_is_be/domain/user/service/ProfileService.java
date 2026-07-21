@@ -6,6 +6,10 @@ import com.leets7th.job_is_be.domain.job.repository.JobCategoryRepository;
 import com.leets7th.job_is_be.domain.job.repository.RegionRepository;
 import com.leets7th.job_is_be.domain.user.dto.ProfileDraftRequest;
 import com.leets7th.job_is_be.domain.user.dto.ProfileDraftResponse;
+import com.leets7th.job_is_be.domain.user.dto.ProfileJobCategoryResponse;
+import com.leets7th.job_is_be.domain.user.dto.ProfileRegionResponse;
+import com.leets7th.job_is_be.domain.user.dto.ProfileResponse;
+import com.leets7th.job_is_be.domain.user.dto.ProfileUpdateRequest;
 import com.leets7th.job_is_be.domain.user.entity.User;
 import com.leets7th.job_is_be.domain.user.entity.UserJobCategory;
 import com.leets7th.job_is_be.domain.user.entity.UserProfile;
@@ -132,6 +136,68 @@ public class ProfileService {
         profile.completeOnboarding(LocalDateTime.now());
     }
 
+    @Transactional(readOnly = true)
+    public ProfileResponse getProfile(Long userId) {
+        UserProfile profile = findCompletedProfile(userId);
+        return toProfileResponse(profile, findJobCategories(userId), findRegion(userId));
+    }
+
+    @Transactional
+    public ProfileResponse updateProfile(Long userId, ProfileUpdateRequest request) {
+        UserProfile profile = findCompletedProfile(userId);
+        if (request == null) {
+            return toProfileResponse(profile, findJobCategories(userId), findRegion(userId));
+        }
+
+        User user = profile.getUser();
+        List<UserJobCategory> currentSelections = findJobCategories(userId);
+        UserRegion currentRegion = findRegion(userId);
+
+        if (request.jobCategoryIds() != null || request.primaryJobCategoryId() != null) {
+            List<Long> categoryIds = request.jobCategoryIds() != null
+                    ? request.jobCategoryIds()
+                    : currentSelections.stream()
+                    .map(selection -> selection.getJobCategory().getId())
+                    .toList();
+            Long primaryId = request.primaryJobCategoryId() != null
+                    ? request.primaryJobCategoryId()
+                    : currentSelections.stream()
+                    .filter(UserJobCategory::isPrimary)
+                    .map(selection -> selection.getJobCategory().getId())
+                    .findFirst()
+                    .orElse(null);
+            List<JobCategory> categories = resolveJobCategories(categoryIds, primaryId);
+            if (categories.isEmpty()) {
+                throw new GeneralException(ErrorStatus.PROFILE_REQUIRED_FIELDS_MISSING);
+            }
+            replaceJobCategories(user, categories, primaryId);
+        }
+
+        if (request.regionId() != null) {
+            replaceRegion(user, resolveRegion(request.regionId()));
+        }
+
+        profile.updateProfile(
+                request.careerLevel() != null ? request.careerLevel() : profile.getCareerLevel(),
+                request.preferenceNotes() != null
+                        ? valueCodec.encode(request.preferenceNotes())
+                        : profile.getPreferenceNote(),
+                request.excludeKeywords() != null
+                        ? valueCodec.encode(request.excludeKeywords())
+                        : profile.getExcludeKeywords(),
+                request.techStacks() != null
+                        ? valueCodec.encode(request.techStacks())
+                        : profile.getTechStack()
+        );
+
+        List<UserJobCategory> updatedSelections = findJobCategories(userId);
+        UserRegion updatedRegion = findRegion(userId);
+        if (updatedSelections.isEmpty() || updatedRegion == null || profile.getCareerLevel() == null) {
+            throw new GeneralException(ErrorStatus.PROFILE_REQUIRED_FIELDS_MISSING);
+        }
+        return toProfileResponse(profile, updatedSelections, updatedRegion);
+    }
+
     private List<JobCategory> resolveJobCategories(List<Long> requestedIds, Long primaryId) {
         List<Long> ids = requestedIds == null ? List.of() : requestedIds;
         LinkedHashSet<Long> uniqueIds = new LinkedHashSet<>(ids);
@@ -209,16 +275,16 @@ public class ProfileService {
             return left.getJobCategory().getId().compareTo(right.getJobCategory().getId());
         });
 
-        List<ProfileDraftResponse.JobCategoryItem> jobCategories = orderedSelections.stream()
-                .map(selection -> new ProfileDraftResponse.JobCategoryItem(
+        List<ProfileJobCategoryResponse> jobCategories = orderedSelections.stream()
+                .map(selection -> new ProfileJobCategoryResponse(
                         selection.getJobCategory().getId(),
                         selection.getJobCategory().getName(),
                         selection.isPrimary()
                 ))
                 .toList();
-        ProfileDraftResponse.RegionItem region = userRegion == null
+        ProfileRegionResponse region = userRegion == null
                 ? null
-                : new ProfileDraftResponse.RegionItem(
+                : new ProfileRegionResponse(
                         userRegion.getRegion().getId(),
                         userRegion.getRegion().getName()
                 );
@@ -232,6 +298,51 @@ public class ProfileService {
                 valueCodec.decode(profile.getExcludeKeywords()),
                 valueCodec.decode(profile.getTechStack()),
                 profile.isJobTestCompleted()
+        );
+    }
+
+    private UserProfile findCompletedProfile(Long userId) {
+        UserProfile profile = userProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new GeneralException(ErrorStatus.PROFILE_NOT_FOUND));
+        if (!profile.isOnboardingCompleted()) {
+            throw new GeneralException(ErrorStatus.PROFILE_NOT_FOUND);
+        }
+        return profile;
+    }
+
+    private ProfileResponse toProfileResponse(
+            UserProfile profile,
+            List<UserJobCategory> selections,
+            UserRegion userRegion
+    ) {
+        List<ProfileJobCategoryResponse> jobCategories = selections.stream()
+                .sorted((left, right) -> {
+                    if (left.isPrimary() != right.isPrimary()) {
+                        return left.isPrimary() ? -1 : 1;
+                    }
+                    return left.getJobCategory().getId().compareTo(right.getJobCategory().getId());
+                })
+                .map(selection -> new ProfileJobCategoryResponse(
+                        selection.getJobCategory().getId(),
+                        selection.getJobCategory().getName(),
+                        selection.isPrimary()
+                ))
+                .toList();
+        ProfileRegionResponse region = new ProfileRegionResponse(
+                userRegion.getRegion().getId(),
+                userRegion.getRegion().getName()
+        );
+        return new ProfileResponse(
+                profile.getUser().getId(),
+                jobCategories,
+                region,
+                profile.getCareerLevel(),
+                valueCodec.decode(profile.getPreferenceNote()),
+                valueCodec.decode(profile.getExcludeKeywords()),
+                valueCodec.decode(profile.getTechStack()),
+                profile.isJobTestCompleted(),
+                profile.isOnboardingCompleted(),
+                profile.getOnboardingCompletedAt()
         );
     }
 }

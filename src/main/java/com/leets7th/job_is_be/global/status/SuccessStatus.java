@@ -25,6 +25,8 @@ public enum SuccessStatus implements BaseStatus {
     /**
      * Profile
      */
+    PROFILE_GET_SUCCESS(HttpStatus.OK, "PROFILE_200_1", "프로필을 조회했습니다."),
+    PROFILE_UPDATE_SUCCESS(HttpStatus.OK, "PROFILE_200_2", "프로필을 수정했습니다."),
     PROFILE_DRAFT_GET_SUCCESS(HttpStatus.OK, "PROFILE_200_3", "온보딩 임시저장을 조회했습니다."),
     PROFILE_DRAFT_SAVE_SUCCESS(HttpStatus.OK, "PROFILE_200_4", "온보딩 내용을 임시저장했습니다."),
     PROFILE_ONBOARDING_COMPLETE_SUCCESS(HttpStatus.OK, "PROFILE_200_5", "온보딩을 완료했습니다."),
