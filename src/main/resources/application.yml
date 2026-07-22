@@ -33,7 +33,7 @@ server:
 app:
   aws:
     s3:
-      bucket: ${AWS_S3_BUCKET:jobis-assets}
+      bucket: ${AWS_S3_BUCKET}
       region: ${AWS_REGION:us-east-1}
       presigned-url-expiration: ${AWS_S3_PRESIGNED_URL_EXPIRATION:5m}
   cors:
