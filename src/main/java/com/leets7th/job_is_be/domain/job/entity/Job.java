@@ -8,8 +8,11 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 
 /**
  * 채용 공고
@@ -73,11 +76,32 @@ public class Job extends BaseEntity {
     @Column(name = "editor_note", length = 1000)
     private String editorNote; // Editor's Note (DET-01)
 
+    @Column(name = "location_full", length = 500)
+    private String locationFull;
+
+    @Column(name = "main_tasks", columnDefinition = "TEXT")
+    private String mainTasks;
+
+    @Column(columnDefinition = "TEXT")
+    private String requirements;
+
+    @Column(name = "preferred_points", columnDefinition = "TEXT")
+    private String preferredPoints;
+
+    @JdbcTypeCode(SqlTypes.ARRAY)
+    @Column(name = "skill_tags")
+    private List<String> skillTags;
+
+    @Column(name = "skills_inferred")
+    private Boolean skillsInferred;
+
     @Builder
     public Job(Company company, JobCategory jobCategory, Region region, String title,
                String careerLevel, String employmentType, boolean remoteAvailable,
                boolean salaryDisclosed, String source, Long externalId, String sourceUrl,
-               OffsetDateTime postedAt, OffsetDateTime deadlineAt, String editorNote) {
+               OffsetDateTime postedAt, OffsetDateTime deadlineAt, String editorNote,
+               String locationFull, String mainTasks, String requirements,
+               String preferredPoints, List<String> skillTags, Boolean skillsInferred) {
         this.company = company;
         this.jobCategory = jobCategory;
         this.region = region;
@@ -92,6 +116,12 @@ public class Job extends BaseEntity {
         this.postedAt = postedAt;
         this.deadlineAt = deadlineAt;
         this.editorNote = editorNote;
+        this.locationFull = locationFull;
+        this.mainTasks = mainTasks;
+        this.requirements = requirements;
+        this.preferredPoints = preferredPoints;
+        this.skillTags = skillTags;
+        this.skillsInferred = skillsInferred;
         this.status = JobStatus.ACTIVE;
     }
 
@@ -110,7 +140,9 @@ public class Job extends BaseEntity {
     // 크롤링 재수집 시 (source, externalId)로 매칭된 기존 공고에 최신 원문 내용을 반영
     public void syncFrom(Company company, String title, String careerLevel, String employmentType,
                           boolean remoteAvailable, String sourceUrl,
-                          OffsetDateTime postedAt, OffsetDateTime deadlineAt, JobStatus status) {
+                          OffsetDateTime postedAt, OffsetDateTime deadlineAt, JobStatus status,
+                          String locationFull, String mainTasks, String requirements,
+                          String preferredPoints, List<String> skillTags, Boolean skillsInferred) {
         this.company = company;
         this.title = title;
         this.careerLevel = careerLevel;
@@ -120,5 +152,11 @@ public class Job extends BaseEntity {
         this.postedAt = postedAt;
         this.deadlineAt = deadlineAt;
         this.status = status;
+        this.locationFull = locationFull;
+        this.mainTasks = mainTasks;
+        this.requirements = requirements;
+        this.preferredPoints = preferredPoints;
+        this.skillTags = skillTags;
+        this.skillsInferred = skillsInferred;
     }
 }

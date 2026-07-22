@@ -47,8 +47,13 @@ public class Resume extends BaseEntity {
     @Column(name = "s3_key", nullable = false, length = 500)
     private String s3Key;
 
+    // TODO: LocalDateTime → OffsetDateTime으로 통일 필요 (BaseEntity와 타입 불일치)
     @Column(name = "uploaded_at", nullable = false)
     private LocalDateTime uploadedAt;
+
+    // TODO: LocalDateTime → OffsetDateTime으로 통일 필요 (BaseEntity와 타입 불일치)
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 
     @Builder
     public Resume(User user, ResumeCategory category, String fileName, ResumeFileFormat fileFormat, String s3Key, LocalDateTime uploadedAt) {

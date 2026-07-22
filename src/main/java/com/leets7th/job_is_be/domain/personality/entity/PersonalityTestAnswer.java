@@ -33,6 +33,7 @@ public class PersonalityTestAnswer extends BaseEntity {
     @Column(name = "choice_value", nullable = false, length = 50)
     private String choiceValue; // 선택한 카드 값
 
+    // TODO: LocalDateTime → OffsetDateTime으로 통일 필요 (BaseEntity와 타입 불일치)
     @Column(name = "answered_at", nullable = false)
     private LocalDateTime answeredAt;
 
