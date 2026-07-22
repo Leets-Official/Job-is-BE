@@ -8,11 +8,9 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
-/**
- * 저장 목록
- */
+
 @Entity
 @Table(
         name = "saved_jobs",
@@ -38,16 +36,14 @@ public class SavedJob extends BaseEntity {
     private Job job;
 
     @Column(name = "saved_at", nullable = false)
-    private LocalDateTime savedAt;
+    private OffsetDateTime savedAt;
 
+    // 지원함 등 자기보고 상태 — 추후 지원 현황 트래킹에 활용
     @Column(name = "self_reported_status", length = 20)
-    private String selfReportedStatus; // 지원함 등 자기보고 상태 (§6.2)
-
-    @Column(name = "unsaved_at")
-    private LocalDateTime unsavedAt; // 해제 시각 (undo 5초)
+    private String selfReportedStatus;
 
     @Builder
-    public SavedJob(User user, Job job, LocalDateTime savedAt) {
+    public SavedJob(User user, Job job, OffsetDateTime savedAt) {
         this.user = user;
         this.job = job;
         this.savedAt = savedAt;
@@ -55,10 +51,6 @@ public class SavedJob extends BaseEntity {
 
     public void markSelfReportedStatus(String status) {
         this.selfReportedStatus = status;
-    }
-
-    public void unsave(LocalDateTime now) {
-        this.unsavedAt = now;
     }
 }
 

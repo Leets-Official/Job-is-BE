@@ -30,12 +30,15 @@ public class UserWithdrawal extends BaseEntity {
     @Column(name = "reason_code", length = 30)
     private String reasonCode; // 선택 입력, 강제 아님
 
+    // TODO: LocalDateTime → OffsetDateTime으로 통일 필요 (BaseEntity와 타입 불일치)
     @Column(name = "requested_at", nullable = false)
     private LocalDateTime requestedAt;
 
+    // TODO: LocalDateTime → OffsetDateTime으로 통일 필요 (BaseEntity와 타입 불일치)
     @Column(name = "scheduled_deletion_at")
     private LocalDateTime scheduledDeletionAt; // 신청일 + 30일
 
+    // TODO: LocalDateTime → OffsetDateTime으로 통일 필요 (BaseEntity와 타입 불일치)
     @Column(name = "restored_at")
     private LocalDateTime restoredAt;
 
