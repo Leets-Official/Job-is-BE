@@ -7,6 +7,7 @@ import com.leets7th.job_is_be.domain.job.entity.Company;
 import com.leets7th.job_is_be.domain.job.entity.Job;
 import com.leets7th.job_is_be.domain.job.entity.JobCategory;
 import com.leets7th.job_is_be.domain.job.entity.Region;
+import com.leets7th.job_is_be.domain.job.enums.JobStatus;
 import com.leets7th.job_is_be.domain.job.repository.JobCategoryRepository;
 import com.leets7th.job_is_be.domain.job.repository.JobRepository;
 import com.leets7th.job_is_be.domain.job.repository.RegionRepository;
@@ -79,7 +80,13 @@ public class JobParserService {
                         jobDto.detailUrl(),
                         jobDto.postedAt(),
                         jobDto.deadlineAt(),
-                        com.leets7th.job_is_be.domain.job.enums.JobStatus.ACTIVE
+                        JobStatus.ACTIVE,
+                        null,
+                        jobDto.mainTasks(),
+                        jobDto.requirements(),
+                        jobDto.preferredPoints(),
+                        jobDto.skills(),
+                        null
                 );
             } else {
                 job = Job.builder()
