@@ -179,6 +179,7 @@ class ResumeServiceTest {
         ResumeUploadResponse response = resumeService.confirmUpload(1L, request);
 
         assertThat(response.fileId()).isEqualTo(10L);
+        assertThat(response.created()).isTrue();
         verify(resumeRepository).save(any(Resume.class));
     }
 
@@ -209,6 +210,7 @@ class ResumeServiceTest {
         ResumeUploadResponse response = resumeService.confirmUpload(1L, request);
 
         assertThat(response.fileId()).isEqualTo(5L);
+        assertThat(response.created()).isFalse();
         assertThat(existing.getFileName()).isEqualTo("new.docx");
         assertThat(existing.getFileFormat()).isEqualTo(ResumeFileFormat.DOCX);
         verify(resumeRepository, never()).save(any(Resume.class));

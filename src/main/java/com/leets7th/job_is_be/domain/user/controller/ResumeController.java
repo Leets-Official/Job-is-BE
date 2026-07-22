@@ -47,7 +47,10 @@ public class ResumeController {
             @Valid @RequestBody ResumeConfirmRequest request
     ) {
         ResumeUploadResponse response = resumeService.confirmUpload(userId(jwt), request);
-        return ApiResponse.success(SuccessStatus.RESUME_UPLOAD_CONFIRM_SUCCESS, response);
+        SuccessStatus status = response.created()
+                ? SuccessStatus.RESUME_UPLOAD_CONFIRM_SUCCESS
+                : SuccessStatus.RESUME_UPLOAD_UPDATE_SUCCESS;
+        return ApiResponse.success(status, response);
     }
 
     @GetMapping

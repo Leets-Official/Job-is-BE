@@ -31,6 +31,7 @@ import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignReques
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class ResumeService {
@@ -98,7 +99,10 @@ public class ResumeService {
         }
 
         LocalDateTime uploadedAt = LocalDateTime.now();
-        Resume resume = resumeRepository.findByUserAndCategory(user, request.category())
+        Optional<Resume> existingResume = resumeRepository.findByUserAndCategory(user, request.category());
+        boolean created = existingResume.isEmpty();
+
+        Resume resume = existingResume
                 .map(existing -> {
                     existing.replace(request.fileName(), fileFormat, uploadedAt);
                     return existing;
@@ -112,7 +116,7 @@ public class ResumeService {
                         .uploadedAt(uploadedAt)
                         .build()));
 
-        return new ResumeUploadResponse(resume.getId());
+        return new ResumeUploadResponse(resume.getId(), created);
     }
 
     @Transactional(readOnly = true)
