@@ -195,6 +195,44 @@ class ProfileControllerIntegrationTest {
     }
 
     @Test
+    void preservesExistingDraftValuesWhenLaterStepOmitsThem() throws Exception {
+        mockMvc.perform(put("/api/profile/draft")
+                        .with(userJwt())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "onboardingStep": "PROFILE",
+                                  "jobCategoryIds": [%d],
+                                  "primaryJobCategoryId": %d,
+                                  "regionId": %d,
+                                  "careerLevel": "ENTRY",
+                                  "preferenceNotes": ["remote"],
+                                  "excludeKeywords": ["night shift"],
+                                  "techStacks": ["Java"]
+                                }
+                                """.formatted(jobCategoryIds.get(0), jobCategoryIds.get(0), regionId)))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(put("/api/profile/draft")
+                        .with(userJwt())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "onboardingStep": "QUIZ"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.onboardingStep").value("QUIZ"))
+                .andExpect(jsonPath("$.data.jobCategories.length()").value(1))
+                .andExpect(jsonPath("$.data.jobCategories[0].id").value(jobCategoryIds.get(0)))
+                .andExpect(jsonPath("$.data.region.id").value(regionId))
+                .andExpect(jsonPath("$.data.careerLevel").value("ENTRY"))
+                .andExpect(jsonPath("$.data.preferenceNotes[0]").value("remote"))
+                .andExpect(jsonPath("$.data.excludeKeywords[0]").value("night shift"))
+                .andExpect(jsonPath("$.data.techStacks[0]").value("Java"));
+    }
+
+    @Test
     void profileEndpointRejectsIncompleteDraft() throws Exception {
         mockMvc.perform(put("/api/profile/draft")
                         .with(userJwt())

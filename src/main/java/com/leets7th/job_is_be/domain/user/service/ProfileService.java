@@ -80,21 +80,41 @@ public class ProfileService {
             throw new GeneralException(ErrorStatus.PROFILE_ALREADY_COMPLETED);
         }
 
-        List<JobCategory> jobCategories = resolveJobCategories(
-                request.jobCategoryIds(),
-                request.primaryJobCategoryId()
-        );
-        Region region = resolveRegion(request.regionId());
+        List<UserJobCategory> currentSelections = findJobCategories(userId);
         profile.updateDraft(
-                request.careerLevel(),
+                request.careerLevel() != null ? request.careerLevel() : profile.getCareerLevel(),
                 request.onboardingStep(),
-                valueCodec.encode(request.preferenceNotes()),
-                valueCodec.encode(request.excludeKeywords()),
-                valueCodec.encode(request.techStacks())
+                request.preferenceNotes() != null
+                        ? valueCodec.encode(request.preferenceNotes())
+                        : profile.getPreferenceNote(),
+                request.excludeKeywords() != null
+                        ? valueCodec.encode(request.excludeKeywords())
+                        : profile.getExcludeKeywords(),
+                request.techStacks() != null
+                        ? valueCodec.encode(request.techStacks())
+                        : profile.getTechStack()
         );
         userProfileRepository.save(profile);
-        replaceJobCategories(user, jobCategories, request.primaryJobCategoryId());
-        replaceRegion(user, region);
+
+        if (request.jobCategoryIds() != null || request.primaryJobCategoryId() != null) {
+            List<Long> categoryIds = request.jobCategoryIds() != null
+                    ? request.jobCategoryIds()
+                    : currentSelections.stream()
+                    .map(selection -> selection.getJobCategory().getId())
+                    .toList();
+            Long primaryId = request.primaryJobCategoryId() != null
+                    ? request.primaryJobCategoryId()
+                    : currentSelections.stream()
+                    .filter(UserJobCategory::isPrimary)
+                    .map(selection -> selection.getJobCategory().getId())
+                    .findFirst()
+                    .orElse(null);
+            replaceJobCategories(user, resolveJobCategories(categoryIds, primaryId), primaryId);
+        }
+
+        if (request.regionId() != null) {
+            replaceRegion(user, resolveRegion(request.regionId()));
+        }
 
         return toDraftResponse(profile, findJobCategories(userId), findRegion(userId));
     }
