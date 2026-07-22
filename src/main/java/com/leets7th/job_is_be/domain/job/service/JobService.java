@@ -60,7 +60,7 @@ public class JobService {
     }
 
     /**
-     * 채용공고 검색 및 필터링 조회
+     * 채용공고 탐색 및 검색
      */
     @Transactional(readOnly = true)
     public Page<JobSummaryResponse> searchJobs(JobSearchRequest condition, Pageable pageable) {
