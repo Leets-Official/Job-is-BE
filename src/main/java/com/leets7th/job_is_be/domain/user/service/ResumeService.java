@@ -16,6 +16,8 @@ import com.leets7th.job_is_be.global.properties.AwsS3Properties;
 import com.leets7th.job_is_be.global.status.ErrorStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
@@ -127,8 +129,21 @@ public class ResumeService {
         Resume resume = resumeRepository.findByIdAndUser(fileId, user)
                 .orElseThrow(() -> new GeneralException(ErrorStatus.RESUME_NOT_FOUND));
 
-        deleteObject(resume.getS3Key());
+        String s3Key = resume.getS3Key();
         resumeRepository.delete(resume);
+
+        // DB 커밋이 실패하면 S3 삭제도 실행되지 않도록, 커밋 성공 이후에만 S3 객체를 삭제한다.
+        // (S3 orphan은 무해하지만, S3만 먼저 지우고 DB 커밋이 실패하면 ghost row가 남는다)
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    deleteObject(s3Key);
+                }
+            });
+        } else {
+            deleteObject(s3Key);
+        }
     }
 
     private User getUser(Long userId) {
