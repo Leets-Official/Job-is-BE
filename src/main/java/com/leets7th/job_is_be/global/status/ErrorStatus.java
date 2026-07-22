@@ -62,6 +62,14 @@ public enum ErrorStatus implements BaseStatus {
     DECK_NOT_FOUND(HttpStatus.NOT_FOUND, "DECK_404_1", "덱을 찾을 수 없습니다."),
 
     /**
+     * Resume (이력서/자소서 파일)
+     */
+    RESUME_INVALID_FILE_FORMAT(HttpStatus.BAD_REQUEST, "RESUME_400_1", "지원하지 않는 파일 형식입니다. (PDF, DOCX, HWP, HWPX만 업로드 가능합니다)"),
+    RESUME_OBJECT_KEY_MISMATCH(HttpStatus.BAD_REQUEST, "RESUME_400_2", "발급받은 업로드 경로와 일치하지 않습니다."),
+    RESUME_UPLOAD_NOT_FOUND(HttpStatus.BAD_REQUEST, "RESUME_400_3", "S3에 업로드된 파일을 찾을 수 없습니다."),
+    RESUME_FILE_TOO_LARGE(HttpStatus.PAYLOAD_TOO_LARGE, "RESUME_413_1", "파일 용량은 10MB를 초과할 수 없습니다."),
+    RESUME_NOT_FOUND(HttpStatus.NOT_FOUND, "RESUME_404_1", "이력서/자소서 파일을 찾을 수 없습니다."),
+    /**
      * Job
      */
     JOB_NOT_FOUND(HttpStatus.NOT_FOUND, "JOB_404_1", "공고를 찾을 수 없습니다."),

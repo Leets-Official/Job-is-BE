@@ -47,3 +47,4 @@ application-prod.yml
 
 ## Claude ##
 .claude/
+.DS_Store

@@ -45,7 +45,16 @@ public enum SuccessStatus implements BaseStatus {
     BRIEFING_STATUS_SUCCESS(HttpStatus.OK, "BRIEFING_200_2", "오늘의 브리핑 덱 카드 목록을 조회했습니다."),
 
     /**
-     * Job
+     * Resume (이력서/자소서 파일)
+     */
+    RESUME_PRESIGNED_URL_SUCCESS(HttpStatus.OK, "RESUME_200_1", "업로드용 Presigned URL을 발급했습니다."),
+    RESUME_UPLOAD_CONFIRM_SUCCESS(HttpStatus.CREATED, "RESUME_201_1", "이력서/자소서 파일을 저장했습니다."),
+    RESUME_LIST_SUCCESS(HttpStatus.OK, "RESUME_200_2", "이력서/자소서 파일 목록을 조회했습니다."),
+    RESUME_DELETE_SUCCESS(HttpStatus.OK, "RESUME_200_3", "이력서/자소서 파일을 삭제했습니다."),
+    RESUME_UPLOAD_UPDATE_SUCCESS(HttpStatus.OK, "RESUME_200_4", "이력서/자소서 파일을 갱신했습니다."),
+
+     /**
+      * Job
      */
     JOB_SAVE_SUCCESS(HttpStatus.CREATED, "JOB_201_1", "공고를 저장했습니다."),
     JOB_UNSAVE_SUCCESS(HttpStatus.OK, "JOB_200_1", "공고 저장을 취소했습니다.");
