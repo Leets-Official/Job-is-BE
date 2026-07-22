@@ -1,11 +1,12 @@
 package com.leets7th.job_is_be.domain.job.dto;
 
+import com.leets7th.job_is_be.domain.job.entity.Job;
 import lombok.Builder;
 import java.time.OffsetDateTime;
 import java.util.List;
 
 @Builder
-public record JobDetailResponse(
+public record JobDetailResponse (
         Long id,
         String companyName,
         String position,
@@ -28,4 +29,22 @@ public record JobDetailResponse(
 
         List<String> skillTags,
         String locationFull
-) {}
+) {
+    public static JobDetailResponse from(Job job) {
+        return JobDetailResponse.builder()
+                .id(job.getId())
+                .companyName(job.getCompany() != null ? job.getCompany().getName() : null)
+                .position(job.getTitle())
+                .careerLevel(job.getCareerLevel())
+                .employmentType(job.getEmploymentType())
+                .remoteAvailable(job.isRemoteAvailable())
+                .sourceUrl(job.getSourceUrl())
+                .dueTime(job.getDeadlineAt())
+                .mainTasks(job.getMainTasks())
+                .requirements(job.getRequirements())
+                .preferredPoints(job.getPreferredPoints())
+                .skillTags(job.getSkillTags())
+                .locationFull(job.getLocationFull())
+                .build();
+    }
+}
