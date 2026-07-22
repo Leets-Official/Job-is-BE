@@ -82,7 +82,7 @@ class ResumeServiceTest {
         when(presignedRequest.url()).thenReturn(URI.create("https://s3.example.com/upload").toURL());
         when(s3Presigner.presignPutObject(any(PutObjectPresignRequest.class))).thenReturn(presignedRequest);
 
-        PresignedUrlRequest request = new PresignedUrlRequest(ResumeCategory.RESUME, "resume.pdf", "application/pdf");
+        PresignedUrlRequest request = new PresignedUrlRequest(ResumeCategory.RESUME, "resume.pdf");
 
         PresignedUrlResponse response = resumeService.issuePresignedUrl(1L, request);
 
@@ -95,7 +95,7 @@ class ResumeServiceTest {
     void 지원하지_않는_확장자면_Presigned_URL_발급시_예외를_던진다() {
         resumeService = newService();
 
-        PresignedUrlRequest request = new PresignedUrlRequest(ResumeCategory.RESUME, "resume.exe", "application/octet-stream");
+        PresignedUrlRequest request = new PresignedUrlRequest(ResumeCategory.RESUME, "resume.exe");
 
         assertThatThrownBy(() -> resumeService.issuePresignedUrl(1L, request))
                 .isInstanceOf(GeneralException.class)

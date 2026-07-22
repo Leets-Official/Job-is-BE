@@ -6,7 +6,6 @@ import jakarta.validation.constraints.NotNull;
 
 public record PresignedUrlRequest(
         @NotNull ResumeCategory category,
-        @NotBlank String fileName,
-        @NotBlank String contentType
+        @NotBlank String fileName
 ) {
 }

@@ -56,13 +56,13 @@ public class ResumeService {
     }
 
     public PresignedUrlResponse issuePresignedUrl(Long userId, PresignedUrlRequest request) {
-        parseFileFormat(request.fileName()); // 확장자 검증 (PDF/DOCX/HWP/HWPX 아니면 예외)
+        ResumeFileFormat fileFormat = parseFileFormat(request.fileName()); // 확장자 검증 (PDF/DOCX/HWP/HWPX 아니면 예외)
         String objectKey = buildObjectKey(userId, request.category());
 
         PutObjectRequest objectRequest = PutObjectRequest.builder()
                 .bucket(awsS3Properties.bucket())
                 .key(objectKey)
-                .contentType(request.contentType())
+                .contentType(fileFormat.mimeType()) // 클라이언트 값 대신 확장자 기준 서버 매핑 MIME 사용
                 .build();
 
         PutObjectPresignRequest presignRequest = PutObjectPresignRequest.builder()
