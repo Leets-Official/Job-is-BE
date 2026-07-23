@@ -5,6 +5,7 @@ import com.leets7th.job_is_be.domain.deck.dto.DismissReasonRequest;
 import com.leets7th.job_is_be.domain.deck.service.CardService;
 import com.leets7th.job_is_be.global.response.ApiResponse;
 import com.leets7th.job_is_be.global.status.SuccessStatus;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -16,7 +17,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/decks")
@@ -50,7 +50,7 @@ public class CardController {
             @PathVariable Long deckId,
             @PathVariable Long cardId,
             @AuthenticationPrincipal Jwt jwt,
-            @RequestBody DismissReasonRequest request
+            @Valid @RequestBody DismissReasonRequest request
     ) {
         cardService.submitDismissReason(deckId, cardId, Long.valueOf(jwt.getSubject()), request);
         return ApiResponse.success(SuccessStatus.CARD_DISMISS_REASON_SUCCESS);

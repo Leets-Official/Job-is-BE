@@ -4,6 +4,7 @@ import com.leets7th.job_is_be.global.base.BaseStatus;
 import com.leets7th.job_is_be.global.response.ApiResponse;
 import com.leets7th.job_is_be.global.status.ErrorStatus;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
@@ -37,6 +38,14 @@ public class GeneralExceptionAdvice extends ResponseEntityExceptionHandler {
         String errorMessage = "잘못된 요청입니다: " + e.getMessage();
         log.error("[*] IllegalArgumentException :", e);
         return ApiResponse.error(ErrorStatus.BAD_REQUEST, errorMessage);
+    }
+
+    @ExceptionHandler(OptimisticLockingFailureException.class)
+    public ResponseEntity<ApiResponse<Void>> handleOptimisticLockingFailureException(
+            OptimisticLockingFailureException e
+    ) {
+        log.error("[*] OptimisticLockingFailureException : {}", e.getMessage());
+        return ApiResponse.error(ErrorStatus.CARD_STATE_CONFLICT);
     }
 
     @ExceptionHandler(NullPointerException.class)
