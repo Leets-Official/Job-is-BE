@@ -35,16 +35,20 @@ public class UserAction extends BaseEntity {
     @Column(name = "reason_code", length = 30)
     private String reasonCode; // 관심없음 사유 (DET-03): 직무불일치 등
 
+    @Column(length = 200)
+    private String comment; // 관심없음 사유 자유 코멘트 (DET-03), 최대 200자
+
     @Column(name = "source_screen", length = 20)
     private String sourceScreen; // 이벤트 발생 화면 ID (REC-03, EXP-03 등)
 
     @Builder
     public UserAction(User user, Job job, ActionType actionType, String reasonCode,
-                      String sourceScreen) {
+                      String comment, String sourceScreen) {
         this.user = user;
         this.job = job;
         this.actionType = actionType;
         this.reasonCode = reasonCode;
+        this.comment = comment;
         this.sourceScreen = sourceScreen;
     }
 }

@@ -13,7 +13,13 @@ import lombok.NoArgsConstructor;
  * 사용자 관심 직무/직군
  */
 @Entity
-@Table(name = "user_job_categories")
+@Table(
+        name = "user_job_categories",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_user_job_categories_user_category",
+                columnNames = {"user_id", "job_category_id"}
+        )
+)
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class UserJobCategory extends BaseEntity {

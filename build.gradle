@@ -25,6 +25,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
 	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.2'
 
 	// Lombok
@@ -33,6 +34,9 @@ dependencies {
 
 	// PostgreSQL
 	implementation 'org.postgresql:postgresql'
+
+	// AWS S3 (Presigned URL 업로드)
+	implementation 'software.amazon.awssdk:s3'
 
 	implementation 'org.springframework.boot:spring-boot-starter-cache'
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
@@ -49,6 +53,9 @@ dependencies {
 	annotationProcessor "com.querydsl:querydsl-apt:5.1.0:jakarta"
 	annotationProcessor "jakarta.annotation:jakarta.annotation-api"
 	annotationProcessor "jakarta.persistence:jakarta.persistence-api"
+
+	// JSONL 파일 파싱을 위해 사용한 ObjectMapper용 Jackson 라이브러리
+	implementation 'org.springframework.boot:spring-boot-starter-web'
 }
 
 tasks.named('test') {

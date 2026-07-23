@@ -13,7 +13,13 @@ import lombok.NoArgsConstructor;
  * 사용자 희망 지역
  */
 @Entity
-@Table(name = "user_regions")
+@Table(
+        name = "user_regions",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_user_regions_user",
+                columnNames = "user_id"
+        )
+)
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class UserRegion extends BaseEntity {

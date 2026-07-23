@@ -22,12 +22,23 @@ public enum SuccessStatus implements BaseStatus {
     DEV_LOGIN_SUCCESS(HttpStatus.OK, "AUTH_200_5", "개발자 전용 로그인에 성공했습니다."),
     OAUTH_EXCHANGE_SUCCESS(HttpStatus.OK, "AUTH_200_6", "로그인 토큰 교환에 성공했습니다."),
 
+    /**
+     * Profile
+     */
+    PROFILE_GET_SUCCESS(HttpStatus.OK, "PROFILE_200_1", "프로필을 조회했습니다."),
+    PROFILE_UPDATE_SUCCESS(HttpStatus.OK, "PROFILE_200_2", "프로필을 수정했습니다."),
+    PROFILE_DRAFT_GET_SUCCESS(HttpStatus.OK, "PROFILE_200_3", "온보딩 임시저장을 조회했습니다."),
+    PROFILE_DRAFT_SAVE_SUCCESS(HttpStatus.OK, "PROFILE_200_4", "온보딩 내용을 임시저장했습니다."),
+    PROFILE_ONBOARDING_COMPLETE_SUCCESS(HttpStatus.OK, "PROFILE_200_5", "온보딩을 완료했습니다."),
+
 
     /**
      * Deck
      */
-    DECK_CARDS_SUCCESS(HttpStatus.OK, "DECK_200", "덱의 카드들을 조회했습니다."),
     DECK_GENERATE_SUCCESS(HttpStatus.OK, "DECK_200_2", "오늘의 추천 덱을 생성했습니다."),
+    CARD_DISMISS_SUCCESS(HttpStatus.OK, "DECK_200_3", "카드를 관심없음으로 처리했습니다."),
+    CARD_DISMISS_CANCEL_SUCCESS(HttpStatus.OK, "DECK_200_4", "카드의 관심없음 처리를 취소했습니다."),
+    CARD_DISMISS_REASON_SUCCESS(HttpStatus.OK, "DECK_200_5", "관심없음 사유를 제출했습니다."),
 
     /**
      * Briefing
@@ -36,7 +47,16 @@ public enum SuccessStatus implements BaseStatus {
     BRIEFING_STATUS_SUCCESS(HttpStatus.OK, "BRIEFING_200_2", "오늘의 브리핑 덱 카드 목록을 조회했습니다."),
 
     /**
-     * Job
+     * Resume (이력서/자소서 파일)
+     */
+    RESUME_PRESIGNED_URL_SUCCESS(HttpStatus.OK, "RESUME_200_1", "업로드용 Presigned URL을 발급했습니다."),
+    RESUME_UPLOAD_CONFIRM_SUCCESS(HttpStatus.CREATED, "RESUME_201_1", "이력서/자소서 파일을 저장했습니다."),
+    RESUME_LIST_SUCCESS(HttpStatus.OK, "RESUME_200_2", "이력서/자소서 파일 목록을 조회했습니다."),
+    RESUME_DELETE_SUCCESS(HttpStatus.OK, "RESUME_200_3", "이력서/자소서 파일을 삭제했습니다."),
+    RESUME_UPLOAD_UPDATE_SUCCESS(HttpStatus.OK, "RESUME_200_4", "이력서/자소서 파일을 갱신했습니다."),
+
+     /**
+      * Job
      */
     JOB_SAVE_SUCCESS(HttpStatus.CREATED, "JOB_201_1", "공고를 저장했습니다."),
     JOB_UNSAVE_SUCCESS(HttpStatus.OK, "JOB_200_1", "공고 저장을 취소했습니다.");

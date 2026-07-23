@@ -84,7 +84,7 @@ public class BriefingService {
         Deck deck = deckRepository.findByUserIdAndDeckDate(userId, OffsetDateTime.now().toLocalDate())
                 .orElseThrow(() -> new GeneralException(ErrorStatus.DECK_NOT_FOUND));
 
-        return cardService.getDeckCards(deck.getId());
+        return cardService.getDeckCards(deck.getId(), userId);
     }
 
     // 시간대 별 인사문구 추출
