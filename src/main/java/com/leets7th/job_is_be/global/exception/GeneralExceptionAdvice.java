@@ -45,7 +45,7 @@ public class GeneralExceptionAdvice extends ResponseEntityExceptionHandler {
             OptimisticLockingFailureException e
     ) {
         log.error("[*] OptimisticLockingFailureException : {}", e.getMessage());
-        return ApiResponse.error(ErrorStatus.CARD_STATE_CONFLICT);
+        return ApiResponse.error(ErrorStatus.CONFLICT);
     }
 
     @ExceptionHandler(NullPointerException.class)
