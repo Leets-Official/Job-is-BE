@@ -1,6 +1,5 @@
 package com.leets7th.job_is_be.domain.job.entity;
 
-
 import com.leets7th.job_is_be.domain.job.enums.JobStatus;
 import com.leets7th.job_is_be.global.base.BaseEntity;
 import jakarta.persistence.*;
@@ -8,8 +7,11 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 
 /**
  * 채용 공고
@@ -36,7 +38,7 @@ public class Job extends BaseEntity {
     @JoinColumn(name = "region_id")
     private Region region;
 
-    @Column(nullable = false, length = 255)
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String title;
 
     @Column(name = "career_level", length = 30)
@@ -57,7 +59,7 @@ public class Job extends BaseEntity {
     @Column(name = "external_id")
     private Long externalId; // 원문 출처 내 공고 id. (source, externalId)로 크롤링 동기화 시 upsert 매칭
 
-    @Column(name = "source_url", length = 500)
+    @Column(name = "source_url", columnDefinition = "TEXT")
     private String sourceUrl;
 
     @Column(name = "posted_at")
@@ -73,11 +75,58 @@ public class Job extends BaseEntity {
     @Column(name = "editor_note", length = 1000)
     private String editorNote; // Editor's Note (DET-01)
 
+    @Column(name = "location_full", columnDefinition = "TEXT")
+    private String locationFull;
+
+    @Column(columnDefinition = "TEXT")
+    private String intro; // 팀/회사 소개
+
+    @Column(name = "main_tasks", columnDefinition = "TEXT")
+    private String mainTasks; // 담당업무
+
+    @Column(columnDefinition = "TEXT")
+    private String requirements; // 자격요건
+
+    @Column(name = "preferred_points", columnDefinition = "TEXT")
+    private String preferredPoints; // 우대사항
+
+    @Column(columnDefinition = "TEXT")
+    private String benefits; // 복지/문화
+
+    @Column(name = "career_min")
+    private Integer careerMin; // 경력 최소 연수
+
+    @Column(name = "career_max")
+    private Integer careerMax; // 경력 최대 연수
+
+    @Column(name = "reward_total")
+    private String rewardTotal; // 추천 보상금
+
+    @Column(name = "thumbnail_url", columnDefinition = "TEXT")
+    private String thumbnailUrl; // 카드 썸네일 URL
+
+    @Column(name = "skills", columnDefinition = "TEXT")
+    private String skills;
+
+    @Column(name = "categories", columnDefinition = "TEXT")
+    private String categories;
+
+    @JdbcTypeCode(SqlTypes.ARRAY)
+    @Column(name = "skill_tags")
+    private List<String> skillTags;
+
+    @Column(name = "skills_inferred")
+    private Boolean skillsInferred;
+
     @Builder
     public Job(Company company, JobCategory jobCategory, Region region, String title,
                String careerLevel, String employmentType, boolean remoteAvailable,
                boolean salaryDisclosed, String source, Long externalId, String sourceUrl,
-               OffsetDateTime postedAt, OffsetDateTime deadlineAt, String editorNote) {
+               OffsetDateTime postedAt, OffsetDateTime deadlineAt, String editorNote,
+               String locationFull, String intro, String mainTasks, String requirements,
+               String preferredPoints, String benefits, Integer careerMin, Integer careerMax,
+               String rewardTotal, String thumbnailUrl, String skills, String categories,
+               List<String> skillTags, Boolean skillsInferred) {
         this.company = company;
         this.jobCategory = jobCategory;
         this.region = region;
@@ -92,6 +141,20 @@ public class Job extends BaseEntity {
         this.postedAt = postedAt;
         this.deadlineAt = deadlineAt;
         this.editorNote = editorNote;
+        this.locationFull = locationFull;
+        this.intro = intro;
+        this.mainTasks = mainTasks;
+        this.requirements = requirements;
+        this.preferredPoints = preferredPoints;
+        this.benefits = benefits;
+        this.careerMin = careerMin;
+        this.careerMax = careerMax;
+        this.rewardTotal = rewardTotal;
+        this.thumbnailUrl = thumbnailUrl;
+        this.skills = skills;
+        this.categories = categories;
+        this.skillTags = skillTags;
+        this.skillsInferred = skillsInferred;
         this.status = JobStatus.ACTIVE;
     }
 
@@ -109,8 +172,10 @@ public class Job extends BaseEntity {
 
     // 크롤링 재수집 시 (source, externalId)로 매칭된 기존 공고에 최신 원문 내용을 반영
     public void syncFrom(Company company, String title, String careerLevel, String employmentType,
-                          boolean remoteAvailable, String sourceUrl,
-                          OffsetDateTime postedAt, OffsetDateTime deadlineAt, JobStatus status) {
+                         boolean remoteAvailable, String sourceUrl,
+                         OffsetDateTime postedAt, OffsetDateTime deadlineAt, JobStatus status,
+                         String locationFull, String mainTasks, String requirements,
+                         String preferredPoints, List<String> skillTags, Boolean skillsInferred) {
         this.company = company;
         this.title = title;
         this.careerLevel = careerLevel;
@@ -120,5 +185,11 @@ public class Job extends BaseEntity {
         this.postedAt = postedAt;
         this.deadlineAt = deadlineAt;
         this.status = status;
+        this.locationFull = locationFull;
+        this.mainTasks = mainTasks;
+        this.requirements = requirements;
+        this.preferredPoints = preferredPoints;
+        this.skillTags = skillTags;
+        this.skillsInferred = skillsInferred;
     }
 }

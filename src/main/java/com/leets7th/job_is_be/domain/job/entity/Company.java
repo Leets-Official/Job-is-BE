@@ -1,5 +1,6 @@
 package com.leets7th.job_is_be.domain.job.entity;
 
+import com.leets7th.job_is_be.global.base.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -20,7 +21,7 @@ import java.time.OffsetDateTime;
 @Table(name = "companies")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Company {
+public class Company extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -59,7 +60,13 @@ public class Company {
     @Column(length = 500)
     private String homepage;
 
-    @Column(length = 2000)
+    @Column(name = "source", length = 50)
+    private String source;
+
+    @Column(name = "logo_url", length = 500)
+    private String logoUrl;
+
+    @Column(columnDefinition = "TEXT") // erd 규격 많이 어기는데, 1000자 넘기면 자르는 걸로 바꿀까요?
     private String description;
 
     @Column(name = "enrichment_status", length = 50)
@@ -83,7 +90,7 @@ public class Company {
                    Long wantedCompanyId, Long jobkoreaGnoRef, Integer employeeCount, String companyType,
                    String industry, String stockStatus, String hqAddress, String homepage,
                    String description, String enrichmentStatus, Boolean nameMatch, String rejectedName,
-                   OffsetDateTime enrichedAt, String rawJobkorea) {
+                   OffsetDateTime enrichedAt, String rawJobkorea, String source, String logoUrl) {
         this.name = name;
         this.normalizedName = normalizedName;
         this.registrationNumber = registrationNumber;
@@ -101,5 +108,21 @@ public class Company {
         this.rejectedName = rejectedName;
         this.enrichedAt = enrichedAt;
         this.rawJobkorea = rawJobkorea;
+        this.source = source;
+        this.logoUrl = logoUrl;
+        this.name = name;
+        this.normalizedName = normalizedName;
+        this.registrationNumber = registrationNumber;
+        this.companyType = companyType;
+        this.industry = industry;
+        this.stockStatus = stockStatus;
+        this.hqAddress = hqAddress;
+        this.homepage = homepage;
+        this.description = description;
+        this.enrichmentStatus = enrichmentStatus;
+        this.rejectedName = rejectedName;
+        this.rawJobkorea = rawJobkorea;
+        this.source = source;
+        this.logoUrl = logoUrl;
     }
 }

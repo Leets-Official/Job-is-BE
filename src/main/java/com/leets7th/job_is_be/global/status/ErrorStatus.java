@@ -43,6 +43,20 @@ public enum ErrorStatus implements BaseStatus {
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER_404_1", "사용자를 찾을 수 없습니다."),
 
     /**
+     * Profile
+     */
+    PROFILE_ONBOARDING_STEP_REQUIRED(HttpStatus.BAD_REQUEST, "PROFILE_400_1", "온보딩 진행 단계가 필요합니다."),
+    PROFILE_JOB_CATEGORY_COUNT_INVALID(HttpStatus.BAD_REQUEST, "PROFILE_400_2", "관심 직무는 중복 없이 최대 3개까지 선택할 수 있습니다."),
+    PROFILE_PRIMARY_JOB_CATEGORY_INVALID(HttpStatus.BAD_REQUEST, "PROFILE_400_3", "대표 관심 직무는 선택한 관심 직무에 포함되어야 합니다."),
+    PROFILE_VALUE_TOO_LONG(HttpStatus.BAD_REQUEST, "PROFILE_400_4", "프로필 입력값이 허용 길이를 초과했습니다."),
+    PROFILE_REQUIRED_FIELDS_MISSING(HttpStatus.BAD_REQUEST, "PROFILE_400_5", "온보딩 완료에 필요한 프로필 항목을 입력해 주세요."),
+    PROFILE_NOT_FOUND(HttpStatus.NOT_FOUND, "PROFILE_404_1", "완료된 프로필을 찾을 수 없습니다."),
+    PROFILE_JOB_CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "PROFILE_404_2", "선택한 관심 직무를 찾을 수 없습니다."),
+    PROFILE_REGION_NOT_FOUND(HttpStatus.NOT_FOUND, "PROFILE_404_3", "선택한 희망 지역을 찾을 수 없습니다."),
+    PROFILE_ALREADY_COMPLETED(HttpStatus.CONFLICT, "PROFILE_409_1", "이미 온보딩을 완료한 프로필입니다."),
+    PROFILE_ONBOARDING_NOT_READY(HttpStatus.CONFLICT, "PROFILE_409_2", "온보딩 확인 단계에서 완료할 수 있습니다."),
+
+    /**
      * Deck
      */
     DECK_NOT_FOUND(HttpStatus.NOT_FOUND, "DECK_404_1", "덱을 찾을 수 없습니다."),
@@ -50,7 +64,23 @@ public enum ErrorStatus implements BaseStatus {
     CARD_NOT_DISMISSED(HttpStatus.BAD_REQUEST, "DECK_400_1", "관심없음 처리되지 않은 카드입니다."),
     CARD_ALREADY_DISMISSED(HttpStatus.BAD_REQUEST, "DECK_400_2", "이미 관심없음 처리된 카드입니다."),
     CARD_DISMISS_REASON_ALREADY_SUBMITTED(HttpStatus.BAD_REQUEST, "DECK_400_3", "이미 관심없음 사유를 제출한 카드입니다."),
-    CARD_STATE_CONFLICT(HttpStatus.CONFLICT, "DECK_409_1", "다른 요청에 의해 카드 상태가 변경되었습니다. 다시 시도해 주세요.");
+    CARD_STATE_CONFLICT(HttpStatus.CONFLICT, "DECK_409_1", "다른 요청에 의해 카드 상태가 변경되었습니다. 다시 시도해 주세요."),
+
+    /**
+     * Resume (이력서/자소서 파일)
+     */
+    RESUME_INVALID_FILE_FORMAT(HttpStatus.BAD_REQUEST, "RESUME_400_1", "지원하지 않는 파일 형식입니다. (PDF, DOCX, HWP, HWPX만 업로드 가능합니다)"),
+    RESUME_OBJECT_KEY_MISMATCH(HttpStatus.BAD_REQUEST, "RESUME_400_2", "발급받은 업로드 경로와 일치하지 않습니다."),
+    RESUME_UPLOAD_NOT_FOUND(HttpStatus.BAD_REQUEST, "RESUME_400_3", "S3에 업로드된 파일을 찾을 수 없습니다."),
+    RESUME_FILE_TOO_LARGE(HttpStatus.PAYLOAD_TOO_LARGE, "RESUME_413_1", "파일 용량은 10MB를 초과할 수 없습니다."),
+    RESUME_NOT_FOUND(HttpStatus.NOT_FOUND, "RESUME_404_1", "이력서/자소서 파일을 찾을 수 없습니다."),
+
+    /**
+     * Job
+     */
+    JOB_NOT_FOUND(HttpStatus.NOT_FOUND, "JOB_404_1", "공고를 찾을 수 없습니다."),
+    JOB_ALREADY_SAVED(HttpStatus.CONFLICT, "JOB_409_1", "이미 저장된 공고입니다."),
+    JOB_NOT_SAVED(HttpStatus.NOT_FOUND, "JOB_404_2", "저장되지 않은 공고입니다.");
 
     private final HttpStatus httpStatus;
     private final String code;

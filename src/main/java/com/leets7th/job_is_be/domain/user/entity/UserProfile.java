@@ -2,6 +2,7 @@ package com.leets7th.job_is_be.domain.user.entity;
 
 
 import com.leets7th.job_is_be.domain.user.enums.CareerLevel;
+import com.leets7th.job_is_be.domain.user.enums.OnboardingStep;
 import com.leets7th.job_is_be.global.base.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -31,8 +32,12 @@ public class UserProfile extends BaseEntity {
     private User user;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "career_level", nullable = false, length = 20)
+    @Column(name = "career_level", length = 20)
     private CareerLevel careerLevel;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "onboarding_step", length = 20)
+    private OnboardingStep onboardingStep;
 
     @Column(name = "preference_note", length = 500)
     private String preferenceNote; // 선호 조건 텍스트 (재택 우선 등)
@@ -46,20 +51,23 @@ public class UserProfile extends BaseEntity {
     @Column(name = "is_job_test_completed", nullable = false)
     private boolean jobTestCompleted;
 
+    // TODO: LocalDateTime → OffsetDateTime으로 통일 필요 (BaseEntity와 타입 불일치)
     @Column(name = "job_test_completed_at")
     private LocalDateTime jobTestCompletedAt;
 
     @Column(name = "onboarding_completed", nullable = false)
     private boolean onboardingCompleted;
 
+    // TODO: LocalDateTime → OffsetDateTime으로 통일 필요 (BaseEntity와 타입 불일치)
     @Column(name = "onboarding_completed_at")
     private LocalDateTime onboardingCompletedAt;
 
     @Builder
-    public UserProfile(User user, CareerLevel careerLevel, String preferenceNote,
-                       String excludeKeywords, String techStack) {
+    public UserProfile(User user, CareerLevel careerLevel, OnboardingStep onboardingStep,
+                       String preferenceNote, String excludeKeywords, String techStack) {
         this.user = user;
         this.careerLevel = careerLevel;
+        this.onboardingStep = onboardingStep;
         this.preferenceNote = preferenceNote;
         this.excludeKeywords = excludeKeywords;
         this.techStack = techStack;
@@ -70,6 +78,36 @@ public class UserProfile extends BaseEntity {
     public void completeOnboarding(LocalDateTime now) {
         this.onboardingCompleted = true;
         this.onboardingCompletedAt = now;
+    }
+
+    public void updateDraft(
+            CareerLevel careerLevel,
+            OnboardingStep onboardingStep,
+            String preferenceNote,
+            String excludeKeywords,
+            String techStack
+    ) {
+        this.careerLevel = careerLevel;
+        this.onboardingStep = onboardingStep;
+        this.preferenceNote = preferenceNote;
+        this.excludeKeywords = excludeKeywords;
+        this.techStack = techStack;
+    }
+
+    public void updateProfile(
+            CareerLevel careerLevel,
+            String preferenceNote,
+            String excludeKeywords,
+            String techStack
+    ) {
+        this.careerLevel = careerLevel;
+        this.preferenceNote = preferenceNote;
+        this.excludeKeywords = excludeKeywords;
+        this.techStack = techStack;
+    }
+
+    public void moveOnboardingStep(OnboardingStep onboardingStep) {
+        this.onboardingStep = onboardingStep;
     }
 
     public void completeJobTest(LocalDateTime now) {
