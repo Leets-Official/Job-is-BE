@@ -15,6 +15,7 @@ import com.leets7th.job_is_be.domain.job.repository.JobPostingRepository;
 import com.leets7th.job_is_be.global.exception.GeneralException;
 import com.leets7th.job_is_be.global.status.ErrorStatus;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -95,10 +96,16 @@ public class CardService {
                 .user(card.getDeck().getUser())
                 .job(card.getJob())
                 .actionType(ActionType.DISMISSED)
-                .reasonCode(request.reasonCode())
+                .reasonCode(request.reason())
                 .comment(request.comment())
                 .build());
-        card.markReasonSubmitted();
+        try {
+            card.markReasonSubmitted();
+            cardRepository.saveAndFlush(card);
+        } catch (OptimisticLockingFailureException e) {
+            // 동시 요청이 먼저 사유를 제출해 version이 이미 바뀐 경우: 이미 제출된 것으로 간주
+            throw new GeneralException(ErrorStatus.CARD_DISMISS_REASON_ALREADY_SUBMITTED);
+        }
     }
 
     private Card getCardInDeck(Long deckId, Long cardId, Long userId) {

@@ -50,6 +50,9 @@ public class Card extends BaseEntity {
     @Column(name = "reason_submitted", nullable = false)
     private boolean reasonSubmitted; // 관심없음 사유 제출 여부 (DET-03), 관심없음 사이클마다 초기화
 
+    @Version
+    private Long version; // 동시 관심없음/사유제출 요청 시 상태 검사-전환을 원자적으로 보호하기 위한 낙관적 락
+
     @Builder
     public Card(Deck deck, Job job, Integer position, BigDecimal fitScore, String reason, String summary) {
         this.deck = deck;
