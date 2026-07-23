@@ -1,21 +1,27 @@
 package com.leets7th.job_is_be.domain.deck.service;
 
 import com.leets7th.job_is_be.domain.deck.dto.CardResponse;
+import com.leets7th.job_is_be.domain.deck.dto.DismissReasonRequest;
 import com.leets7th.job_is_be.domain.deck.entity.Card;
 import com.leets7th.job_is_be.domain.deck.entity.Deck;
 import com.leets7th.job_is_be.domain.deck.repository.CardRepository;
 import com.leets7th.job_is_be.domain.deck.repository.DeckRepository;
+import com.leets7th.job_is_be.domain.deck.repository.UserActionRepository;
 import com.leets7th.job_is_be.domain.job.entity.Job;
 import com.leets7th.job_is_be.domain.job.entity.JobPosting;
 import com.leets7th.job_is_be.domain.job.repository.JobPostingRepository;
+import com.leets7th.job_is_be.domain.user.entity.User;
+import com.leets7th.job_is_be.domain.user.enums.SocialType;
 import com.leets7th.job_is_be.global.exception.GeneralException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -32,21 +38,26 @@ class CardServiceTest {
     private CardRepository cardRepository;
     @Mock
     private JobPostingRepository jobPostingRepository;
+    @Mock
+    private UserActionRepository userActionRepository;
 
     @InjectMocks
     private CardService cardService;
 
     @Test
     void 덱이_없으면_예외를_던진다() {
-        when(deckRepository.existsById(1L)).thenReturn(false);
+        when(deckRepository.findById(1L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> cardService.getDeckCards(1L))
+        assertThatThrownBy(() -> cardService.getDeckCards(1L, 1L))
                 .isInstanceOf(GeneralException.class);
     }
 
     @Test
     void 덱의_카드_목록을_추천_이유와_함께_반환한다() {
-        when(deckRepository.existsById(1L)).thenReturn(true);
+        User user = User.builder().socialId("s").socialType(SocialType.KAKAO).email("a@a.com").build();
+        ReflectionTestUtils.setField(user, "id", 1L);
+        Deck deck = Deck.builder().user(user).deckDate(LocalDate.now()).build();
+        when(deckRepository.findById(1L)).thenReturn(Optional.of(deck));
 
         Job job = Job.builder()
                 .title("백엔드 엔지니어 채용")
@@ -71,7 +82,7 @@ class CardServiceTest {
         when(jobPostingRepository.findFirstBySourceAndExternalIdOrderByCollectedAtDesc("wanted", 10L))
                 .thenReturn(Optional.of(posting));
 
-        List<CardResponse> response = cardService.getDeckCards(1L);
+        List<CardResponse> response = cardService.getDeckCards(1L, 1L);
 
         assertThat(response).hasSize(1);
         assertThat(response.get(0).jobTitle()).isEqualTo("백엔드 엔지니어 채용");
@@ -79,5 +90,53 @@ class CardServiceTest {
         assertThat(response.get(0).summary()).isEqualTo("백엔드, 3년 이상, 서울");
         assertThat(response.get(0).techStack()).containsExactly("Java", "Spring");
         assertThat(response.get(0).tags()).containsExactly("신입", "연봉 비공개");
+    }
+
+    @Test
+    void 이미_관심없음_처리된_카드를_다시_관심없음_처리하면_예외를_던진다() {
+        User user = User.builder().socialId("s").socialType(SocialType.KAKAO).email("a@a.com").build();
+        ReflectionTestUtils.setField(user, "id", 1L);
+        Deck deck = Deck.builder().user(user).deckDate(LocalDate.now()).build();
+        ReflectionTestUtils.setField(deck, "id", 1L);
+        Card card = Card.builder().position(1).build();
+        ReflectionTestUtils.setField(card, "deck", deck);
+        ReflectionTestUtils.setField(card, "id", 1L);
+        card.dismiss();
+        when(cardRepository.findById(1L)).thenReturn(Optional.of(card));
+
+        assertThatThrownBy(() -> cardService.dismissCard(1L, 1L, 1L))
+                .isInstanceOf(GeneralException.class);
+    }
+
+    @Test
+    void 관심없음_처리되지_않은_카드의_관심없음을_취소하면_예외를_던진다() {
+        User user = User.builder().socialId("s").socialType(SocialType.KAKAO).email("a@a.com").build();
+        ReflectionTestUtils.setField(user, "id", 1L);
+        Deck deck = Deck.builder().user(user).deckDate(LocalDate.now()).build();
+        ReflectionTestUtils.setField(deck, "id", 1L);
+        Card card = Card.builder().position(1).build();
+        ReflectionTestUtils.setField(card, "deck", deck);
+        ReflectionTestUtils.setField(card, "id", 1L);
+        when(cardRepository.findById(1L)).thenReturn(Optional.of(card));
+
+        assertThatThrownBy(() -> cardService.undismissCard(1L, 1L, 1L))
+                .isInstanceOf(GeneralException.class);
+    }
+
+    @Test
+    void 이미_관심없음_사유를_제출한_카드에_다시_사유를_제출하면_예외를_던진다() {
+        User user = User.builder().socialId("s").socialType(SocialType.KAKAO).email("a@a.com").build();
+        ReflectionTestUtils.setField(user, "id", 1L);
+        Deck deck = Deck.builder().user(user).deckDate(LocalDate.now()).build();
+        ReflectionTestUtils.setField(deck, "id", 1L);
+        Card card = Card.builder().position(1).build();
+        ReflectionTestUtils.setField(card, "deck", deck);
+        ReflectionTestUtils.setField(card, "id", 1L);
+        card.dismiss();
+        card.markReasonSubmitted();
+        when(cardRepository.findById(1L)).thenReturn(Optional.of(card));
+
+        assertThatThrownBy(() -> cardService.submitDismissReason(1L, 1L, 1L, new DismissReasonRequest("직무불일치", null)))
+                .isInstanceOf(GeneralException.class);
     }
 }

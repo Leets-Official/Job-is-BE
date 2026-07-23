@@ -20,6 +20,7 @@ public enum ErrorStatus implements BaseStatus {
     FORBIDDEN(HttpStatus.FORBIDDEN, "COMM_403", "접근 권한이 없습니다."),
     NOT_FOUND(HttpStatus.NOT_FOUND, "COMM_404", "요청한 자원을 찾을 수 없습니다."),
     METHOD_NOT_ALLOWED(HttpStatus.METHOD_NOT_ALLOWED, "COMM_405", "허용되지 않은 메소드입니다."),
+    CONFLICT(HttpStatus.CONFLICT, "COMM_409", "다른 요청과 충돌했습니다. 다시 시도해 주세요."),
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "COMM_500", "서버 내부 오류입니다."),
 
     /**
@@ -60,6 +61,10 @@ public enum ErrorStatus implements BaseStatus {
      * Deck
      */
     DECK_NOT_FOUND(HttpStatus.NOT_FOUND, "DECK_404_1", "덱을 찾을 수 없습니다."),
+    CARD_NOT_FOUND(HttpStatus.NOT_FOUND, "DECK_404_2", "카드를 찾을 수 없습니다."),
+    CARD_NOT_DISMISSED(HttpStatus.BAD_REQUEST, "DECK_400_1", "관심없음 처리되지 않은 카드입니다."),
+    CARD_ALREADY_DISMISSED(HttpStatus.BAD_REQUEST, "DECK_400_2", "이미 관심없음 처리된 카드입니다."),
+    CARD_DISMISS_REASON_ALREADY_SUBMITTED(HttpStatus.BAD_REQUEST, "DECK_400_3", "이미 관심없음 사유를 제출한 카드입니다."),
 
     /**
      * Resume (이력서/자소서 파일)
@@ -69,6 +74,7 @@ public enum ErrorStatus implements BaseStatus {
     RESUME_UPLOAD_NOT_FOUND(HttpStatus.BAD_REQUEST, "RESUME_400_3", "S3에 업로드된 파일을 찾을 수 없습니다."),
     RESUME_FILE_TOO_LARGE(HttpStatus.PAYLOAD_TOO_LARGE, "RESUME_413_1", "파일 용량은 10MB를 초과할 수 없습니다."),
     RESUME_NOT_FOUND(HttpStatus.NOT_FOUND, "RESUME_404_1", "이력서/자소서 파일을 찾을 수 없습니다."),
+
     /**
      * Job
      */

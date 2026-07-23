@@ -26,6 +26,7 @@ docker run -d --name jobis-pg -e POSTGRES_PASSWORD=jobis -e POSTGRES_USER=jobis 
   -e POSTGRES_DB=jobis -p 127.0.0.1:5432:5432 postgres:16
 
 export DATABASE_URL="postgresql://jobis:jobis@127.0.0.1:5432/jobis"
+# set DATABASE_URL=postgresql://postgres:1234@localhost:5432/jobisbe
 
 # 2) 스키마 생성 + 적재 (한 번에)
 python load.py --dir data --schema schema.sql --init

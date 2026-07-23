@@ -53,7 +53,7 @@ public class RecommendationService {
             fillWithPlaceholderCards(deck);
         }
 
-        return cardService.getDeckCards(deck.getId());
+        return cardService.getDeckCards(deck.getId(), userId);
     }
 
     private void fillWithPlaceholderCards(Deck deck) {

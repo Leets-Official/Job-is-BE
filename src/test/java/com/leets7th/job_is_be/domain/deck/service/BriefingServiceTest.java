@@ -119,7 +119,7 @@ class BriefingServiceTest {
 
         CardResponse card = new CardResponse(1L, 2L, null, "주니어 백엔드 엔지니어", "추천 이유", null,
                 List.of("Java"), "클라우드 데이터 플랫폼", "서울", List.of("신입"), null, "요약", 1, null);
-        when(cardService.getDeckCards(deck.getId())).thenReturn(List.of(card));
+        when(cardService.getDeckCards(deck.getId(), 1L)).thenReturn(List.of(card));
 
         List<CardResponse> response = briefingService.getTodayBriefingStatus(1L);
 
