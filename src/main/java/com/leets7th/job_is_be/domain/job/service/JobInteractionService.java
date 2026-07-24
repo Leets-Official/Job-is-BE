@@ -91,7 +91,12 @@ public class JobInteractionService {
             record(userId, job, ActionType.APPLY_INTENT_CLICKED);
             applyIntent = true;
         } else {
-            applyIntent = has(userId, jobId, ActionType.APPLY_INTENT_CLICKED);
+            userActionRepository.deleteByUserIdAndJobIdAndActionType(
+                    userId,
+                    jobId,
+                    ActionType.APPLY_INTENT_CLICKED
+            );
+            applyIntent = false;
         }
 
         boolean viewed = has(userId, jobId, ActionType.VIEWED);
