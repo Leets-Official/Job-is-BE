@@ -1,6 +1,7 @@
 package com.leets7th.job_is_be.domain.notification.controller;
 
 import com.leets7th.job_is_be.domain.notification.dto.NotificationSettingResponse;
+import com.leets7th.job_is_be.domain.notification.dto.NotificationSettingUpdateRequest;
 import com.leets7th.job_is_be.domain.notification.service.NotificationSettingService;
 import com.leets7th.job_is_be.global.response.ApiResponse;
 import com.leets7th.job_is_be.global.status.SuccessStatus;
@@ -9,6 +10,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -26,6 +29,17 @@ public class NotificationSettingController {
         return ApiResponse.success(
                 SuccessStatus.NOTIFICATION_SETTING_GET_SUCCESS,
                 notificationSettingService.getSetting(userId(jwt))
+        );
+    }
+
+    @PatchMapping
+    public ResponseEntity<ApiResponse<NotificationSettingResponse>> updateSetting(
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestBody NotificationSettingUpdateRequest request
+    ) {
+        return ApiResponse.success(
+                SuccessStatus.NOTIFICATION_SETTING_UPDATE_SUCCESS,
+                notificationSettingService.updateSetting(userId(jwt), request)
         );
     }
 

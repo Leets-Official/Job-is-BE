@@ -1,6 +1,7 @@
 package com.leets7th.job_is_be.domain.notification.service;
 
 import com.leets7th.job_is_be.domain.notification.dto.NotificationSettingResponse;
+import com.leets7th.job_is_be.domain.notification.dto.NotificationSettingUpdateRequest;
 import com.leets7th.job_is_be.domain.notification.entity.NotificationSetting;
 import com.leets7th.job_is_be.domain.notification.repository.NotificationSettingRepository;
 import com.leets7th.job_is_be.domain.user.entity.User;
@@ -60,5 +61,33 @@ class NotificationSettingServiceTest {
         assertThat(response.briefingEnabled()).isTrue();
         assertThat(response.marketingSubscribed()).isFalse();
         assertThat(response.snooze().snoozed()).isFalse();
+    }
+
+    @Test
+    void 허용되지_않은_슬롯으로_변경하면_예외를_던진다() {
+        User user = user();
+        NotificationSetting setting = NotificationSetting.builder().user(user).sendSlot("07:30").build();
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(notificationSettingRepository.findByUser(user)).thenReturn(Optional.of(setting));
+
+        NotificationSettingUpdateRequest request = new NotificationSettingUpdateRequest(null, "09:00", null);
+
+        assertThatThrownBy(() -> notificationSettingService.updateSetting(1L, request))
+                .isInstanceOf(GeneralException.class);
+    }
+
+    @Test
+    void 수신_설정을_변경한다() {
+        User user = user();
+        NotificationSetting setting = NotificationSetting.builder().user(user).sendSlot("07:30").build();
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(notificationSettingRepository.findByUser(user)).thenReturn(Optional.of(setting));
+
+        NotificationSettingUpdateRequest request = new NotificationSettingUpdateRequest(false, "12:30", true);
+        NotificationSettingResponse response = notificationSettingService.updateSetting(1L, request);
+
+        assertThat(response.briefingEnabled()).isFalse();
+        assertThat(response.sendSlot()).isEqualTo("12:30");
+        assertThat(response.marketingSubscribed()).isTrue();
     }
 }
