@@ -133,4 +133,18 @@ class NotificationSettingServiceTest {
         assertThat(setting.isSnoozeIndefinite()).isFalse();
         assertThat(setting.getSnoozeUntil()).isEqualTo(LocalDate.now().plusDays(30));
     }
+
+    @Test
+    void 스누즈를_해제하면_즉시_재개된다() {
+        User user = user();
+        NotificationSetting setting = NotificationSetting.builder().user(user).sendSlot("07:30").build();
+        setting.snooze(LocalDate.now().plusDays(7));
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(notificationSettingRepository.findByUser(user)).thenReturn(Optional.of(setting));
+
+        notificationSettingService.cancelSnooze(1L);
+
+        assertThat(setting.getSnoozeUntil()).isNull();
+        assertThat(setting.isSnoozeIndefinite()).isFalse();
+    }
 }

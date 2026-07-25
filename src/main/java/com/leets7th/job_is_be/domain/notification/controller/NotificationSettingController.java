@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -52,6 +53,14 @@ public class NotificationSettingController {
     ) {
         notificationSettingService.snooze(userId(jwt), request);
         return ApiResponse.success(SuccessStatus.NOTIFICATION_SNOOZE_SUCCESS);
+    }
+
+    @DeleteMapping("/snooze")
+    public ResponseEntity<ApiResponse<Void>> cancelSnooze(
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        notificationSettingService.cancelSnooze(userId(jwt));
+        return ApiResponse.success(SuccessStatus.NOTIFICATION_SNOOZE_CANCEL_SUCCESS);
     }
 
     private Long userId(Jwt jwt) {

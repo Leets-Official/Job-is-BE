@@ -60,6 +60,11 @@ public class NotificationSettingService {
         }
     }
 
+    @Transactional
+    public void cancelSnooze(Long userId) {
+        getOrCreateSetting(userId).clearSnooze();
+    }
+
     private void validateSendSlot(String sendSlot) {
         if (!ALLOWED_SEND_SLOTS.contains(sendSlot)) {
             throw new GeneralException(ErrorStatus.NOTIFICATION_INVALID_SEND_SLOT);
