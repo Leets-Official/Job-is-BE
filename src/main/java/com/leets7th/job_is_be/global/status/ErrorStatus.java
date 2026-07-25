@@ -81,7 +81,12 @@ public enum ErrorStatus implements BaseStatus {
     JOB_NOT_FOUND(HttpStatus.NOT_FOUND, "JOB_404_1", "공고를 찾을 수 없습니다."),
     JOB_ALREADY_SAVED(HttpStatus.CONFLICT, "JOB_409_1", "이미 저장된 공고입니다."),
     JOB_NOT_SAVED(HttpStatus.NOT_FOUND, "JOB_404_2", "저장되지 않은 공고입니다."),
-    JOB_NOT_APPLICABLE(HttpStatus.BAD_REQUEST, "JOB_400_1", "마감되었거나 무효한 공고입니다.");
+    JOB_NOT_APPLICABLE(HttpStatus.BAD_REQUEST, "JOB_400_1", "마감되었거나 무효한 공고입니다."),
+
+    /**
+     * Notification
+     */
+    NOTIFICATION_INVALID_SEND_SLOT(HttpStatus.BAD_REQUEST, "NOTIFICATION_400_1", "허용되지 않는 발송 시간대입니다.");
 
     private final HttpStatus httpStatus;
     private final String code;

@@ -1,0 +1,64 @@
+package com.leets7th.job_is_be.domain.notification.service;
+
+import com.leets7th.job_is_be.domain.notification.dto.NotificationSettingResponse;
+import com.leets7th.job_is_be.domain.notification.entity.NotificationSetting;
+import com.leets7th.job_is_be.domain.notification.repository.NotificationSettingRepository;
+import com.leets7th.job_is_be.domain.user.entity.User;
+import com.leets7th.job_is_be.domain.user.enums.SocialType;
+import com.leets7th.job_is_be.domain.user.repository.UserRepository;
+import com.leets7th.job_is_be.global.exception.GeneralException;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
+class NotificationSettingServiceTest {
+
+    @Mock
+    private NotificationSettingRepository notificationSettingRepository;
+    @Mock
+    private UserRepository userRepository;
+
+    @InjectMocks
+    private NotificationSettingService notificationSettingService;
+
+    private User user() {
+        User user = User.builder().socialId("s").socialType(SocialType.KAKAO).email("a@a.com").build();
+        ReflectionTestUtils.setField(user, "id", 1L);
+        return user;
+    }
+
+    @Test
+    void 사용자가_없으면_예외를_던진다() {
+        when(userRepository.findById(1L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> notificationSettingService.getSetting(1L))
+                .isInstanceOf(GeneralException.class);
+    }
+
+    @Test
+    void 설정이_없으면_기본값으로_생성해서_조회한다() {
+        User user = user();
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(notificationSettingRepository.findByUser(user)).thenReturn(Optional.empty());
+        when(notificationSettingRepository.save(any(NotificationSetting.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        NotificationSettingResponse response = notificationSettingService.getSetting(1L);
+
+        assertThat(response.sendSlot()).isEqualTo("07:30");
+        assertThat(response.briefingEnabled()).isTrue();
+        assertThat(response.marketingSubscribed()).isFalse();
+        assertThat(response.snooze().snoozed()).isFalse();
+    }
+}
