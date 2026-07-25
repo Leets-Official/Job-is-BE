@@ -1,5 +1,6 @@
 package com.leets7th.job_is_be.domain.job.entity;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.leets7th.job_is_be.domain.job.enums.JobStatus;
 import com.leets7th.job_is_be.global.base.BaseEntity;
 import jakarta.persistence.*;
@@ -26,7 +27,7 @@ public class Job extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
     @JoinColumn(name = "company_id")
     private Company company;
 
@@ -38,6 +39,7 @@ public class Job extends BaseEntity {
     @JoinColumn(name = "region_id")
     private Region region;
 
+    @JsonAlias({"job_title", "position", "title"})
     @Column(nullable = false, columnDefinition = "TEXT")
     private String title;
 

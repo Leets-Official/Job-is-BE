@@ -26,4 +26,6 @@ public interface JobRepository extends JpaRepository<Job, Long>, JobRepositoryCu
 
     Optional<Job> findBySourceAndExternalId(String source, Long externalId);
 
+    // 출처(source)와 외부 ID(externalId) 기준 존재 여부 확인
+    boolean existsBySourceAndExternalId(String source, Long externalId);
 }

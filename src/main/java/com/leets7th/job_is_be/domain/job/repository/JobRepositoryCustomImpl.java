@@ -2,6 +2,7 @@ package com.leets7th.job_is_be.domain.job.repository;
 
 import com.leets7th.job_is_be.domain.job.dto.JobSearchRequest;
 import com.leets7th.job_is_be.domain.job.dto.JobSummaryResponse;
+import com.leets7th.job_is_be.domain.job.enums.TechStackType;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
@@ -34,15 +35,15 @@ public class JobRepositoryCustomImpl implements JobRepositoryCustom {
                         job.employmentType,
                         job.remoteAvailable,
                         job.deadlineAt,
-                        Expressions.asString((String) null),
+                        Expressions.nullExpression(String.class),
                         job.skillTags
                 ))
                 .from(job)
                 .leftJoin(job.company)
                 .where(
                         keywordContains(request.keyword()),
-                        regionEq(request.region()),
-                        skillTagEq(request.skillTag()),
+                        regionsIn(request.regions()),
+                        skillTagsIn(request.skillTags()),
                         categoryChildEq(request.categoryChild())
                 )
                 .offset(pageable.getOffset())
@@ -54,8 +55,8 @@ public class JobRepositoryCustomImpl implements JobRepositoryCustom {
                 .from(job)
                 .where(
                         keywordContains(request.keyword()),
-                        regionEq(request.region()),
-                        skillTagEq(request.skillTag()),
+                        regionsIn(request.regions()),
+                        skillTagsIn(request.skillTags()),
                         categoryChildEq(request.categoryChild())
                 )
                 .fetchOne();
@@ -64,16 +65,30 @@ public class JobRepositoryCustomImpl implements JobRepositoryCustom {
         return new PageImpl<>(content, pageable, totalCount);
     }
 
+
+
     private BooleanExpression keywordContains(String keyword) {
         return StringUtils.hasText(keyword) ? job.title.containsIgnoreCase(keyword).or(job.company.name.containsIgnoreCase(keyword)) : null;
     }
 
-    private BooleanExpression regionEq(String region) {
-        return StringUtils.hasText(region) ? job.locationFull.containsIgnoreCase(region) : null;
+    private BooleanExpression regionsIn(List<String> regions) {
+        if (regions == null || regions.isEmpty()) {
+            return null;
+        }
+        return regions.stream()
+                .map(job.region.name::containsIgnoreCase)
+                .reduce(BooleanExpression::or)
+                .orElse(null);
     }
 
-    private BooleanExpression skillTagEq(String skillTag) {
-        return StringUtils.hasText(skillTag) ? job.skillTags.contains(skillTag) : null;
+    private BooleanExpression skillTagsIn(List<TechStackType> skillTags) {
+        if (skillTags == null || skillTags.isEmpty()) {
+            return null;
+        }
+        return skillTags.stream()
+                .map(tag -> (BooleanExpression) Expressions.booleanTemplate("{0} = ANY({1})", tag.getValue(), job.skillTags))
+                .reduce(BooleanExpression::or)
+                .orElse(null);
     }
 
     private BooleanExpression categoryChildEq(String categoryChild) {
