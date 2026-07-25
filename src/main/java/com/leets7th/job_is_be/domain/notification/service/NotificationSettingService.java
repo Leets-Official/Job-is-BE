@@ -2,6 +2,7 @@ package com.leets7th.job_is_be.domain.notification.service;
 
 import com.leets7th.job_is_be.domain.notification.dto.NotificationSettingResponse;
 import com.leets7th.job_is_be.domain.notification.dto.NotificationSettingUpdateRequest;
+import com.leets7th.job_is_be.domain.notification.dto.SnoozeRequest;
 import com.leets7th.job_is_be.domain.notification.entity.NotificationSetting;
 import com.leets7th.job_is_be.domain.notification.repository.NotificationSettingRepository;
 import com.leets7th.job_is_be.domain.user.entity.User;
@@ -12,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.Set;
 
 @Service
@@ -46,6 +48,16 @@ public class NotificationSettingService {
         }
 
         return toResponse(setting);
+    }
+
+    @Transactional
+    public void snooze(Long userId, SnoozeRequest request) {
+        NotificationSetting setting = getOrCreateSetting(userId);
+        switch (request.duration()) {
+            case SEVEN_DAYS -> setting.snooze(LocalDate.now().plusDays(7));
+            case THIRTY_DAYS -> setting.snooze(LocalDate.now().plusDays(30));
+            case INDEFINITE -> setting.snoozeIndefinitely();
+        }
     }
 
     private void validateSendSlot(String sendSlot) {
