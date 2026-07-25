@@ -1,6 +1,7 @@
 package com.leets7th.job_is_be.domain.job.entity;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.leets7th.job_is_be.domain.job.enums.JobStatus;
 import com.leets7th.job_is_be.global.base.BaseEntity;
 import jakarta.persistence.*;
@@ -104,6 +105,7 @@ public class Job extends BaseEntity {
     @Column(name = "reward_total")
     private String rewardTotal; // 추천 보상금
 
+    @JsonProperty("thumbnail_url")
     @Column(name = "thumbnail_url", columnDefinition = "TEXT")
     private String thumbnailUrl; // 카드 썸네일 URL
 

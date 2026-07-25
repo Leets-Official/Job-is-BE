@@ -2,6 +2,7 @@ package com.leets7th.job_is_be.domain.job.repository;
 
 import com.leets7th.job_is_be.domain.job.dto.JobSearchRequest;
 import com.leets7th.job_is_be.domain.job.dto.JobSummaryResponse;
+import com.leets7th.job_is_be.domain.job.entity.Job;
 import com.leets7th.job_is_be.domain.job.enums.TechStackType;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
@@ -26,20 +27,10 @@ public class JobRepositoryCustomImpl implements JobRepositoryCustom {
 
     @Override
     public Page<JobSummaryResponse> searchJobs(JobSearchRequest request, Pageable pageable) {
-        List<JobSummaryResponse> content = queryFactory
-                .select(Projections.constructor(JobSummaryResponse.class,
-                        job.id,
-                        job.company.name,
-                        job.title,
-                        job.careerLevel,
-                        job.employmentType,
-                        job.remoteAvailable,
-                        job.deadlineAt,
-                        Expressions.nullExpression(String.class),
-                        job.skillTags
-                ))
-                .from(job)
-                .leftJoin(job.company)
+        // Job 엔티티를 조회 (페치 조인 활용)
+        List<Job> jobs = queryFactory
+                .selectFrom(job)
+                .leftJoin(job.company).fetchJoin()
                 .where(
                         keywordContains(request.keyword()),
                         regionsIn(request.regions()),
@@ -49,6 +40,11 @@ public class JobRepositoryCustomImpl implements JobRepositoryCustom {
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();
+
+        // 조회된 Job 엔티티를 JobSummaryResponse로 변환하며 스킬 태그(TechStackResponse) 매핑
+        List<JobSummaryResponse> content = jobs.stream()
+                .map(JobSummaryResponse::from)
+                .toList();
 
         Long total = queryFactory
                 .select(job.count())
@@ -85,10 +81,12 @@ public class JobRepositoryCustomImpl implements JobRepositoryCustom {
         if (skillTags == null || skillTags.isEmpty()) {
             return null;
         }
-        return skillTags.stream()
-                .map(tag -> (BooleanExpression) Expressions.booleanTemplate("{0} = ANY({1})", tag.getValue(), job.skillTags))
-                .reduce(BooleanExpression::or)
-                .orElse(null);
+        // TechStackType을 DB에 저장된 형식)으로 변환
+        List<String> tagValues = skillTags.stream()
+                .map(TechStackType::getValue)
+                .toList();
+
+        return job.skillTags.any().in(tagValues);
     }
 
     private BooleanExpression categoryChildEq(String categoryChild) {
