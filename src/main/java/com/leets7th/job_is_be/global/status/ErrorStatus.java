@@ -86,7 +86,8 @@ public enum ErrorStatus implements BaseStatus {
     /**
      * Notification
      */
-    NOTIFICATION_INVALID_SEND_SLOT(HttpStatus.BAD_REQUEST, "NOTIFICATION_400_1", "허용되지 않는 발송 시간대입니다.");
+    NOTIFICATION_INVALID_SEND_SLOT(HttpStatus.BAD_REQUEST, "NOTIFICATION_400_1", "허용되지 않는 발송 시간대입니다."),
+    NOTIFICATION_SNOOZE_DURATION_REQUIRED(HttpStatus.BAD_REQUEST, "NOTIFICATION_400_2", "스누즈 기간을 선택해주세요.");
 
     private final HttpStatus httpStatus;
     private final String code;

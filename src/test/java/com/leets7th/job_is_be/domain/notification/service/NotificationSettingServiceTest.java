@@ -10,19 +10,23 @@ import com.leets7th.job_is_be.domain.user.entity.User;
 import com.leets7th.job_is_be.domain.user.enums.SocialType;
 import com.leets7th.job_is_be.domain.user.repository.UserRepository;
 import com.leets7th.job_is_be.global.exception.GeneralException;
+import com.leets7th.job_is_be.global.status.ErrorStatus;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDate;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.catchThrowableOfType;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -46,8 +50,10 @@ class NotificationSettingServiceTest {
     void 사용자가_없으면_예외를_던진다() {
         when(userRepository.findById(1L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> notificationSettingService.getSetting(1L))
-                .isInstanceOf(GeneralException.class);
+        GeneralException exception = catchThrowableOfType(
+                () -> notificationSettingService.getSetting(1L), GeneralException.class);
+
+        assertThat(exception.getErrorStatus()).isEqualTo(ErrorStatus.USER_NOT_FOUND);
     }
 
     @Test
@@ -55,7 +61,7 @@ class NotificationSettingServiceTest {
         User user = user();
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(notificationSettingRepository.findByUser(user)).thenReturn(Optional.empty());
-        when(notificationSettingRepository.save(any(NotificationSetting.class)))
+        when(notificationSettingRepository.saveAndFlush(any(NotificationSetting.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
         NotificationSettingResponse response = notificationSettingService.getSetting(1L);
@@ -64,6 +70,52 @@ class NotificationSettingServiceTest {
         assertThat(response.briefingEnabled()).isTrue();
         assertThat(response.marketingSubscribed()).isFalse();
         assertThat(response.snooze().snoozed()).isFalse();
+        verify(notificationSettingRepository).saveAndFlush(any(NotificationSetting.class));
+    }
+
+    @Test
+    void 스누즈_종료일이_지나면_스누즈_상태가_아니다() {
+        User user = user();
+        NotificationSetting setting = NotificationSetting.builder().user(user).sendSlot("07:30").build();
+        setting.snooze(LocalDate.now().minusDays(1));
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(notificationSettingRepository.findByUser(user)).thenReturn(Optional.of(setting));
+
+        NotificationSettingResponse response = notificationSettingService.getSetting(1L);
+
+        assertThat(response.snooze().snoozed()).isFalse();
+        assertThat(response.snooze().until()).isNull();
+    }
+
+    @Test
+    void 재개_예정일_당일에는_이미_재개된_것으로_본다() {
+        User user = user();
+        NotificationSetting setting = NotificationSetting.builder().user(user).sendSlot("07:30").build();
+        setting.snooze(LocalDate.now());
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(notificationSettingRepository.findByUser(user)).thenReturn(Optional.of(setting));
+
+        NotificationSettingResponse response = notificationSettingService.getSetting(1L);
+
+        assertThat(response.snooze().snoozed()).isFalse();
+    }
+
+    @Test
+    void 동시_생성_시_유니크_제약_위반이_발생하면_기존_설정을_재조회한다() {
+        User user = user();
+        NotificationSetting existing = NotificationSetting.builder().user(user).sendSlot("07:30").build();
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(notificationSettingRepository.findByUser(user))
+                .thenReturn(Optional.empty())
+                .thenReturn(Optional.of(existing));
+        when(notificationSettingRepository.saveAndFlush(any(NotificationSetting.class)))
+                .thenThrow(new DataIntegrityViolationException("duplicate key"));
+
+        NotificationSettingResponse response = notificationSettingService.getSetting(1L);
+
+        assertThat(response.sendSlot()).isEqualTo("07:30");
+        verify(notificationSettingRepository).saveAndFlush(any(NotificationSetting.class));
+        verify(notificationSettingRepository, times(2)).findByUser(user);
     }
 
     @Test
@@ -75,8 +127,10 @@ class NotificationSettingServiceTest {
 
         NotificationSettingUpdateRequest request = new NotificationSettingUpdateRequest(null, "09:00", null);
 
-        assertThatThrownBy(() -> notificationSettingService.updateSetting(1L, request))
-                .isInstanceOf(GeneralException.class);
+        GeneralException exception = catchThrowableOfType(
+                () -> notificationSettingService.updateSetting(1L, request), GeneralException.class);
+
+        assertThat(exception.getErrorStatus()).isEqualTo(ErrorStatus.NOTIFICATION_INVALID_SEND_SLOT);
     }
 
     @Test
@@ -92,6 +146,14 @@ class NotificationSettingServiceTest {
         assertThat(response.briefingEnabled()).isFalse();
         assertThat(response.sendSlot()).isEqualTo("12:30");
         assertThat(response.marketingSubscribed()).isTrue();
+    }
+
+    @Test
+    void 스누즈_기간이_없으면_예외를_던진다() {
+        GeneralException exception = catchThrowableOfType(
+                () -> notificationSettingService.snooze(1L, new SnoozeRequest(null)), GeneralException.class);
+
+        assertThat(exception.getErrorStatus()).isEqualTo(ErrorStatus.NOTIFICATION_SNOOZE_DURATION_REQUIRED);
     }
 
     @Test

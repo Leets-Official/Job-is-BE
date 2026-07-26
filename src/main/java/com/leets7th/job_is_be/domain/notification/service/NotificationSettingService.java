@@ -10,6 +10,7 @@ import com.leets7th.job_is_be.domain.user.repository.UserRepository;
 import com.leets7th.job_is_be.global.exception.GeneralException;
 import com.leets7th.job_is_be.global.status.ErrorStatus;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -52,6 +53,10 @@ public class NotificationSettingService {
 
     @Transactional
     public void snooze(Long userId, SnoozeRequest request) {
+        if (request.duration() == null) {
+            throw new GeneralException(ErrorStatus.NOTIFICATION_SNOOZE_DURATION_REQUIRED);
+        }
+
         NotificationSetting setting = getOrCreateSetting(userId);
         switch (request.duration()) {
             case SEVEN_DAYS -> setting.snooze(LocalDate.now().plusDays(7));
@@ -75,19 +80,37 @@ public class NotificationSettingService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new GeneralException(ErrorStatus.USER_NOT_FOUND));
         return notificationSettingRepository.findByUser(user)
-                .orElseGet(() -> notificationSettingRepository.save(
-                        NotificationSetting.builder()
-                                .user(user)
-                                .sendSlot(DEFAULT_SEND_SLOT)
-                                .build()
-                ));
+                .orElseGet(() -> createDefaultSetting(user));
+    }
+
+    // 최초 조회가 동시에 들어오면 findByUser가 둘 다 비어있는 것으로 보고 저장을 시도할 수 있어
+    // uk_notification_settings_user 위반이 날 수 있다. saveAndFlush로 즉시 반영해 이 자리에서 잡고,
+    // 위반 시 먼저 커밋된 다른 트랜잭션의 행을 재조회한다.
+    private NotificationSetting createDefaultSetting(User user) {
+        try {
+            return notificationSettingRepository.saveAndFlush(
+                    NotificationSetting.builder()
+                            .user(user)
+                            .sendSlot(DEFAULT_SEND_SLOT)
+                            .build()
+            );
+        } catch (DataIntegrityViolationException e) {
+            return notificationSettingRepository.findByUser(user)
+                    .orElseThrow(() -> e);
+        }
     }
 
     private NotificationSettingResponse toResponse(NotificationSetting setting) {
+        boolean indefinite = setting.isSnoozeIndefinite();
+        LocalDate snoozeUntil = setting.getSnoozeUntil();
+        // snoozeUntil은 "재개 예정일"이므로 당일 포함해 그 이후는 이미 재개된 것으로 본다.
+        boolean dateActive = snoozeUntil != null && snoozeUntil.isAfter(LocalDate.now());
+        boolean snoozed = indefinite || dateActive;
+
         NotificationSettingResponse.SnoozeInfo snoozeInfo = new NotificationSettingResponse.SnoozeInfo(
-                setting.isSnoozeIndefinite() || setting.getSnoozeUntil() != null,
-                setting.getSnoozeUntil(),
-                setting.isSnoozeIndefinite()
+                snoozed,
+                dateActive ? snoozeUntil : null,
+                indefinite
         );
         return new NotificationSettingResponse(
                 setting.isEmailSubscribed(),
