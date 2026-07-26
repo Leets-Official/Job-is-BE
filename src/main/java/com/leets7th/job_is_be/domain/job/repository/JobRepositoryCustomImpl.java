@@ -3,7 +3,11 @@ package com.leets7th.job_is_be.domain.job.repository;
 import com.leets7th.job_is_be.domain.job.dto.JobSearchRequest;
 import com.leets7th.job_is_be.domain.job.dto.JobSummaryResponse;
 import com.leets7th.job_is_be.domain.job.entity.Job;
+import com.leets7th.job_is_be.domain.job.entity.QCompany;
+import com.leets7th.job_is_be.domain.job.entity.QJobCategory;
+import com.leets7th.job_is_be.domain.job.entity.QRegion;
 import com.leets7th.job_is_be.domain.job.enums.TechStackType;
+import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
@@ -27,33 +31,42 @@ public class JobRepositoryCustomImpl implements JobRepositoryCustom {
 
     @Override
     public Page<JobSummaryResponse> searchJobs(JobSearchRequest request, Pageable pageable) {
-        // Job 엔티티를 조회 (페치 조인 활용)
+        QCompany company = QCompany.company;
+        QRegion region = QRegion.region;
+        QJobCategory jobCategory = QJobCategory.jobCategory;
+
+        // 공고 목록 조회 (LEFT JOIN & FETCH JOIN으로 N+1 방지 및 NULL 허용)
         List<Job> jobs = queryFactory
                 .selectFrom(job)
-                .leftJoin(job.company).fetchJoin()
+                .leftJoin(job.company, company).fetchJoin()
+                .leftJoin(job.region, region).fetchJoin()
+                .leftJoin(job.jobCategory, jobCategory).fetchJoin()
                 .where(
-                        keywordContains(request.keyword()),
-                        regionsIn(request.regions()),
+                        keywordContains(company, request.keyword()),
+                        regionsIn(region, request.regions()),
                         skillTagsIn(request.skillTags()),
-                        categoryChildEq(request.categoryChild())
+                        categoryChildEq(jobCategory, request.categoryChild())
                 )
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();
 
-        // 조회된 Job 엔티티를 JobSummaryResponse로 변환하며 스킬 태그(TechStackResponse) 매핑
         List<JobSummaryResponse> content = jobs.stream()
                 .map(JobSummaryResponse::from)
                 .toList();
 
+        // 전체 카운트 조회 (목록 조회와 동일한 LEFT JOIN 적용)
         Long total = queryFactory
                 .select(job.count())
                 .from(job)
+                .leftJoin(job.company, company)
+                .leftJoin(job.region, region)
+                .leftJoin(job.jobCategory, jobCategory)
                 .where(
-                        keywordContains(request.keyword()),
-                        regionsIn(request.regions()),
+                        keywordContains(company, request.keyword()),
+                        regionsIn(region, request.regions()),
                         skillTagsIn(request.skillTags()),
-                        categoryChildEq(request.categoryChild())
+                        categoryChildEq(jobCategory, request.categoryChild())
                 )
                 .fetchOne();
 
@@ -63,16 +76,18 @@ public class JobRepositoryCustomImpl implements JobRepositoryCustom {
 
 
 
-    private BooleanExpression keywordContains(String keyword) {
-        return StringUtils.hasText(keyword) ? job.title.containsIgnoreCase(keyword).or(job.company.name.containsIgnoreCase(keyword)) : null;
+    private BooleanExpression keywordContains(QCompany company, String keyword) {
+        return StringUtils.hasText(keyword)
+                ? job.title.containsIgnoreCase(keyword).or(company.name.containsIgnoreCase(keyword))
+                : null;
     }
 
-    private BooleanExpression regionsIn(List<String> regions) {
+    private BooleanExpression regionsIn(QRegion region, List<String> regions) {
         if (regions == null || regions.isEmpty()) {
             return null;
         }
         return regions.stream()
-                .map(job.region.name::containsIgnoreCase)
+                .map(region.name::containsIgnoreCase)
                 .reduce(BooleanExpression::or)
                 .orElse(null);
     }
@@ -81,15 +96,15 @@ public class JobRepositoryCustomImpl implements JobRepositoryCustom {
         if (skillTags == null || skillTags.isEmpty()) {
             return null;
         }
-        // TechStackType을 DB에 저장된 형식)으로 변환
-        List<String> tagValues = skillTags.stream()
-                .map(TechStackType::getValue)
-                .toList();
 
-        return job.skillTags.any().in(tagValues);
+        return skillTags.stream()
+                .map(TechStackType::getValue)
+                .map(tag -> (BooleanExpression) Expressions.booleanTemplate("array_contains({0}, {1})", job.skillTags, tag))
+                .reduce(BooleanExpression::or)
+                .orElse(null);
     }
 
-    private BooleanExpression categoryChildEq(String categoryChild) {
-        return StringUtils.hasText(categoryChild) ? job.jobCategory.name.eq(categoryChild) : null;
+    private BooleanExpression categoryChildEq(QJobCategory jobCategory, String categoryChild) {
+        return StringUtils.hasText(categoryChild) ? jobCategory.name.eq(categoryChild) : null;
     }
 }

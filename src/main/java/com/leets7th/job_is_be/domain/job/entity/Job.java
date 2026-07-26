@@ -19,7 +19,13 @@ import java.util.List;
  * 채용 공고
  */
 @Entity
-@Table(name = "jobs", uniqueConstraints = @UniqueConstraint(name = "uk_jobs_source_external_id", columnNames = {"source", "external_id"}))
+@Table(
+        name = "jobs",
+        uniqueConstraints = @UniqueConstraint(name = "uk_jobs_source_external_id", columnNames = {"source", "external_id"}),
+        indexes = {
+                @Index(name = "idx_created_at_id", columnList = "created_at DESC, id DESC")
+        }
+)
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Job extends BaseEntity {
