@@ -4,6 +4,7 @@ import com.leets7th.job_is_be.domain.auth.dto.SessionResponse;
 import com.leets7th.job_is_be.domain.auth.dto.TokenReissueResponse;
 import com.leets7th.job_is_be.domain.user.entity.User;
 import com.leets7th.job_is_be.domain.user.enums.WithdrawalStatus;
+import com.leets7th.job_is_be.domain.user.enums.UserStatus;
 import com.leets7th.job_is_be.domain.user.repository.UserProfileRepository;
 import com.leets7th.job_is_be.domain.user.repository.UserRepository;
 import com.leets7th.job_is_be.domain.user.repository.UserWithdrawalRepository;
@@ -43,8 +44,10 @@ public class AuthService {
         }
 
         JwtTokenProvider.RefreshTokenClaims claims = decodeRefreshToken(refreshToken);
-        if (!userRepository.existsById(claims.userId())) {
-            throw new GeneralException(ErrorStatus.USER_NOT_FOUND);
+        User user = userRepository.findById(claims.userId())
+                .orElseThrow(() -> new GeneralException(ErrorStatus.USER_NOT_FOUND));
+        if (user.getStatus() == UserStatus.WITHDRAWN) {
+            throw new GeneralException(ErrorStatus.WITHDRAWN_ACCOUNT_TOKEN_REISSUE);
         }
 
         JwtTokenProvider.TokenPair tokenPair = tokenProvider.issueTokenPair(claims.userId());

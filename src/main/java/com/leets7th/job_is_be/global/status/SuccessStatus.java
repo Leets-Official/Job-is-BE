@@ -23,6 +23,7 @@ public enum SuccessStatus implements BaseStatus {
     OAUTH_EXCHANGE_SUCCESS(HttpStatus.OK, "AUTH_200_6", "로그인 토큰 교환에 성공했습니다."),
     CONSENT_SAVE_SUCCESS(HttpStatus.OK, "AUTH_200_7", "필수 약관 동의를 저장했습니다."),
     WITHDRAWAL_SUCCESS(HttpStatus.OK, "AUTH_200_8", "회원 탈퇴를 요청했습니다."),
+    WITHDRAWAL_RESTORE_SUCCESS(HttpStatus.OK, "AUTH_200_9", "회원 탈퇴를 복구했습니다."),
 
     /**
      * Profile
