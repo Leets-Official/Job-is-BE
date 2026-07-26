@@ -47,7 +47,7 @@ public class JobController {
 
     // 공고 탐색 및 검색
     @Operation(summary = "공고 탐색 및 검색", description = "필터 조건(직군, 지역, 경력 등)과 키워드를 기반으로 공고 목록을 페이징 조회합니다.")
-    @GetMapping
+    @GetMapping("/search")
     public ResponseEntity<Page<JobSummaryResponse>> searchJobs(
             @Valid @ModelAttribute @ParameterObject JobSearchRequest condition,
             @PageableDefault(page = 0, size = 24, sort = {"createdAt", "id"}, direction = Sort.Direction.DESC)
