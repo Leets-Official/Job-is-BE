@@ -62,7 +62,8 @@ public enum SuccessStatus implements BaseStatus {
     JOB_UNSAVE_SUCCESS(HttpStatus.OK, "JOB_200_1", "공고 저장을 취소했습니다."),
     JOB_VIEW_RECORD_SUCCESS(HttpStatus.OK, "JOB_200_2", "공고 열람을 기록했습니다."),
     JOB_APPLY_INTENT_TOGGLE_SUCCESS(HttpStatus.OK, "JOB_200_3", "지원 의향 상태를 변경했습니다."),
-    JOB_APPLY_RECORD_SUCCESS(HttpStatus.OK, "JOB_200_4", "지원하기 클릭을 기록했습니다.");
+    JOB_APPLY_RECORD_SUCCESS(HttpStatus.OK, "JOB_200_4", "지원하기 클릭을 기록했습니다."),
+    SAVE_LIST_GET_SUCCESS(HttpStatus.OK, "JOB_200_5", "저장 목록을 조회했습니다.");
 
     private final HttpStatus httpStatus;
     private final String code;

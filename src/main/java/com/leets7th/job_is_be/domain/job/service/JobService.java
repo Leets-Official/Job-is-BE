@@ -1,15 +1,25 @@
 package com.leets7th.job_is_be.domain.job.service;
 
+import com.leets7th.job_is_be.domain.deck.enums.ActionType;
+import com.leets7th.job_is_be.domain.deck.repository.UserActionRepository;
+import com.leets7th.job_is_be.domain.job.dto.SavedJobListResponse;
+import com.leets7th.job_is_be.domain.job.dto.SavedJobResponse;
 import com.leets7th.job_is_be.domain.job.entity.Job;
 import com.leets7th.job_is_be.domain.job.entity.SavedJob;
+import com.leets7th.job_is_be.domain.job.enums.JobStatus;
+import com.leets7th.job_is_be.domain.job.enums.SavedJobSortType;
 import com.leets7th.job_is_be.domain.job.repository.JobRepository;
 import com.leets7th.job_is_be.domain.job.repository.SavedJobRepository;
 import com.leets7th.job_is_be.domain.user.entity.User;
 import com.leets7th.job_is_be.domain.user.repository.UserRepository;
 import com.leets7th.job_is_be.global.exception.GeneralException;
+import com.leets7th.job_is_be.global.response.PageResponse;
 import com.leets7th.job_is_be.global.status.ErrorStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +32,7 @@ public class JobService {
     private final JobRepository jobRepository;
     private final SavedJobRepository savedJobRepository;
     private final UserRepository userRepository;
+    private final UserActionRepository userActionRepository;
 
     @Transactional
     public void saveJob(Long userId, Long jobId) {
@@ -52,5 +63,44 @@ public class JobService {
         }
 
         savedJobRepository.deleteByUserIdAndJobId(userId, jobId);
+    }
+
+    @Transactional(readOnly = true)
+    public SavedJobListResponse getSavedJobs(Long userId, int page, int size, SavedJobSortType sortType) {
+        Pageable pageable = PageRequest.of(page, size);
+        OffsetDateTime now = OffsetDateTime.now();
+
+        Page<SavedJob> savedJobs = switch (sortType) {
+            case SAVED_DESC -> savedJobRepository.findByUserIdOrderBySavedDesc(userId, now, pageable);
+            case DEADLINE_ASC -> savedJobRepository.findByUserIdOrderByDeadlineAsc(userId, now, pageable);
+        };
+
+        Page<SavedJobResponse> responses = savedJobs.map(savedJob -> toSavedJobResponse(userId, savedJob, now));
+
+        long totalSaved = savedJobRepository.countByUserId(userId);
+        long totalApplyIntent = savedJobRepository.countApplyIntentByUserId(userId);
+
+        return new SavedJobListResponse(totalSaved, totalApplyIntent, PageResponse.from(responses));
+    }
+
+    private SavedJobResponse toSavedJobResponse(Long userId, SavedJob savedJob, OffsetDateTime now) {
+        Job job = savedJob.getJob();
+        boolean expired = job.getStatus() != JobStatus.ACTIVE
+                || (job.getDeadlineAt() != null && !job.getDeadlineAt().isAfter(now));
+        boolean applyIntent = userActionRepository.existsByUserIdAndJobIdAndActionType(
+                userId, job.getId(), ActionType.APPLY_INTENT_CLICKED);
+
+        return new SavedJobResponse(
+                job.getId(),
+                job.getCompany() != null ? job.getCompany().getName() : null,
+                job.getTitle(),
+                job.getLocationFull(),
+                job.getCareerLevel(),
+                job.getEmploymentType(),
+                savedJob.getSavedAt(),
+                job.getDeadlineAt(),
+                expired,
+                applyIntent
+        );
     }
 }
