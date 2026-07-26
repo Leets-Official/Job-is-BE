@@ -24,7 +24,7 @@ public class SaveController {
     @GetMapping
     public ResponseEntity<ApiResponse<SavedJobListResponse>> getSavedJobs(
             @AuthenticationPrincipal Jwt jwt,
-            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "SAVED_DESC") SavedJobSortType sort
     ) {

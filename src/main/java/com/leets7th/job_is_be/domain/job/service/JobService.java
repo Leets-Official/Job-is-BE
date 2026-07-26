@@ -67,7 +67,8 @@ public class JobService {
 
     @Transactional(readOnly = true)
     public SavedJobListResponse getSavedJobs(Long userId, int page, int size, SavedJobSortType sortType) {
-        Pageable pageable = PageRequest.of(page, size);
+        // page는 클라이언트에는 1부터 시작하는 값으로 노출하고, Spring Data Pageable(0-based)로는 내부에서만 변환한다.
+        Pageable pageable = PageRequest.of(page - 1, size);
         OffsetDateTime now = OffsetDateTime.now();
 
         Page<SavedJob> savedJobs = switch (sortType) {
@@ -80,7 +81,16 @@ public class JobService {
         long totalSaved = savedJobRepository.countByUserId(userId);
         long totalApplyIntent = savedJobRepository.countApplyIntentByUserId(userId);
 
-        return new SavedJobListResponse(totalSaved, totalApplyIntent, PageResponse.from(responses));
+        PageResponse<SavedJobResponse> pageResponse = new PageResponse<>(
+                responses.getContent(),
+                page,
+                responses.getSize(),
+                responses.getTotalElements(),
+                responses.getTotalPages(),
+                responses.isLast()
+        );
+
+        return new SavedJobListResponse(totalSaved, totalApplyIntent, pageResponse);
     }
 
     private SavedJobResponse toSavedJobResponse(Long userId, SavedJob savedJob, OffsetDateTime now) {
