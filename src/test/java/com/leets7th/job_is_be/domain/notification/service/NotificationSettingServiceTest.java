@@ -98,6 +98,7 @@ class NotificationSettingServiceTest {
         NotificationSettingResponse response = notificationSettingService.getSetting(1L);
 
         assertThat(response.snooze().snoozed()).isFalse();
+        assertThat(response.snooze().until()).isNull();
     }
 
     @Test
