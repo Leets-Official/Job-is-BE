@@ -37,6 +37,7 @@ public enum ErrorStatus implements BaseStatus {
     OAUTH_STATE_INVALID(HttpStatus.UNAUTHORIZED, "AUTH_401_4", "유효하지 않거나 만료된 OAuth 요청입니다."),
     OAUTH_LOGIN_CODE_INVALID(HttpStatus.UNAUTHORIZED, "AUTH_401_5", "유효하지 않거나 만료된 OAuth 로그인 코드입니다."),
     SOCIAL_ACCOUNT_CONFLICT(HttpStatus.CONFLICT, "AUTH_409_1", "이미 다른 소셜 계정으로 가입된 이메일입니다."),
+    WITHDRAWAL_ALREADY_REQUESTED(HttpStatus.CONFLICT, "AUTH_409_2", "이미 회원 탈퇴가 요청된 계정입니다."),
     WITHDRAWAL_RESTORE_EXPIRED(HttpStatus.FORBIDDEN, "AUTH_403_1", "계정 복구 가능 기간이 지났습니다."),
     OAUTH_PROVIDER_ERROR(HttpStatus.BAD_GATEWAY, "AUTH_502_1", "소셜 로그인 서버 연동에 실패했습니다."),
     OAUTH_USER_INFO_INVALID(HttpStatus.BAD_GATEWAY, "AUTH_502_2", "소셜 로그인 사용자 정보가 올바르지 않습니다."),

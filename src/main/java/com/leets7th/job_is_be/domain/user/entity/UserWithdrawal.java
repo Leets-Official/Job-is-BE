@@ -1,6 +1,7 @@
 package com.leets7th.job_is_be.domain.user.entity;
 
 import com.leets7th.job_is_be.domain.user.enums.WithdrawalStatus;
+import com.leets7th.job_is_be.domain.user.enums.WithdrawalReasonCode;
 import com.leets7th.job_is_be.global.base.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -27,8 +28,12 @@ public class UserWithdrawal extends BaseEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "reason_code", length = 30)
-    private String reasonCode; // 선택 입력, 강제 아님
+    private WithdrawalReasonCode reasonCode;
+
+    @Column(name = "reason_detail", length = 500)
+    private String reasonDetail;
 
     // TODO: LocalDateTime → OffsetDateTime으로 통일 필요 (BaseEntity와 타입 불일치)
     @Column(name = "requested_at", nullable = false)
@@ -47,9 +52,16 @@ public class UserWithdrawal extends BaseEntity {
     private WithdrawalStatus status;
 
     @Builder
-    public UserWithdrawal(User user, String reasonCode, LocalDateTime requestedAt, LocalDateTime scheduledDeletionAt) {
+    public UserWithdrawal(
+            User user,
+            WithdrawalReasonCode reasonCode,
+            String reasonDetail,
+            LocalDateTime requestedAt,
+            LocalDateTime scheduledDeletionAt
+    ) {
         this.user = user;
         this.reasonCode = reasonCode;
+        this.reasonDetail = reasonDetail;
         this.requestedAt = requestedAt;
         this.scheduledDeletionAt = scheduledDeletionAt;
         this.status = WithdrawalStatus.PENDING;
