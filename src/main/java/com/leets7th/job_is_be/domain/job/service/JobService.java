@@ -24,6 +24,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import static org.hibernate.dialect.SybaseASEDialect.MAX_PAGE_SIZE;
 
 @Service
 @RequiredArgsConstructor
@@ -67,6 +72,13 @@ public class JobService {
 
     @Transactional(readOnly = true)
     public SavedJobListResponse getSavedJobs(Long userId, int page, int size, SavedJobSortType sortType) {
+
+        if (page < 1) {
+            throw new GeneralException(ErrorStatus.INVALID_PAGE);
+        }
+        if (size < 1 || size > MAX_PAGE_SIZE) {
+            throw new GeneralException(ErrorStatus.INVALID_PAGE_SIZE);
+        }
         // page는 클라이언트에는 1부터 시작하는 값으로 노출하고, Spring Data Pageable(0-based)로는 내부에서만 변환한다.
         Pageable pageable = PageRequest.of(page - 1, size);
         OffsetDateTime now = OffsetDateTime.now();
@@ -76,7 +88,15 @@ public class JobService {
             case DEADLINE_ASC -> savedJobRepository.findByUserIdOrderByDeadlineAsc(userId, now, pageable);
         };
 
-        Page<SavedJobResponse> responses = savedJobs.map(savedJob -> toSavedJobResponse(userId, savedJob, now));
+        List<Long> jobIds = savedJobs.getContent().stream()
+                .map(savedJob -> savedJob.getJob().getId())
+                .toList();
+        Set<Long> applyIntentJobIds = jobIds.isEmpty()
+                ? Set.of()
+                : new HashSet<>(userActionRepository.findJobIdsByUserIdAndJobIdInAndActionType(
+                        userId, jobIds, ActionType.APPLY_INTENT_CLICKED));
+
+        Page<SavedJobResponse> responses = savedJobs.map(savedJob -> toSavedJobResponse(savedJob, now, applyIntentJobIds));
 
         long totalSaved = savedJobRepository.countByUserId(userId);
         long totalApplyIntent = savedJobRepository.countApplyIntentByUserId(userId);
@@ -93,12 +113,11 @@ public class JobService {
         return new SavedJobListResponse(totalSaved, totalApplyIntent, pageResponse);
     }
 
-    private SavedJobResponse toSavedJobResponse(Long userId, SavedJob savedJob, OffsetDateTime now) {
+    private SavedJobResponse toSavedJobResponse(SavedJob savedJob, OffsetDateTime now, Set<Long> applyIntentJobIds) {
         Job job = savedJob.getJob();
         boolean expired = job.getStatus() != JobStatus.ACTIVE
                 || (job.getDeadlineAt() != null && !job.getDeadlineAt().isAfter(now));
-        boolean applyIntent = userActionRepository.existsByUserIdAndJobIdAndActionType(
-                userId, job.getId(), ActionType.APPLY_INTENT_CLICKED);
+        boolean applyIntent = applyIntentJobIds.contains(job.getId());
 
         return new SavedJobResponse(
                 job.getId(),
