@@ -58,10 +58,10 @@ public class JobController {
     }
 
     //공고 상세 조회
-    @Operation(summary = "공고 상세 조회", description = "external_id(예: 348736)를 통해 특정 공고의 상세 정보를 조회합니다.")
+    @Operation(summary = "공고 상세 조회", description = "공고 ID를 통해 특정 공고의 상세 정보를 조회합니다.")
     @GetMapping("/{jobId}")
     public ResponseEntity<JobDetailResponse> getJobDetail(
-            @Parameter(description = "공고 external_id") @PathVariable Long jobId
+            @Parameter(description = "공고 ID") @PathVariable Long jobId
     ) {
         JobDetailResponse response = jobService.getJobDetail(jobId);
         return ResponseEntity.ok(response);
