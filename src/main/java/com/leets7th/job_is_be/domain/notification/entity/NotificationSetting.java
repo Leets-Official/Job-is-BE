@@ -37,11 +37,17 @@ public class NotificationSetting extends BaseEntity {
     @Column(name = "email_subscribed", nullable = false)
     private boolean emailSubscribed;
 
+    @Column(name = "marketing_subscribed", nullable = false)
+    private boolean marketingSubscribed;
+
     @Column(name = "send_slot", nullable = false, length = 10)
     private String sendSlot; // 07:30, 12:30, 18:30
 
     @Column(name = "snooze_until")
-    private LocalDate snoozeUntil; // 스누즈 재개 예정일
+    private LocalDate snoozeUntil; // 스누즈 재개 예정일 (무기한 스누즈면 null)
+
+    @Column(name = "snooze_indefinite", nullable = false)
+    private boolean snoozeIndefinite;
 
     @Column(name = "email_verified", nullable = false)
     private boolean emailVerified;
@@ -51,6 +57,7 @@ public class NotificationSetting extends BaseEntity {
         this.user = user;
         this.sendSlot = sendSlot;
         this.emailSubscribed = true;
+        this.marketingSubscribed = false;
         this.emailVerified = false;
     }
 
@@ -58,12 +65,27 @@ public class NotificationSetting extends BaseEntity {
         this.sendSlot = slot;
     }
 
-    public void snooze(LocalDate until) {
-        this.snoozeUntil = until;
+    public void updateEmailSubscribed(boolean emailSubscribed) {
+        this.emailSubscribed = emailSubscribed;
     }
 
-    public void unsubscribe() {
-        this.emailSubscribed = false;
+    public void updateMarketingSubscribed(boolean marketingSubscribed) {
+        this.marketingSubscribed = marketingSubscribed;
+    }
+
+    public void snooze(LocalDate until) {
+        this.snoozeUntil = until;
+        this.snoozeIndefinite = false;
+    }
+
+    public void snoozeIndefinitely() {
+        this.snoozeUntil = null;
+        this.snoozeIndefinite = true;
+    }
+
+    public void clearSnooze() {
+        this.snoozeUntil = null;
+        this.snoozeIndefinite = false;
     }
 
     public void resetEmailVerification() {
