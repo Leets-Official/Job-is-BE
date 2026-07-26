@@ -61,7 +61,12 @@ public enum SuccessStatus implements BaseStatus {
     JOB_SAVE_SUCCESS(HttpStatus.CREATED, "JOB_201_1", "공고를 저장했습니다."),
     JOB_UNSAVE_SUCCESS(HttpStatus.OK, "JOB_200_1", "공고 저장을 취소했습니다."),
     JOB_SEARCH_SUCCESS(HttpStatus.OK, "JOB_200_2", "공고 목록을 조회했습니다."),
-    JOB_DETAIL_SUCCESS(HttpStatus.OK, "JOB_200_3", "공고 상세 정보를 조회했습니다.");
+    JOB_DETAIL_SUCCESS(HttpStatus.OK, "JOB_200_3", "공고 상세 정보를 조회했습니다."),
+
+    /**
+     * Metadata / TechStack
+     */
+    TECH_STACK_GET_SUCCESS(HttpStatus.OK, "TECH_200_1", "기술 스택 목록을 조회했습니다.");
 
     private final HttpStatus httpStatus;
     private final String code;

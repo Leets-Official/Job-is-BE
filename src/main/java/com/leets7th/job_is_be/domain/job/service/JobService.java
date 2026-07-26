@@ -14,6 +14,7 @@ import com.leets7th.job_is_be.global.status.ErrorStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -64,7 +65,8 @@ public class JobService {
      */
     @Transactional(readOnly = true)
     public Page<JobSummaryResponse> searchJobs(JobSearchRequest condition, Pageable pageable) {
-        return jobRepository.searchJobs(condition, pageable);
+        Pageable fixedPageable = PageRequest.of(pageable.getPageNumber(), 24, pageable.getSort());
+        return jobRepository.searchJobs(condition, fixedPageable);
     }
 
     /**

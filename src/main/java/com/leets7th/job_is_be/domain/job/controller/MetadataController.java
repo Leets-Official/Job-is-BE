@@ -6,6 +6,8 @@ import com.leets7th.job_is_be.domain.job.dto.RegionResponse;
 import com.leets7th.job_is_be.domain.job.dto.TechStackResponse;
 import com.leets7th.job_is_be.domain.job.enums.TechStackType;
 import com.leets7th.job_is_be.domain.job.service.MetadataQueryService;
+import com.leets7th.job_is_be.global.response.ApiResponse;
+import com.leets7th.job_is_be.global.status.SuccessStatus;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -47,10 +49,10 @@ public class MetadataController {
 
     @Operation(summary = "기술 스택 목록 조회", description = "시스템에 정의된 전체 기술 스택 메타데이터 목록을 조회합니다.")
     @GetMapping("/tech-stacks")
-    public ResponseEntity<List<TechStackResponse>> getAllTechStacks() {
+    public ResponseEntity<ApiResponse<List<TechStackResponse>>> getAllTechStacks() {
         List<TechStackResponse> response = Arrays.stream(TechStackType.values())
                 .map(TechStackResponse::from)
                 .toList();
-        return ResponseEntity.ok(response);
+        return ApiResponse.success(SuccessStatus.TECH_STACK_GET_SUCCESS, response);
     }
 }
