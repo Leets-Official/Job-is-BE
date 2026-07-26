@@ -15,6 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -51,6 +52,8 @@ class AccountServiceTest {
     @Test
     void 계정_정보를_조회한다() {
         User user = user();
+        LocalDateTime createdAt = LocalDateTime.of(2026, 1, 15, 10, 30);
+        ReflectionTestUtils.setField(user, "createdAt", createdAt);
         NotificationSetting setting = NotificationSetting.builder().user(user).sendSlot("07:30").build();
         ReflectionTestUtils.setField(setting, "emailVerified", true);
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
@@ -59,6 +62,7 @@ class AccountServiceTest {
         AccountResponse response = accountService.getAccount(1L);
 
         assertThat(response.socialType()).isEqualTo(SocialType.KAKAO);
+        assertThat(response.joinedAt()).isEqualTo(createdAt);
         assertThat(response.receivingEmail()).isEqualTo("a@a.com");
         assertThat(response.emailVerified()).isTrue();
     }
