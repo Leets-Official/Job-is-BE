@@ -30,7 +30,7 @@ public record JobSummaryResponse(
                 .employmentType(job.getEmploymentType())
                 .remoteAvailable(job.isRemoteAvailable())
                 .dueTime(job.getDeadlineAt())
-                .thumbnailUrl(null)
+                .thumbnailUrl(job.getThumbnailUrl())
                 .skillTags(tags)
                 .build();
     }

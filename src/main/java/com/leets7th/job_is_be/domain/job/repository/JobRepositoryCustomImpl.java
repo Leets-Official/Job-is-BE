@@ -47,6 +47,7 @@ public class JobRepositoryCustomImpl implements JobRepositoryCustom {
                         skillTagsIn(request.skillTags()),
                         categoryChildEq(jobCategory, request.categoryChild())
                 )
+                .orderBy(job.createdAt.desc(), job.id.desc())
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();

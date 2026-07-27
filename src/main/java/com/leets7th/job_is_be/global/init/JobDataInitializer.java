@@ -8,7 +8,10 @@ import com.leets7th.job_is_be.domain.job.entity.Company;
 import com.leets7th.job_is_be.domain.job.entity.Job;
 import com.leets7th.job_is_be.domain.job.repository.CompanyRepository;
 import com.leets7th.job_is_be.domain.job.repository.JobRepository;
+import com.leets7th.job_is_be.global.exception.GeneralException;
+import com.leets7th.job_is_be.global.status.ErrorStatus;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
@@ -16,6 +19,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class JobDataInitializer implements CommandLineRunner {
@@ -26,22 +30,26 @@ public class JobDataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        objectMapper.setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
-        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        objectMapper.enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS);
+        ObjectMapper localObjectMapper = objectMapper.copy()
+                .setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE)
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                .enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS);
 
-        loadCompanies("database/out/companies.jsonl");
-        loadJobs("database/out/job_postings.jsonl");
+        loadCompanies("database/out/companies.jsonl", localObjectMapper);
+        loadJobs("database/out/job_postings.jsonl", localObjectMapper);
     }
 
-    private void loadCompanies(String filePath) {
+    private void loadCompanies(String filePath, ObjectMapper mapper) {
         File file = new File(filePath);
-        if (!file.exists()) return;
+        if (!file.exists()) {
+            log.error("초기 회사 데이터 파일이 존재하지 않습니다. 경로: {}", file.getAbsolutePath());
+            throw new GeneralException(ErrorStatus.INITIAL_DATA_FILE_NOT_FOUND);
+        }
 
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
             String line;
             while ((line = br.readLine()) != null) {
-                Company company = objectMapper.readValue(line, Company.class);
+                Company company = mapper.readValue(line, Company.class);
 
                 // 이미 존재하는 회사가 아니면 저장
                 if (company.getId() != null && companyRepository.existsById(company.getId())) {
@@ -50,18 +58,22 @@ public class JobDataInitializer implements CommandLineRunner {
                 companyRepository.save(company);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("회사 데이터 적재 중 오류 발생: {}", e.getMessage(), e);
+            throw new GeneralException(ErrorStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
-    private void loadJobs(String filePath) {
+    private void loadJobs(String filePath, ObjectMapper mapper) {
         File file = new File(filePath);
-        if (!file.exists()) return;
+        if (!file.exists()) {
+            log.error("초기 공고 데이터 파일이 존재하지 않습니다. 경로: {}", file.getAbsolutePath());
+            throw new GeneralException(ErrorStatus.INITIAL_DATA_FILE_NOT_FOUND);
+        }
 
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
             String line;
             while ((line = br.readLine()) != null) {
-                Job job = objectMapper.readValue(line, Job.class);
+                Job job = mapper.readValue(line, Job.class);
 
                 if (job.getTitle() == null) {
                     continue;
@@ -72,7 +84,8 @@ public class JobDataInitializer implements CommandLineRunner {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("공고 데이터 적재 중 오류 발생: {}", e.getMessage(), e);
+            throw new GeneralException(ErrorStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }
