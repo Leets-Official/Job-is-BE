@@ -110,7 +110,7 @@ class HistoryServiceTest {
     }
 
     @Test
-    void givenAllFilter_whenGetHistory_thenQueryAllThreeActionTypes() {
+    void givenAllFilter_whenGetHistory_thenQueryAllFourActionTypes() {
         when(userActionRepository.findLatestByUserIdAndActionTypeIn(any(), any(), any()))
                 .thenReturn(new PageImpl<>(List.of()));
 
@@ -121,6 +121,21 @@ class HistoryServiceTest {
                 .findLatestByUserIdAndActionTypeIn(anyLong(), captor.capture(), any(Pageable.class));
 
         assertThat(captor.getValue())
-                .containsExactlyInAnyOrder(ActionType.VIEWED, ActionType.DISMISSED, ActionType.APPLY_INTENT_CLICKED);
+                .containsExactlyInAnyOrder(ActionType.VIEWED, ActionType.DISMISSED, ActionType.APPLY_INTENT_CLICKED, ActionType.SAVED);
+    }
+
+    @Test
+    void givenSavedAction_whenGetHistory_thenMapToSavedItem() {
+        Job job = job(12L, OffsetDateTime.now().plusDays(3), JobStatus.ACTIVE);
+        UserAction saved = userAction(job, ActionType.SAVED, null, null);
+
+        Page<UserAction> page = new PageImpl<>(List.of(saved));
+        when(userActionRepository.findLatestByUserIdAndActionTypeIn(any(), any(), any()))
+                .thenReturn(page);
+
+        PageResponse<?> response = historyService.getHistory(1L, 1, 24, HistoryFilterType.SAVED);
+
+        var item = (com.leets7th.job_is_be.domain.job.dto.HistoryItemResponse) response.content().get(0);
+        assertThat(item.actionType()).isEqualTo(HistoryActionType.SAVED);
     }
 }
