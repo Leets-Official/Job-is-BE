@@ -3,6 +3,8 @@ package com.leets7th.job_is_be.domain.job.service;
 import com.leets7th.job_is_be.domain.job.dto.CareerLevelResponse;
 import com.leets7th.job_is_be.domain.job.dto.JobCategoryResponse;
 import com.leets7th.job_is_be.domain.job.dto.RegionResponse;
+import com.leets7th.job_is_be.domain.job.dto.TechStackResponse;
+import com.leets7th.job_is_be.domain.job.enums.TechStackType;
 import com.leets7th.job_is_be.domain.job.repository.JobCategoryRepository;
 import com.leets7th.job_is_be.domain.job.repository.RegionRepository;
 import com.leets7th.job_is_be.domain.user.enums.CareerLevel;
@@ -38,5 +40,11 @@ public class MetadataQueryService {
         return Arrays.stream(CareerLevel.values())
                 .map(CareerLevelResponse::new)
                 .collect(Collectors.toList());
+    }
+
+    public List<TechStackResponse> getAllTechStacks() {
+        return Arrays.stream(TechStackType.values())
+                .map(TechStackResponse::from)
+                .toList();
     }
 }

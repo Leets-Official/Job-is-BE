@@ -48,3 +48,8 @@ application-prod.yml
 ## Claude ##
 .claude/
 .DS_Store
+
+
+## Python ##
+__pycache__/
+*.pyc
