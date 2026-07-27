@@ -64,8 +64,8 @@ public enum SuccessStatus implements BaseStatus {
     JOB_APPLY_INTENT_TOGGLE_SUCCESS(HttpStatus.OK, "JOB_200_3", "지원 의향 상태를 변경했습니다."),
     JOB_APPLY_RECORD_SUCCESS(HttpStatus.OK, "JOB_200_4", "지원하기 클릭을 기록했습니다."),
     SAVE_LIST_GET_SUCCESS(HttpStatus.OK, "JOB_200_5", "저장 목록을 조회했습니다."),
-    JOB_SEARCH_SUCCESS(HttpStatus.OK, "JOB_200_2", "공고 목록을 조회했습니다."),
-    JOB_DETAIL_SUCCESS(HttpStatus.OK, "JOB_200_3", "공고 상세 정보를 조회했습니다."),
+    JOB_SEARCH_SUCCESS(HttpStatus.OK, "JOB_200_6", "공고 목록을 조회했습니다."),
+    JOB_DETAIL_SUCCESS(HttpStatus.OK, "JOB_200_7", "공고 상세 정보를 조회했습니다."),
 
     /**
      * Metadata / TechStack
