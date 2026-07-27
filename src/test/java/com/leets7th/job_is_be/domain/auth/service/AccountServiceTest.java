@@ -55,7 +55,7 @@ class AccountServiceTest {
                 .socialType(SocialType.KAKAO)
                 .email("user@example.com")
                 .build();
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(userRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(user));
         when(userWithdrawalRepository.findFirstByUserIdAndStatusOrderByRequestedAtDesc(
                 1L,
                 WithdrawalStatus.PENDING

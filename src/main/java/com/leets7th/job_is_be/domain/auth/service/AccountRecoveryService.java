@@ -50,7 +50,7 @@ public class AccountRecoveryService {
         }
         OAuthRestoreCodeStore.RestorePayload payload = restoreCodeStore.consume(restoreCode)
                 .orElseThrow(() -> new GeneralException(ErrorStatus.OAUTH_RESTORE_CODE_INVALID));
-        User user = userRepository.findById(payload.userId())
+        User user = userRepository.findByIdForUpdate(payload.userId())
                 .orElseThrow(() -> new GeneralException(ErrorStatus.USER_NOT_FOUND));
         UserWithdrawal withdrawal = userWithdrawalRepository
                 .findFirstByUserIdAndStatusOrderByRequestedAtDesc(
@@ -68,18 +68,20 @@ public class AccountRecoveryService {
             throw new GeneralException(ErrorStatus.WITHDRAWAL_RESTORE_EXPIRED);
         }
 
+        boolean onboardingCompleted = userProfileRepository.findByUserId(user.getId())
+                .map(profile -> profile.isOnboardingCompleted())
+                .orElse(false);
+
         user.restore();
         withdrawal.restore(now);
         JwtTokenProvider.TokenPair tokenPair = tokenProvider.issueTokenPair(user.getId());
+        refreshTokenSessionStore.revokeAll(user.getId());
         refreshTokenSessionStore.save(
                 tokenPair.refreshSessionId(),
                 user.getId(),
                 tokenPair.refreshToken(),
                 tokenPair.refreshTokenTtl()
         );
-        boolean onboardingCompleted = userProfileRepository.findByUserId(user.getId())
-                .map(profile -> profile.isOnboardingCompleted())
-                .orElse(false);
 
         return new RestoreResult(
                 new OAuthExchangeResponse(

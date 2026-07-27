@@ -13,6 +13,7 @@ import com.leets7th.job_is_be.global.status.SuccessStatus;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -54,15 +55,10 @@ public class AccountController {
             @Valid @RequestBody(required = false) WithdrawalRequest request
     ) {
         WithdrawalResponse response = accountService.withdraw(Long.valueOf(jwt.getSubject()), request);
-        return ResponseEntity
-                .status(SuccessStatus.WITHDRAWAL_SUCCESS.getHttpStatus())
-                .header(HttpHeaders.SET_COOKIE, cookieManager.clear().toString())
-                .body(new ApiResponse<>(
-                        true,
-                        SuccessStatus.WITHDRAWAL_SUCCESS.getCode(),
-                        SuccessStatus.WITHDRAWAL_SUCCESS.getMessage(),
-                        response
-                ));
+        return withCookie(
+                ApiResponse.success(SuccessStatus.WITHDRAWAL_SUCCESS, response),
+                cookieManager.clear()
+        );
     }
 
     @PostMapping("/restore")
@@ -71,14 +67,20 @@ public class AccountController {
     ) {
         AccountRecoveryService.RestoreResult result =
                 accountRecoveryService.restore(request.restoreCode());
+        return withCookie(
+                ApiResponse.success(SuccessStatus.WITHDRAWAL_RESTORE_SUCCESS, result.response()),
+                cookieManager.create(result.refreshToken())
+        );
+    }
+
+    private <T> ResponseEntity<ApiResponse<T>> withCookie(
+            ResponseEntity<ApiResponse<T>> response,
+            ResponseCookie cookie
+    ) {
         return ResponseEntity
-                .status(SuccessStatus.WITHDRAWAL_RESTORE_SUCCESS.getHttpStatus())
-                .header(HttpHeaders.SET_COOKIE, cookieManager.create(result.refreshToken()).toString())
-                .body(new ApiResponse<>(
-                        true,
-                        SuccessStatus.WITHDRAWAL_RESTORE_SUCCESS.getCode(),
-                        SuccessStatus.WITHDRAWAL_RESTORE_SUCCESS.getMessage(),
-                        result.response()
-                ));
+                .status(response.getStatusCode())
+                .headers(response.getHeaders())
+                .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                .body(response.getBody());
     }
 }

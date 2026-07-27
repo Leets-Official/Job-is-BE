@@ -15,6 +15,8 @@ import com.leets7th.job_is_be.global.exception.GeneralException;
 import com.leets7th.job_is_be.global.status.ErrorStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.LocalDateTime;
 
@@ -60,7 +62,7 @@ public class AccountService {
 
     @Transactional
     public WithdrawalResponse withdraw(Long userId, WithdrawalRequest request) {
-        User user = userRepository.findById(userId)
+        User user = userRepository.findByIdForUpdate(userId)
                 .orElseThrow(() -> new GeneralException(ErrorStatus.USER_NOT_FOUND));
         if (user.getStatus() == UserStatus.WITHDRAWN
                 || userWithdrawalRepository
@@ -85,12 +87,27 @@ public class AccountService {
                 .build());
         userRepository.flush();
         userWithdrawalRepository.flush();
-        refreshTokenSessionStore.revokeAll(userId);
+        revokeRefreshSessionsAfterCommit(userId);
 
         return new WithdrawalResponse(restorableUntil);
     }
 
     private String normalize(String value) {
         return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    private void revokeRefreshSessionsAfterCommit(Long userId) {
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(
+                    new TransactionSynchronization() {
+                        @Override
+                        public void afterCommit() {
+                            refreshTokenSessionStore.revokeAll(userId);
+                        }
+                    }
+            );
+            return;
+        }
+        refreshTokenSessionStore.revokeAll(userId);
     }
 }

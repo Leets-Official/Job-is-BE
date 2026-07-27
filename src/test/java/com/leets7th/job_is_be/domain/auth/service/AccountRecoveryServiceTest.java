@@ -22,6 +22,8 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -75,7 +77,7 @@ class AccountRecoveryServiceTest {
                         withdrawal.getScheduledDeletionAt().toString()
                 )
         ));
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(userRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(user));
         when(userWithdrawalRepository.findFirstByUserIdAndStatusOrderByRequestedAtDesc(
                 1L,
                 WithdrawalStatus.PENDING
@@ -101,6 +103,49 @@ class AccountRecoveryServiceTest {
                 1L,
                 "refresh",
                 Duration.ofDays(14)
+        );
+        verify(refreshTokenSessionStore).revokeAll(1L);
+    }
+
+    @Test
+    void doesNotCreateRedisSessionWhenProfileLookupFails() {
+        User user = User.builder()
+                .socialId("social-id")
+                .socialType(SocialType.KAKAO)
+                .email("user@example.com")
+                .build();
+        ReflectionTestUtils.setField(user, "id", 1L);
+        user.withdraw(LocalDateTime.now().minusDays(1));
+        UserWithdrawal withdrawal = UserWithdrawal.builder()
+                .user(user)
+                .requestedAt(LocalDateTime.now().minusDays(1))
+                .scheduledDeletionAt(LocalDateTime.now().plusDays(29))
+                .build();
+        when(restoreCodeStore.consume("restore-code")).thenReturn(Optional.of(
+                new OAuthRestoreCodeStore.RestorePayload(
+                        1L,
+                        withdrawal.getScheduledDeletionAt().toString()
+                )
+        ));
+        when(userRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(user));
+        when(userWithdrawalRepository.findFirstByUserIdAndStatusOrderByRequestedAtDesc(
+                1L,
+                WithdrawalStatus.PENDING
+        )).thenReturn(Optional.of(withdrawal));
+        when(userProfileRepository.findByUserId(1L))
+                .thenThrow(new IllegalStateException("database read failed"));
+
+        assertThatThrownBy(() -> recoveryService.restore("restore-code"))
+                .isInstanceOf(IllegalStateException.class);
+
+        assertThat(user.getStatus()).isEqualTo(UserStatus.WITHDRAWN);
+        assertThat(withdrawal.getStatus()).isEqualTo(WithdrawalStatus.PENDING);
+        verify(refreshTokenSessionStore, never()).revokeAll(1L);
+        verify(refreshTokenSessionStore, never()).save(
+                org.mockito.ArgumentMatchers.anyString(),
+                org.mockito.ArgumentMatchers.anyLong(),
+                org.mockito.ArgumentMatchers.anyString(),
+                org.mockito.ArgumentMatchers.any()
         );
     }
 }
