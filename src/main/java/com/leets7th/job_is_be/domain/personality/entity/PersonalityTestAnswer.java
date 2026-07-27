@@ -14,7 +14,13 @@ import java.time.LocalDateTime;
  * 퀴즈 문항별 응답. PersonalityTest 하위 엔티티.
  */
 @Entity
-@Table(name = "personality_test_answers")
+@Table(
+        name = "personality_test_answers",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_personality_test_answers_test_question",
+                columnNames = {"test_id", "question_no"}
+        )
+)
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class PersonalityTestAnswer extends BaseEntity {
@@ -41,6 +47,11 @@ public class PersonalityTestAnswer extends BaseEntity {
     public PersonalityTestAnswer(PersonalityTest test, Integer questionNo, String choiceValue, LocalDateTime answeredAt) {
         this.test = test;
         this.questionNo = questionNo;
+        this.choiceValue = choiceValue;
+        this.answeredAt = answeredAt;
+    }
+
+    public void updateChoice(String choiceValue, LocalDateTime answeredAt) {
         this.choiceValue = choiceValue;
         this.answeredAt = answeredAt;
     }
