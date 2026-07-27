@@ -13,6 +13,7 @@ import com.leets7th.job_is_be.global.status.ErrorStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
 
 import java.io.BufferedReader;
@@ -59,6 +60,8 @@ public class JobDataInitializer implements CommandLineRunner {
                         continue;
                     }
                     companyRepository.save(company);
+                } catch (DataIntegrityViolationException e) {
+                    log.info("동시 적재로 인한 중복 회사 데이터 건너뜀 (행 번호: {})", lineNumber);
                 } catch (Exception e) {
                     log.warn("회사 데이터 {}번째 행 적재 실패 (건너뜀): {}", lineNumber, e.getMessage());
                 }
@@ -84,16 +87,18 @@ public class JobDataInitializer implements CommandLineRunner {
                 lineNumber++;
 
                 try {
-                    // [수정] Company -> Job 관련 로직 및 로깅으로 변경
                     Job job = mapper.readValue(line, Job.class);
 
-                    if (job.getTitle() == null) {
+                    if (job.getTitle() == null || job.getTitle().isBlank()
+                            || job.getSource() == null || job.getExternalId() == null) {
                         continue;
                     }
 
                     if (!jobRepository.existsBySourceAndExternalId(job.getSource(), job.getExternalId())) {
                         jobRepository.save(job);
                     }
+                } catch (DataIntegrityViolationException e) {
+                    log.info("동시 적재로 인한 중복 공고 데이터 건너뜀 (행 번호: {})", lineNumber);
                 } catch (Exception e) {
                     log.warn("공고 데이터 {}번째 행 적재 실패 (건너뜀): {}", lineNumber, e.getMessage());
                 }
