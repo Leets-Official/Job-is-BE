@@ -44,6 +44,7 @@ public class ProfileService {
     private final JobCategoryRepository jobCategoryRepository;
     private final RegionRepository regionRepository;
     private final ProfileValueCodec valueCodec;
+    private final UserTechStackService userTechStackService;
 
     public ProfileService(
             UserRepository userRepository,
@@ -52,7 +53,8 @@ public class ProfileService {
             UserRegionRepository userRegionRepository,
             JobCategoryRepository jobCategoryRepository,
             RegionRepository regionRepository,
-            ProfileValueCodec valueCodec
+            ProfileValueCodec valueCodec,
+            UserTechStackService userTechStackService
     ) {
         this.userRepository = userRepository;
         this.userProfileRepository = userProfileRepository;
@@ -61,6 +63,7 @@ public class ProfileService {
         this.jobCategoryRepository = jobCategoryRepository;
         this.regionRepository = regionRepository;
         this.valueCodec = valueCodec;
+        this.userTechStackService = userTechStackService;
     }
 
     @Transactional
@@ -81,6 +84,9 @@ public class ProfileService {
         }
 
         List<UserJobCategory> currentSelections = findJobCategories(userId);
+        List<String> techStackNames = request.techStacks() != null
+                ? userTechStackService.replace(user, request.techStacks())
+                : null;
         profile.updateDraft(
                 request.careerLevel() != null ? request.careerLevel() : profile.getCareerLevel(),
                 request.onboardingStep(),
@@ -90,8 +96,8 @@ public class ProfileService {
                 request.excludeKeywords() != null
                         ? valueCodec.encode(request.excludeKeywords())
                         : profile.getExcludeKeywords(),
-                request.techStacks() != null
-                        ? valueCodec.encode(request.techStacks())
+                techStackNames != null
+                        ? valueCodec.encode(techStackNames)
                         : profile.getTechStack()
         );
         userProfileRepository.save(profile);
@@ -172,6 +178,9 @@ public class ProfileService {
         User user = profile.getUser();
         List<UserJobCategory> currentSelections = findJobCategories(userId);
         UserRegion currentRegion = findRegion(userId);
+        List<String> techStackNames = request.techStacks() != null
+                ? userTechStackService.replace(user, request.techStacks())
+                : null;
 
         if (request.jobCategoryIds() != null || request.primaryJobCategoryId() != null) {
             List<Long> categoryIds = request.jobCategoryIds() != null
@@ -205,8 +214,8 @@ public class ProfileService {
                 request.excludeKeywords() != null
                         ? valueCodec.encode(request.excludeKeywords())
                         : profile.getExcludeKeywords(),
-                request.techStacks() != null
-                        ? valueCodec.encode(request.techStacks())
+                techStackNames != null
+                        ? valueCodec.encode(techStackNames)
                         : profile.getTechStack()
         );
 
@@ -316,7 +325,7 @@ public class ProfileService {
                 profile.getCareerLevel(),
                 valueCodec.decode(profile.getPreferenceNote()),
                 valueCodec.decode(profile.getExcludeKeywords()),
-                valueCodec.decode(profile.getTechStack()),
+                findTechStackNames(profile),
                 profile.isJobTestCompleted()
         );
     }
@@ -359,10 +368,15 @@ public class ProfileService {
                 profile.getCareerLevel(),
                 valueCodec.decode(profile.getPreferenceNote()),
                 valueCodec.decode(profile.getExcludeKeywords()),
-                valueCodec.decode(profile.getTechStack()),
+                findTechStackNames(profile),
                 profile.isJobTestCompleted(),
                 profile.isOnboardingCompleted(),
                 profile.getOnboardingCompletedAt()
         );
+    }
+
+    private List<String> findTechStackNames(UserProfile profile) {
+        List<String> names = userTechStackService.findNames(profile.getUser().getId());
+        return names.isEmpty() ? valueCodec.decode(profile.getTechStack()) : names;
     }
 }
