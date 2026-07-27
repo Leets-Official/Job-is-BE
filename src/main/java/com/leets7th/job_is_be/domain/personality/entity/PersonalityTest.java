@@ -50,11 +50,22 @@ public class PersonalityTest extends BaseEntity {
     private OffsetDateTime completedAt;
 
     @Builder
-    public PersonalityTest(User user, PersonalityTestSource source, OffsetDateTime startedAt) {
+    public PersonalityTest(
+            User user,
+            PersonalityTestSource source,
+            boolean completed,
+            String resultTags,
+            PersonalityResultType resultType,
+            OffsetDateTime startedAt,
+            OffsetDateTime completedAt
+    ) {
         this.user = user;
         this.source = source;
+        this.completed = completed;
+        this.resultTags = resultTags;
+        this.resultType = resultType;
         this.startedAt = startedAt;
-        this.completed = false;
+        this.completedAt = completedAt;
     }
 
     public void complete(
