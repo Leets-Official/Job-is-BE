@@ -81,7 +81,12 @@ public enum SuccessStatus implements BaseStatus {
     NOTIFICATION_SETTING_GET_SUCCESS(HttpStatus.OK, "NOTIFICATION_200_1", "알림 수신 설정을 조회했습니다."),
     NOTIFICATION_SETTING_UPDATE_SUCCESS(HttpStatus.OK, "NOTIFICATION_200_2", "알림 수신 설정을 변경했습니다."),
     NOTIFICATION_SNOOZE_SUCCESS(HttpStatus.OK, "NOTIFICATION_200_3", "알림 발송을 스누즈 설정했습니다."),
-    NOTIFICATION_SNOOZE_CANCEL_SUCCESS(HttpStatus.OK, "NOTIFICATION_200_4", "알림 스누즈를 해제했습니다.");
+    NOTIFICATION_SNOOZE_CANCEL_SUCCESS(HttpStatus.OK, "NOTIFICATION_200_4", "알림 스누즈를 해제했습니다."),
+
+    /**
+     * Account
+     */
+    ACCOUNT_GET_SUCCESS(HttpStatus.OK, "ACCOUNT_200_1", "계정 정보를 조회했습니다.");
 
     private final HttpStatus httpStatus;
     private final String code;
