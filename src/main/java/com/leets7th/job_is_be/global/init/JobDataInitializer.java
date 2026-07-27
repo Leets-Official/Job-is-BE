@@ -48,14 +48,20 @@ public class JobDataInitializer implements CommandLineRunner {
 
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
             String line;
+            int lineNumber = 0;
             while ((line = br.readLine()) != null) {
-                Company company = mapper.readValue(line, Company.class);
+                lineNumber++;
 
-                // 이미 존재하는 회사가 아니면 저장
-                if (company.getId() != null && companyRepository.existsById(company.getId())) {
-                    continue;
+                try {
+                    Company company = mapper.readValue(line, Company.class);
+
+                    if (company.getId() != null && companyRepository.existsById(company.getId())) {
+                        continue;
+                    }
+                    companyRepository.save(company);
+                } catch (Exception e) {
+                    log.warn("회사 데이터 {}번째 행 적재 실패 (건너뜀): {}", lineNumber, e.getMessage());
                 }
-                companyRepository.save(company);
             }
         } catch (Exception e) {
             log.error("회사 데이터 적재 중 오류 발생: {}", e.getMessage(), e);
@@ -72,15 +78,24 @@ public class JobDataInitializer implements CommandLineRunner {
 
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
             String line;
+            int lineNumber = 0;
+
             while ((line = br.readLine()) != null) {
-                Job job = mapper.readValue(line, Job.class);
+                lineNumber++;
 
-                if (job.getTitle() == null) {
-                    continue;
-                }
+                try {
+                    // [수정] Company -> Job 관련 로직 및 로깅으로 변경
+                    Job job = mapper.readValue(line, Job.class);
 
-                if (!jobRepository.existsBySourceAndExternalId(job.getSource(), job.getExternalId())) {
-                    jobRepository.save(job);
+                    if (job.getTitle() == null) {
+                        continue;
+                    }
+
+                    if (!jobRepository.existsBySourceAndExternalId(job.getSource(), job.getExternalId())) {
+                        jobRepository.save(job);
+                    }
+                } catch (Exception e) {
+                    log.warn("공고 데이터 {}번째 행 적재 실패 (건너뜀): {}", lineNumber, e.getMessage());
                 }
             }
         } catch (Exception e) {
