@@ -59,7 +59,9 @@ public enum SuccessStatus implements BaseStatus {
       * Job
      */
     JOB_SAVE_SUCCESS(HttpStatus.CREATED, "JOB_201_1", "공고를 저장했습니다."),
-    JOB_UNSAVE_SUCCESS(HttpStatus.OK, "JOB_200_1", "공고 저장을 취소했습니다.");
+    JOB_UNSAVE_SUCCESS(HttpStatus.OK, "JOB_200_1", "공고 저장을 취소했습니다."),
+    JOB_SOURCE_CHECK_SUCCESS(HttpStatus.OK, "JOB_200_2", "원문 링크 유효성을 확인했습니다.");
+
 
     private final HttpStatus httpStatus;
     private final String code;
