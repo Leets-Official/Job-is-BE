@@ -13,6 +13,7 @@ public record ProfileDraftResponse(
         List<String> preferenceNotes,
         List<String> excludeKeywords,
         List<String> techStacks,
+        List<String> personalityTags,
         boolean jobTestCompleted
 ) {
 }
