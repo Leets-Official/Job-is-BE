@@ -1,5 +1,7 @@
 package com.leets7th.job_is_be.domain.job.converter;
 
+import com.leets7th.job_is_be.domain.job.dto.JobDetailResponse;
+import com.leets7th.job_is_be.domain.job.dto.JobSummaryResponse;
 import com.leets7th.job_is_be.domain.job.entity.Job;
 import com.leets7th.job_is_be.domain.job.entity.JobPosting;
 import com.leets7th.job_is_be.domain.job.enums.JobStatus;
@@ -74,5 +76,23 @@ public class JobPostingConverter {
             return posting.getCareerMin() + "년 이상";
         }
         return "경력무관";
+    }
+
+    public JobSummaryResponse toSummaryResponse(Job job) {
+        return JobSummaryResponse.builder()
+                .id(job.getId())
+                .companyName(job.getCompany() != null ? job.getCompany().getName() : null)
+                .position(job.getTitle())
+                .careerLevel(job.getCareerLevel())
+                .employmentType(job.getEmploymentType())
+                .remoteAvailable(job.isRemoteAvailable())
+                .dueTime(job.getDeadlineAt())
+                .thumbnailUrl(job.getThumbnailUrl())
+                .skillTags(job.getSkillTags())
+                .build();
+    }
+
+    public JobDetailResponse toDetailResponse(Job job) {
+        return JobDetailResponse.from(job);
     }
 }
