@@ -1,5 +1,7 @@
 package com.leets7th.job_is_be.domain.job.entity;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.leets7th.job_is_be.domain.job.enums.JobStatus;
 import com.leets7th.job_is_be.global.base.BaseEntity;
 import jakarta.persistence.*;
@@ -17,7 +19,13 @@ import java.util.List;
  * 채용 공고
  */
 @Entity
-@Table(name = "jobs", uniqueConstraints = @UniqueConstraint(name = "uk_jobs_source_external_id", columnNames = {"source", "external_id"}))
+@Table(
+        name = "jobs",
+        uniqueConstraints = @UniqueConstraint(name = "uk_jobs_source_external_id", columnNames = {"source", "external_id"}),
+        indexes = {
+                @Index(name = "idx_created_at_id", columnList = "created_at DESC, id DESC")
+        }
+)
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Job extends BaseEntity {
@@ -26,7 +34,7 @@ public class Job extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
     @JoinColumn(name = "company_id")
     private Company company;
 
@@ -38,6 +46,7 @@ public class Job extends BaseEntity {
     @JoinColumn(name = "region_id")
     private Region region;
 
+    @JsonAlias({"job_title", "position", "title"})
     @Column(nullable = false, columnDefinition = "TEXT")
     private String title;
 
@@ -102,6 +111,7 @@ public class Job extends BaseEntity {
     @Column(name = "reward_total")
     private String rewardTotal; // 추천 보상금
 
+    @JsonProperty("thumbnail_url")
     @Column(name = "thumbnail_url", columnDefinition = "TEXT")
     private String thumbnailUrl; // 카드 썸네일 URL
 

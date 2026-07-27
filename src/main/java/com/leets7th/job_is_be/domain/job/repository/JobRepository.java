@@ -11,7 +11,7 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 
-public interface JobRepository extends JpaRepository<Job, Long> {
+public interface JobRepository extends JpaRepository<Job, Long>, JobRepositoryCustom {
 
     // 지원 가능 건수 — 마감되지 않은(상시 포함) ACTIVE 공고 수
     @Query("SELECT COUNT(j) FROM Job j WHERE j.status = :status "
@@ -26,4 +26,6 @@ public interface JobRepository extends JpaRepository<Job, Long> {
 
     Optional<Job> findBySourceAndExternalId(String source, Long externalId);
 
+    // 출처(source)와 외부 ID(externalId) 기준 존재 여부 확인
+    boolean existsBySourceAndExternalId(String source, Long externalId);
 }

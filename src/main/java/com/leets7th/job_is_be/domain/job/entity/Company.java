@@ -1,5 +1,6 @@
 package com.leets7th.job_is_be.domain.job.entity;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.leets7th.job_is_be.global.base.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -83,14 +84,14 @@ public class Company extends BaseEntity {
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "raw_jobkorea")
-    private String rawJobkorea;
+    private JsonNode rawJobkorea;
 
     @Builder
     public Company(String name, String normalizedName, String registrationNumber,
                    Long wantedCompanyId, Long jobkoreaGnoRef, Integer employeeCount, String companyType,
                    String industry, String stockStatus, String hqAddress, String homepage,
                    String description, String enrichmentStatus, Boolean nameMatch, String rejectedName,
-                   OffsetDateTime enrichedAt, String rawJobkorea, String source, String logoUrl) {
+                   OffsetDateTime enrichedAt, JsonNode rawJobkorea, String source, String logoUrl) {
         this.name = name;
         this.normalizedName = normalizedName;
         this.registrationNumber = registrationNumber;
@@ -121,7 +122,6 @@ public class Company extends BaseEntity {
         this.description = description;
         this.enrichmentStatus = enrichmentStatus;
         this.rejectedName = rejectedName;
-        this.rawJobkorea = rawJobkorea;
         this.source = source;
         this.logoUrl = logoUrl;
     }

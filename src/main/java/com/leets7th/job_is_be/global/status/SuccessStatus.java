@@ -55,15 +55,30 @@ public enum SuccessStatus implements BaseStatus {
     RESUME_DELETE_SUCCESS(HttpStatus.OK, "RESUME_200_3", "이력서/자소서 파일을 삭제했습니다."),
     RESUME_UPLOAD_UPDATE_SUCCESS(HttpStatus.OK, "RESUME_200_4", "이력서/자소서 파일을 갱신했습니다."),
 
-     /**
-      * Job
+    /**
+     * Job
      */
     JOB_SAVE_SUCCESS(HttpStatus.CREATED, "JOB_201_1", "공고를 저장했습니다."),
     JOB_UNSAVE_SUCCESS(HttpStatus.OK, "JOB_200_1", "공고 저장을 취소했습니다."),
     JOB_VIEW_RECORD_SUCCESS(HttpStatus.OK, "JOB_200_2", "공고 열람을 기록했습니다."),
     JOB_APPLY_INTENT_TOGGLE_SUCCESS(HttpStatus.OK, "JOB_200_3", "지원 의향 상태를 변경했습니다."),
     JOB_APPLY_RECORD_SUCCESS(HttpStatus.OK, "JOB_200_4", "지원하기 클릭을 기록했습니다."),
-    SAVE_LIST_GET_SUCCESS(HttpStatus.OK, "JOB_200_5", "저장 목록을 조회했습니다.");
+    SAVE_LIST_GET_SUCCESS(HttpStatus.OK, "JOB_200_5", "저장 목록을 조회했습니다."),
+    JOB_SEARCH_SUCCESS(HttpStatus.OK, "JOB_200_2", "공고 목록을 조회했습니다."),
+    JOB_DETAIL_SUCCESS(HttpStatus.OK, "JOB_200_3", "공고 상세 정보를 조회했습니다."),
+
+    /**
+     * Metadata / TechStack
+     */
+    TECH_STACK_GET_SUCCESS(HttpStatus.OK, "TECH_200_1", "기술 스택 목록을 조회했습니다."),
+
+    /**
+     * Notification
+     */
+    NOTIFICATION_SETTING_GET_SUCCESS(HttpStatus.OK, "NOTIFICATION_200_1", "알림 수신 설정을 조회했습니다."),
+    NOTIFICATION_SETTING_UPDATE_SUCCESS(HttpStatus.OK, "NOTIFICATION_200_2", "알림 수신 설정을 변경했습니다."),
+    NOTIFICATION_SNOOZE_SUCCESS(HttpStatus.OK, "NOTIFICATION_200_3", "알림 발송을 스누즈 설정했습니다."),
+    NOTIFICATION_SNOOZE_CANCEL_SUCCESS(HttpStatus.OK, "NOTIFICATION_200_4", "알림 스누즈를 해제했습니다.");
 
     private final HttpStatus httpStatus;
     private final String code;
