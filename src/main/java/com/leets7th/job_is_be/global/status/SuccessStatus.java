@@ -28,6 +28,11 @@ public enum SuccessStatus implements BaseStatus {
     /**
      * Profile
      */
+    QUIZ_QUESTIONS_GET_SUCCESS(HttpStatus.OK, "QUIZ_200_1", "직무 성향 퀴즈 문항을 조회했습니다."),
+    QUIZ_ANSWER_SAVE_SUCCESS(HttpStatus.OK, "QUIZ_200_2", "퀴즈 응답을 저장했습니다."),
+    QUIZ_RESULT_GET_SUCCESS(HttpStatus.OK, "QUIZ_200_3", "직무 성향 퀴즈 결과를 조회했습니다."),
+    QUIZ_RESULT_APPLY_SUCCESS(HttpStatus.OK, "QUIZ_200_4", "퀴즈 결과를 프로필에 반영했습니다."),
+
     PROFILE_GET_SUCCESS(HttpStatus.OK, "PROFILE_200_1", "프로필을 조회했습니다."),
     PROFILE_UPDATE_SUCCESS(HttpStatus.OK, "PROFILE_200_2", "프로필을 수정했습니다."),
     PROFILE_DRAFT_GET_SUCCESS(HttpStatus.OK, "PROFILE_200_3", "온보딩 임시저장을 조회했습니다."),
