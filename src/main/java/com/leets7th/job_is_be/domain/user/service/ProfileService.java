@@ -72,7 +72,7 @@ public class ProfileService {
             throw new GeneralException(ErrorStatus.PROFILE_ONBOARDING_STEP_REQUIRED);
         }
 
-        User user = userRepository.findById(userId)
+        User user = userRepository.findByIdForUpdate(userId)
                 .orElseThrow(() -> new GeneralException(ErrorStatus.USER_NOT_FOUND));
         UserProfile profile = userProfileRepository.findByUserId(userId)
                 .orElseGet(() -> UserProfile.builder()
@@ -170,12 +170,14 @@ public class ProfileService {
 
     @Transactional
     public ProfileResponse updateProfile(Long userId, ProfileUpdateRequest request) {
-        UserProfile profile = findCompletedProfile(userId);
         if (request == null) {
+            UserProfile profile = findCompletedProfile(userId);
             return toProfileResponse(profile, findJobCategories(userId), findRegion(userId));
         }
 
-        User user = profile.getUser();
+        User user = userRepository.findByIdForUpdate(userId)
+                .orElseThrow(() -> new GeneralException(ErrorStatus.USER_NOT_FOUND));
+        UserProfile profile = findCompletedProfile(userId);
         List<UserJobCategory> currentSelections = findJobCategories(userId);
         UserRegion currentRegion = findRegion(userId);
         List<String> techStackNames = request.techStacks() != null

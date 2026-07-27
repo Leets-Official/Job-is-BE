@@ -1,7 +1,7 @@
 package com.leets7th.job_is_be.domain.user.service;
 
 import com.leets7th.job_is_be.domain.job.entity.TechStack;
-import com.leets7th.job_is_be.domain.job.repository.TechStackRepository;
+import com.leets7th.job_is_be.domain.job.service.TechStackRegistrationService;
 import com.leets7th.job_is_be.domain.user.entity.User;
 import com.leets7th.job_is_be.domain.user.entity.UserTechStack;
 import com.leets7th.job_is_be.domain.user.repository.UserTechStackRepository;
@@ -19,25 +19,24 @@ public class UserTechStackService {
 
     private static final int MAX_NAME_LENGTH = 100;
 
-    private final TechStackRepository techStackRepository;
+    private final TechStackRegistrationService techStackRegistrationService;
     private final UserTechStackRepository userTechStackRepository;
 
     public UserTechStackService(
-            TechStackRepository techStackRepository,
+            TechStackRegistrationService techStackRegistrationService,
             UserTechStackRepository userTechStackRepository
     ) {
-        this.techStackRepository = techStackRepository;
+        this.techStackRegistrationService = techStackRegistrationService;
         this.userTechStackRepository = userTechStackRepository;
     }
 
     public List<String> replace(User user, List<String> requestedNames) {
         Map<String, String> uniqueNames = normalize(requestedNames);
         List<TechStack> techStacks = uniqueNames.entrySet().stream()
-                .map(entry -> techStackRepository.findByNormalizedName(entry.getKey())
-                        .orElseGet(() -> techStackRepository.save(TechStack.builder()
-                                .name(entry.getValue())
-                                .normalizedName(entry.getKey())
-                                .build())))
+                .map(entry -> techStackRegistrationService.resolve(
+                        entry.getValue(),
+                        entry.getKey()
+                ))
                 .toList();
 
         userTechStackRepository.deleteAllByUserId(user.getId());
