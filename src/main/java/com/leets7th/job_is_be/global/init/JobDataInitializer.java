@@ -36,8 +36,8 @@ public class JobDataInitializer implements CommandLineRunner {
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
                 .enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS);
 
-        loadCompanies("database/out/companies.jsonl", localObjectMapper);
-        loadJobs("database/out/job_postings.jsonl", localObjectMapper);
+        loadCompanies("database/data/companies.jsonl", localObjectMapper);
+        loadJobs("database/data/job_postings.jsonl", localObjectMapper);
     }
 
     private void loadCompanies(String filePath, ObjectMapper mapper) {

@@ -77,8 +77,12 @@ public class OAuthController {
                     state,
                     stateCookieManager.extract(request)
             );
+            String fragment = result.restorationRequired()
+                    ? "restoreCode=" + result.restoreCode()
+                    + "&restorableUntil=" + result.restorableUntil()
+                    : "code=" + result.loginCode();
             URI location = UriComponentsBuilder.fromUri(properties.frontendSuccessUri())
-                    .fragment("code=" + result.loginCode())
+                    .fragment(fragment)
                     .build()
                     .encode()
                     .toUri();
