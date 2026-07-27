@@ -97,7 +97,7 @@ public class JobService {
         Set<Long> applyIntentJobIds = jobIds.isEmpty()
                 ? Set.of()
                 : new HashSet<>(userActionRepository.findJobIdsByUserIdAndJobIdInAndActionType(
-                        userId, jobIds, ActionType.APPLY_INTENT_CLICKED));
+                userId, jobIds, ActionType.APPLY_INTENT_CLICKED));
 
         Page<SavedJobResponse> responses = savedJobs.map(savedJob -> toSavedJobResponse(savedJob, now, applyIntentJobIds));
 
@@ -134,6 +134,8 @@ public class JobService {
                 expired,
                 applyIntent
         );
+    }
+
     /**
      * 채용공고 탐색 및 검색
      */
