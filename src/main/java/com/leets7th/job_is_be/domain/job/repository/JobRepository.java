@@ -28,4 +28,18 @@ public interface JobRepository extends JpaRepository<Job, Long>, JobRepositoryCu
 
     // 출처(source)와 외부 ID(externalId) 기준 존재 여부 확인
     boolean existsBySourceAndExternalId(String source, Long externalId);
+
+    //
+    @Query("SELECT j FROM Job j " +
+            "JOIN FETCH j.company " +
+            "WHERE j.id <> :targetId " +
+            "AND j.status = :status " +
+            "AND (j.deadlineAt IS NULL OR j.deadlineAt > :now) " +
+            "ORDER BY j.postedAt DESC")
+    List<Job> findCandidateJobsExcludingTarget(
+            @Param("targetId") Long targetId,
+            @Param("status") JobStatus status,
+            @Param("now") OffsetDateTime now,
+            Pageable pageable
+    );
 }

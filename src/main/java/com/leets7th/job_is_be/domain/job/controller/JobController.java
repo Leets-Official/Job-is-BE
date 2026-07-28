@@ -3,7 +3,9 @@ package com.leets7th.job_is_be.domain.job.controller;
 import com.leets7th.job_is_be.domain.job.dto.JobDetailResponse;
 import com.leets7th.job_is_be.domain.job.dto.JobSearchRequest;
 import com.leets7th.job_is_be.domain.job.dto.JobSummaryResponse;
+import com.leets7th.job_is_be.domain.job.dto.SimilarJobsResponseDto;
 import com.leets7th.job_is_be.domain.job.service.JobService;
+import com.leets7th.job_is_be.domain.job.service.JobSimilarService;
 import com.leets7th.job_is_be.global.response.ApiResponse;
 import com.leets7th.job_is_be.global.response.PageResponse;
 import com.leets7th.job_is_be.global.status.SuccessStatus;
@@ -25,6 +27,7 @@ import org.springframework.web.bind.annotation.*;
 public class JobController {
 
     private final JobService jobService;
+    private final JobSimilarService jobSimilarService;
 
     // TODO 인증 세팅 후 @AuthenticationPrincipal로 교체
     @PostMapping("/{jobId}/save")
@@ -66,5 +69,15 @@ public class JobController {
     ) {
         JobDetailResponse response = jobService.getJobDetail(jobId);
         return ApiResponse.success(SuccessStatus.JOB_DETAIL_SUCCESS, response);
+    }
+
+    // 유사 추천 공고 조회
+    @Operation(summary = "유사 추천 공고 조회", description = "공고 ID를 기준으로 유사한 추천 공고 목록을 조회합니다.")
+    @GetMapping("/{jobId}/similar")
+    public ResponseEntity<ApiResponse<SimilarJobsResponseDto>> getSimilarJobs(
+            @Parameter(description = "공고 ID") @PathVariable("jobId") String jobId
+    ) {
+        SimilarJobsResponseDto response = jobSimilarService.getSimilarJobs(jobId);
+        return ApiResponse.success(SuccessStatus.JOB_SIMILAR_SUCCESS, response); // JOB_SIMILAR_SUCCESS 적용
     }
 }

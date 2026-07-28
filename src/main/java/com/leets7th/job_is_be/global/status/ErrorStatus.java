@@ -99,6 +99,7 @@ public enum ErrorStatus implements BaseStatus {
     INVALID_PAGE_SIZE(HttpStatus.BAD_REQUEST, "JOB_400_3", "잘못된 페이지 크기입니다."),
     INITIAL_DATA_FILE_NOT_FOUND(HttpStatus.INTERNAL_SERVER_ERROR, "JOB_500_1", "초기 데이터 파일 경로를 찾을 수 없습니다."),
 
+    JOB_ENGINE_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "JOB_500_2", "유사 공고 추출 처리 중 오류가 발생했습니다."),
     /**
      * Notification
      */
