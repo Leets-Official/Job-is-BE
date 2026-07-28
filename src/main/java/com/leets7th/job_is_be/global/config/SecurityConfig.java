@@ -88,7 +88,8 @@ public class SecurityConfig {
                                 "/api/auth/csrf",
                                 "/api/auth/restore",
                                 "/api/auth/dev/**",
-                                "/api/auth/oauth/**"
+                                "/api/auth/oauth/**",
+                                "/api/unsubscribe/**"
                         ).permitAll()
 
                         // Refresh Token API는 Access Token 없이 접근 가능

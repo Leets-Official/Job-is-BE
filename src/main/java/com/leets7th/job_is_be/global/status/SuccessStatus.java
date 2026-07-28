@@ -96,7 +96,14 @@ public enum SuccessStatus implements BaseStatus {
     /**
      * Account
      */
-    ACCOUNT_GET_SUCCESS(HttpStatus.OK, "ACCOUNT_200_1", "계정 정보를 조회했습니다.");
+    ACCOUNT_GET_SUCCESS(HttpStatus.OK, "ACCOUNT_200_1", "계정 정보를 조회했습니다."),
+
+    /**
+     * Unsubscribe
+     */
+    UNSUBSCRIBE_SUCCESS(HttpStatus.OK, "UNSUBSCRIBE_200_1", "수신거부가 처리되었습니다."),
+    RESUBSCRIBE_SUCCESS(HttpStatus.OK, "UNSUBSCRIBE_200_2", "다시 구독되었습니다."),
+    UNSUBSCRIBE_FEEDBACK_SUCCESS(HttpStatus.OK, "UNSUBSCRIBE_200_3", "해지 사유가 제출되었습니다.");
 
     private final HttpStatus httpStatus;
     private final String code;
