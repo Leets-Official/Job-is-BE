@@ -1,8 +1,11 @@
 package com.leets7th.job_is_be.domain.auth.service;
 
+import com.leets7th.job_is_be.domain.auth.dto.AccountResponse;
 import com.leets7th.job_is_be.domain.auth.dto.ConsentRequest;
 import com.leets7th.job_is_be.domain.auth.dto.WithdrawalRequest;
 import com.leets7th.job_is_be.domain.auth.dto.WithdrawalResponse;
+import com.leets7th.job_is_be.domain.notification.entity.NotificationSetting;
+import com.leets7th.job_is_be.domain.notification.repository.NotificationSettingRepository;
 import com.leets7th.job_is_be.domain.user.entity.User;
 import com.leets7th.job_is_be.domain.user.entity.UserConsent;
 import com.leets7th.job_is_be.domain.user.entity.UserWithdrawal;
@@ -27,17 +30,37 @@ public class AccountService {
     private final UserConsentRepository userConsentRepository;
     private final UserWithdrawalRepository userWithdrawalRepository;
     private final RefreshTokenSessionStore refreshTokenSessionStore;
+    private final NotificationSettingRepository notificationSettingRepository;
 
     public AccountService(
             UserRepository userRepository,
             UserConsentRepository userConsentRepository,
             UserWithdrawalRepository userWithdrawalRepository,
-            RefreshTokenSessionStore refreshTokenSessionStore
+            RefreshTokenSessionStore refreshTokenSessionStore,
+            NotificationSettingRepository notificationSettingRepository
     ) {
         this.userRepository = userRepository;
         this.userConsentRepository = userConsentRepository;
         this.userWithdrawalRepository = userWithdrawalRepository;
         this.refreshTokenSessionStore = refreshTokenSessionStore;
+        this.notificationSettingRepository = notificationSettingRepository;
+    }
+
+    @Transactional(readOnly = true)
+    public AccountResponse getAccount(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new GeneralException(ErrorStatus.USER_NOT_FOUND));
+
+        boolean emailVerified = notificationSettingRepository.findByUser(user)
+                .map(NotificationSetting::isEmailVerified)
+                .orElse(false);
+
+        return new AccountResponse(
+                user.getSocialType(),
+                user.getCreatedAt(),
+                user.getEmail(),
+                emailVerified
+        );
     }
 
     @Transactional
