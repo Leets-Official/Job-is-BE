@@ -28,6 +28,11 @@ public enum SuccessStatus implements BaseStatus {
     /**
      * Profile
      */
+    QUIZ_QUESTIONS_GET_SUCCESS(HttpStatus.OK, "QUIZ_200_1", "직무 성향 퀴즈 문항을 조회했습니다."),
+    QUIZ_ANSWER_SAVE_SUCCESS(HttpStatus.OK, "QUIZ_200_2", "퀴즈 응답을 저장했습니다."),
+    QUIZ_RESULT_GET_SUCCESS(HttpStatus.OK, "QUIZ_200_3", "직무 성향 퀴즈 결과를 조회했습니다."),
+    QUIZ_RESULT_APPLY_SUCCESS(HttpStatus.OK, "QUIZ_200_4", "퀴즈 결과를 프로필에 반영했습니다."),
+
     PROFILE_GET_SUCCESS(HttpStatus.OK, "PROFILE_200_1", "프로필을 조회했습니다."),
     PROFILE_UPDATE_SUCCESS(HttpStatus.OK, "PROFILE_200_2", "프로필을 수정했습니다."),
     PROFILE_DRAFT_GET_SUCCESS(HttpStatus.OK, "PROFILE_200_3", "온보딩 임시저장을 조회했습니다."),
@@ -76,12 +81,29 @@ public enum SuccessStatus implements BaseStatus {
     TECH_STACK_GET_SUCCESS(HttpStatus.OK, "TECH_200_1", "기술 스택 목록을 조회했습니다."),
 
     /**
+     * History
+     */
+    HISTORY_LIST_GET_SUCCESS(HttpStatus.OK, "HISTORY_200_1", "열람·스킵·저장·지원 의향 내역을 조회했습니다."),
+
+    /**
      * Notification
      */
     NOTIFICATION_SETTING_GET_SUCCESS(HttpStatus.OK, "NOTIFICATION_200_1", "알림 수신 설정을 조회했습니다."),
     NOTIFICATION_SETTING_UPDATE_SUCCESS(HttpStatus.OK, "NOTIFICATION_200_2", "알림 수신 설정을 변경했습니다."),
     NOTIFICATION_SNOOZE_SUCCESS(HttpStatus.OK, "NOTIFICATION_200_3", "알림 발송을 스누즈 설정했습니다."),
-    NOTIFICATION_SNOOZE_CANCEL_SUCCESS(HttpStatus.OK, "NOTIFICATION_200_4", "알림 스누즈를 해제했습니다.");
+    NOTIFICATION_SNOOZE_CANCEL_SUCCESS(HttpStatus.OK, "NOTIFICATION_200_4", "알림 스누즈를 해제했습니다."),
+
+    /**
+     * Account
+     */
+    ACCOUNT_GET_SUCCESS(HttpStatus.OK, "ACCOUNT_200_1", "계정 정보를 조회했습니다."),
+
+    /**
+     * Unsubscribe
+     */
+    UNSUBSCRIBE_SUCCESS(HttpStatus.OK, "UNSUBSCRIBE_200_1", "수신거부가 처리되었습니다."),
+    RESUBSCRIBE_SUCCESS(HttpStatus.OK, "UNSUBSCRIBE_200_2", "다시 구독되었습니다."),
+    UNSUBSCRIBE_FEEDBACK_SUCCESS(HttpStatus.OK, "UNSUBSCRIBE_200_3", "해지 사유가 제출되었습니다.");
 
     private final HttpStatus httpStatus;
     private final String code;

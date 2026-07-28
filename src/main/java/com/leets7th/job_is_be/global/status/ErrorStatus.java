@@ -50,6 +50,13 @@ public enum ErrorStatus implements BaseStatus {
     /**
      * Profile
      */
+    QUIZ_REQUEST_INVALID(HttpStatus.BAD_REQUEST, "QUIZ_400_1", "퀴즈 요청값을 확인해 주세요."),
+    QUIZ_QUESTION_INVALID(HttpStatus.BAD_REQUEST, "QUIZ_400_2", "존재하지 않는 퀴즈 문항입니다."),
+    QUIZ_CHOICE_INVALID(HttpStatus.BAD_REQUEST, "QUIZ_400_3", "선택지는 1 또는 2여야 합니다."),
+    QUIZ_TEST_NOT_FOUND(HttpStatus.NOT_FOUND, "QUIZ_404_1", "직무 성향 테스트를 찾을 수 없습니다."),
+    QUIZ_TEST_INCOMPLETE(HttpStatus.CONFLICT, "QUIZ_409_1", "모든 문항에 응답한 후 결과를 반영할 수 있습니다."),
+    QUIZ_TEST_ALREADY_COMPLETED(HttpStatus.CONFLICT, "QUIZ_409_2", "이미 완료된 직무 성향 테스트입니다."),
+
     PROFILE_ONBOARDING_STEP_REQUIRED(HttpStatus.BAD_REQUEST, "PROFILE_400_1", "온보딩 진행 단계가 필요합니다."),
     PROFILE_JOB_CATEGORY_COUNT_INVALID(HttpStatus.BAD_REQUEST, "PROFILE_400_2", "관심 직무는 중복 없이 최대 3개까지 선택할 수 있습니다."),
     PROFILE_PRIMARY_JOB_CATEGORY_INVALID(HttpStatus.BAD_REQUEST, "PROFILE_400_3", "대표 관심 직무는 선택한 관심 직무에 포함되어야 합니다."),
@@ -96,7 +103,12 @@ public enum ErrorStatus implements BaseStatus {
      * Notification
      */
     NOTIFICATION_INVALID_SEND_SLOT(HttpStatus.BAD_REQUEST, "NOTIFICATION_400_1", "허용되지 않는 발송 시간대입니다."),
-    NOTIFICATION_SNOOZE_DURATION_REQUIRED(HttpStatus.BAD_REQUEST, "NOTIFICATION_400_2", "스누즈 기간을 선택해주세요.");
+    NOTIFICATION_SNOOZE_DURATION_REQUIRED(HttpStatus.BAD_REQUEST, "NOTIFICATION_400_2", "스누즈 기간을 선택해주세요."),
+
+    /**
+     * Unsubscribe
+     */
+    UNSUBSCRIBE_TOKEN_INVALID(HttpStatus.NOT_FOUND, "UNSUBSCRIBE_404_1", "유효하지 않은 수신거부 링크입니다.");
 
     private final HttpStatus httpStatus;
     private final String code;

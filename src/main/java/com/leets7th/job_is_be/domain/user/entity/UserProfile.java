@@ -48,6 +48,9 @@ public class UserProfile extends BaseEntity {
     @Column(name = "tech_stack", length = 500)
     private String techStack; // 보유/선호 기술 스택, comma-separated
 
+    @Column(name = "personality_tags", length = 500)
+    private String personalityTags;
+
     @Column(name = "is_job_test_completed", nullable = false)
     private boolean jobTestCompleted;
 
@@ -113,5 +116,10 @@ public class UserProfile extends BaseEntity {
     public void completeJobTest(LocalDateTime now) {
         this.jobTestCompleted = true;
         this.jobTestCompletedAt = now;
+    }
+
+    public void applyPersonalityTags(String personalityTags, LocalDateTime now) {
+        this.personalityTags = personalityTags;
+        completeJobTest(now);
     }
 }

@@ -328,6 +328,7 @@ public class ProfileService {
                 valueCodec.decode(profile.getPreferenceNote()),
                 valueCodec.decode(profile.getExcludeKeywords()),
                 findTechStackNames(profile),
+                valueCodec.decode(profile.getPersonalityTags()),
                 profile.isJobTestCompleted()
         );
     }
@@ -371,6 +372,7 @@ public class ProfileService {
                 valueCodec.decode(profile.getPreferenceNote()),
                 valueCodec.decode(profile.getExcludeKeywords()),
                 findTechStackNames(profile),
+                valueCodec.decode(profile.getPersonalityTags()),
                 profile.isJobTestCompleted(),
                 profile.isOnboardingCompleted(),
                 profile.getOnboardingCompletedAt()
