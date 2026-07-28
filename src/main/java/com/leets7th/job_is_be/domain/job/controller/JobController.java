@@ -71,13 +71,12 @@ public class JobController {
         return ApiResponse.success(SuccessStatus.JOB_DETAIL_SUCCESS, response);
     }
 
-    // 유사 추천 공고 조회
-    @Operation(summary = "유사 추천 공고 조회", description = "공고 ID를 기준으로 유사한 추천 공고 목록을 조회합니다.")
+    @Operation(summary = "유사 추천 공고 조회", description = "사용자의 성향 퀴즈 결과를 기반으로 맞춤 공고 목록을 추천합니다.")
     @GetMapping("/{jobId}/similar")
-    public ResponseEntity<ApiResponse<SimilarJobsResponseDto>> getSimilarJobs(
-            @Parameter(description = "공고 ID") @PathVariable("jobId") String jobId
+    public ResponseEntity<ApiResponse<SimilarJobsResponseDto>> getRecommendedJobsByPersonality(
+            @RequestParam Long userId
     ) {
-        SimilarJobsResponseDto response = jobSimilarService.getSimilarJobs(jobId);
-        return ApiResponse.success(SuccessStatus.JOB_SIMILAR_SUCCESS, response); // JOB_SIMILAR_SUCCESS 적용
+        SimilarJobsResponseDto response = jobSimilarService.getRecommendedJobsByPersonality(userId);
+        return ApiResponse.success(SuccessStatus.JOB_SIMILAR_SUCCESS, response);
     }
 }

@@ -20,4 +20,6 @@ public interface PersonalityTestRepository extends JpaRepository<PersonalityTest
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select test from PersonalityTest test where test.id = :testId")
     Optional<PersonalityTest> findByIdForUpdate(@Param("testId") Long testId);
+
+    Optional<PersonalityTest> findByUserId(Long userId);
 }

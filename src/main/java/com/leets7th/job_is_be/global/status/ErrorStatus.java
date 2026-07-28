@@ -106,10 +106,14 @@ public enum ErrorStatus implements BaseStatus {
     NOTIFICATION_INVALID_SEND_SLOT(HttpStatus.BAD_REQUEST, "NOTIFICATION_400_1", "허용되지 않는 발송 시간대입니다."),
     NOTIFICATION_SNOOZE_DURATION_REQUIRED(HttpStatus.BAD_REQUEST, "NOTIFICATION_400_2", "스누즈 기간을 선택해주세요."),
 
+    // 성향 분석 (PERSONALITY) 관련 에러
+    PERSONALITY_NOT_FOUND(HttpStatus.NOT_FOUND, "PERSONALITY404", "해당 사용자의 성향 분석 결과를 찾을 수 없습니다."),
+
     /**
      * Unsubscribe
      */
     UNSUBSCRIBE_TOKEN_INVALID(HttpStatus.NOT_FOUND, "UNSUBSCRIBE_404_1", "유효하지 않은 수신거부 링크입니다.");
+
 
     private final HttpStatus httpStatus;
     private final String code;
