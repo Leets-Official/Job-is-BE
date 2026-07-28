@@ -2,6 +2,7 @@ package com.leets7th.job_is_be.domain.auth.service;
 
 import com.leets7th.job_is_be.domain.auth.oauth.OAuthClientRegistry;
 import com.leets7th.job_is_be.domain.auth.oauth.OAuthLoginCodeStore;
+import com.leets7th.job_is_be.domain.auth.oauth.OAuthRestoreCodeStore;
 import com.leets7th.job_is_be.domain.auth.oauth.OAuthStateStore;
 import com.leets7th.job_is_be.domain.auth.oauth.OAuthUserInfo;
 import com.leets7th.job_is_be.domain.auth.oauth.SocialOAuthClient;
@@ -47,6 +48,7 @@ class OAuthLoginServiceTest {
     @Mock private JwtTokenProvider tokenProvider;
     @Mock private RefreshTokenSessionStore sessionStore;
     @Mock private OAuthLoginCodeStore loginCodeStore;
+    @Mock private OAuthRestoreCodeStore restoreCodeStore;
     @Mock private SocialOAuthClient oauthClient;
 
     private OAuthLoginService loginService;
@@ -61,7 +63,8 @@ class OAuthLoginServiceTest {
                 userWithdrawalRepository,
                 tokenProvider,
                 sessionStore,
-                loginCodeStore
+                loginCodeStore,
+                restoreCodeStore
         );
     }
 
@@ -108,7 +111,7 @@ class OAuthLoginServiceTest {
     }
 
     @Test
-    void restoresWithdrawnUserWithinGracePeriod() {
+    void issuesRestoreCodeWithoutRestoringWithdrawnUser() {
         User user = user("social-id", SocialType.KAKAO, "user@example.com", 1L);
         user.withdraw(LocalDateTime.now().minusDays(1));
         UserWithdrawal withdrawal = UserWithdrawal.builder()
@@ -121,15 +124,19 @@ class OAuthLoginServiceTest {
                 .thenReturn(Optional.of(user));
         when(userWithdrawalRepository.findFirstByUserIdAndStatusOrderByRequestedAtDesc(
                 1L, WithdrawalStatus.PENDING)).thenReturn(Optional.of(withdrawal));
-        when(tokenProvider.issueTokenPair(1L)).thenReturn(tokenPair());
-        when(loginCodeStore.create(any(OAuthLoginCodeStore.LoginPayload.class)))
-                .thenReturn("login-code");
+        when(restoreCodeStore.create(
+                org.mockito.ArgumentMatchers.eq(1L),
+                org.mockito.ArgumentMatchers.any(LocalDateTime.class)
+        )).thenReturn("restore-code");
 
         OAuthLoginService.OAuthLoginResult result = loginService.login("kakao", "code", "state", "state");
 
-        assertEquals("login-code", result.loginCode());
-        assertEquals(UserStatus.ACTIVE, user.getStatus());
-        assertEquals(WithdrawalStatus.RESTORED, withdrawal.getStatus());
+        assertEquals("restore-code", result.restoreCode());
+        assertTrue(result.restorationRequired());
+        assertEquals(UserStatus.WITHDRAWN, user.getStatus());
+        assertEquals(WithdrawalStatus.PENDING, withdrawal.getStatus());
+        verify(tokenProvider, never()).issueTokenPair(any());
+        verify(loginCodeStore, never()).create(any());
     }
 
     @Test

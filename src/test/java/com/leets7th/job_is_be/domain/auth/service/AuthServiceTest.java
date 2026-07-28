@@ -1,5 +1,7 @@
 package com.leets7th.job_is_be.domain.auth.service;
 
+import com.leets7th.job_is_be.domain.user.entity.User;
+import com.leets7th.job_is_be.domain.user.enums.SocialType;
 import com.leets7th.job_is_be.domain.user.repository.UserProfileRepository;
 import com.leets7th.job_is_be.domain.user.repository.UserRepository;
 import com.leets7th.job_is_be.domain.user.repository.UserWithdrawalRepository;
@@ -13,6 +15,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.Optional;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -61,7 +66,7 @@ class AuthServiceTest {
         );
 
         when(tokenProvider.decodeRefreshToken(oldRefreshToken)).thenReturn(claims);
-        when(userRepository.existsById(1L)).thenReturn(true);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user(1L)));
         when(tokenProvider.issueTokenPair(1L)).thenReturn(newPair);
         when(sessionStore.rotate(
                 "old-session",
@@ -91,7 +96,7 @@ class AuthServiceTest {
         String refreshToken = "refresh-token";
         when(tokenProvider.decodeRefreshToken(refreshToken))
                 .thenReturn(new JwtTokenProvider.RefreshTokenClaims(1L, "session"));
-        when(userRepository.existsById(1L)).thenReturn(true);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user(1L)));
         JwtTokenProvider.TokenPair newPair = new JwtTokenProvider.TokenPair(
                 "new-access-token",
                 "new-refresh-token",
@@ -122,7 +127,7 @@ class AuthServiceTest {
         String refreshToken = "refresh-token";
         when(tokenProvider.decodeRefreshToken(refreshToken))
                 .thenReturn(new JwtTokenProvider.RefreshTokenClaims(1L, "session"));
-        when(userRepository.existsById(1L)).thenReturn(false);
+        when(userRepository.findById(1L)).thenReturn(Optional.empty());
 
         GeneralException exception = assertThrows(
                 GeneralException.class,
@@ -143,5 +148,40 @@ class AuthServiceTest {
     @Test
     void logoutWithoutCookieIsIdempotent() {
         authService.logout(null);
+    }
+
+    @Test
+    void rejectsTokenReissueForWithdrawnAccount() {
+        String refreshToken = "refresh-token";
+        User user = user(1L);
+        user.withdraw(LocalDateTime.now());
+        when(tokenProvider.decodeRefreshToken(refreshToken))
+                .thenReturn(new JwtTokenProvider.RefreshTokenClaims(1L, "session"));
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+
+        GeneralException exception = assertThrows(
+                GeneralException.class,
+                () -> authService.reissue(refreshToken)
+        );
+
+        assertEquals(ErrorStatus.WITHDRAWN_ACCOUNT_TOKEN_REISSUE, exception.getErrorStatus());
+        verify(sessionStore, never()).rotate(
+                org.mockito.ArgumentMatchers.anyString(),
+                org.mockito.ArgumentMatchers.anyLong(),
+                org.mockito.ArgumentMatchers.anyString(),
+                org.mockito.ArgumentMatchers.anyString(),
+                org.mockito.ArgumentMatchers.anyString(),
+                org.mockito.ArgumentMatchers.any()
+        );
+    }
+
+    private User user(Long id) {
+        User user = User.builder()
+                .socialId("social-id")
+                .socialType(SocialType.KAKAO)
+                .email("user@example.com")
+                .build();
+        ReflectionTestUtils.setField(user, "id", id);
+        return user;
     }
 }

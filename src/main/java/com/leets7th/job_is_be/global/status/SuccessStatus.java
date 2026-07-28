@@ -21,6 +21,9 @@ public enum SuccessStatus implements BaseStatus {
     CSRF_TOKEN_GET_SUCCESS(HttpStatus.OK, "AUTH_200_4", "CSRF 토큰을 발급했습니다."),
     DEV_LOGIN_SUCCESS(HttpStatus.OK, "AUTH_200_5", "개발자 전용 로그인에 성공했습니다."),
     OAUTH_EXCHANGE_SUCCESS(HttpStatus.OK, "AUTH_200_6", "로그인 토큰 교환에 성공했습니다."),
+    CONSENT_SAVE_SUCCESS(HttpStatus.OK, "AUTH_200_7", "필수 약관 동의를 저장했습니다."),
+    WITHDRAWAL_SUCCESS(HttpStatus.OK, "AUTH_200_8", "회원 탈퇴를 요청했습니다."),
+    WITHDRAWAL_RESTORE_SUCCESS(HttpStatus.OK, "AUTH_200_9", "회원 탈퇴를 복구했습니다."),
 
     /**
      * Profile
@@ -83,7 +86,12 @@ public enum SuccessStatus implements BaseStatus {
     NOTIFICATION_SETTING_GET_SUCCESS(HttpStatus.OK, "NOTIFICATION_200_1", "알림 수신 설정을 조회했습니다."),
     NOTIFICATION_SETTING_UPDATE_SUCCESS(HttpStatus.OK, "NOTIFICATION_200_2", "알림 수신 설정을 변경했습니다."),
     NOTIFICATION_SNOOZE_SUCCESS(HttpStatus.OK, "NOTIFICATION_200_3", "알림 발송을 스누즈 설정했습니다."),
-    NOTIFICATION_SNOOZE_CANCEL_SUCCESS(HttpStatus.OK, "NOTIFICATION_200_4", "알림 스누즈를 해제했습니다.");
+    NOTIFICATION_SNOOZE_CANCEL_SUCCESS(HttpStatus.OK, "NOTIFICATION_200_4", "알림 스누즈를 해제했습니다."),
+
+    /**
+     * Account
+     */
+    ACCOUNT_GET_SUCCESS(HttpStatus.OK, "ACCOUNT_200_1", "계정 정보를 조회했습니다.");
 
     private final HttpStatus httpStatus;
     private final String code;
