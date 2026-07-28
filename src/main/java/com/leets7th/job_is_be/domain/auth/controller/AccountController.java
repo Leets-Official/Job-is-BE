@@ -1,5 +1,6 @@
 package com.leets7th.job_is_be.domain.auth.controller;
 
+import com.leets7th.job_is_be.domain.auth.dto.AccountResponse;
 import com.leets7th.job_is_be.domain.auth.dto.ConsentRequest;
 import com.leets7th.job_is_be.domain.auth.dto.OAuthExchangeResponse;
 import com.leets7th.job_is_be.domain.auth.dto.RestoreRequest;
@@ -16,6 +17,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -38,6 +40,16 @@ public class AccountController {
         this.accountService = accountService;
         this.accountRecoveryService = accountRecoveryService;
         this.cookieManager = cookieManager;
+    }
+
+    @GetMapping("/account")
+    public ResponseEntity<ApiResponse<AccountResponse>> getAccount(
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        return ApiResponse.success(
+                SuccessStatus.ACCOUNT_GET_SUCCESS,
+                accountService.getAccount(Long.valueOf(jwt.getSubject()))
+        );
     }
 
     @PostMapping("/consent")

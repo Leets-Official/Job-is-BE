@@ -1,4 +1,4 @@
-package com.leets7th.job_is_be.domain.user.dto;
+package com.leets7th.job_is_be.domain.auth.dto;
 
 import com.leets7th.job_is_be.domain.user.enums.SocialType;
 

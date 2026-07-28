@@ -1,5 +1,6 @@
 package com.leets7th.job_is_be.domain.job.service;
 
+import com.leets7th.job_is_be.domain.deck.entity.UserAction;
 import com.leets7th.job_is_be.domain.deck.enums.ActionType;
 import com.leets7th.job_is_be.domain.deck.repository.UserActionRepository;
 import com.leets7th.job_is_be.domain.job.dto.SavedJobListResponse;
@@ -62,6 +63,14 @@ public class JobService {
         } catch (DataIntegrityViolationException e) {
             throw new GeneralException(ErrorStatus.JOB_ALREADY_SAVED);
         }
+
+        if (!userActionRepository.existsByUserIdAndJobIdAndActionType(userId, jobId, ActionType.SAVED)) {
+            userActionRepository.save(UserAction.builder()
+                    .user(user)
+                    .job(job)
+                    .actionType(ActionType.SAVED)
+                    .build());
+        }
     }
 
     @Transactional
@@ -71,6 +80,7 @@ public class JobService {
         }
 
         savedJobRepository.deleteByUserIdAndJobId(userId, jobId);
+        userActionRepository.deleteByUserIdAndJobIdAndActionType(userId, jobId, ActionType.SAVED);
     }
 
     @Transactional(readOnly = true)
