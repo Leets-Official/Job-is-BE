@@ -13,7 +13,7 @@ public record JobSummaryResponse(
         String position,
         String careerLevel,
         String employmentType,
-        boolean remoteAvailable,
+        Boolean remoteAvailable,
         OffsetDateTime dueTime,
         String thumbnailUrl,
         List<String> skillTags
@@ -28,7 +28,7 @@ public record JobSummaryResponse(
                 .position(job.getTitle())
                 .careerLevel(job.getCareerLevel())
                 .employmentType(job.getEmploymentType())
-                .remoteAvailable(job.isRemoteAvailable())
+                .remoteAvailable(job.getRemoteAvailable())
                 .dueTime(job.getDeadlineAt())
                 .thumbnailUrl(job.getThumbnailUrl())
                 .skillTags(tags)

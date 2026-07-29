@@ -21,7 +21,7 @@ import java.io.File;
 import java.io.FileReader;
 
 @Slf4j
-@Component
+//@Component
 @RequiredArgsConstructor
 public class JobDataInitializer implements CommandLineRunner {
 

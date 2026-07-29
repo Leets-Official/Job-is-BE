@@ -53,3 +53,4 @@ application-prod.yml
 ## Python ##
 __pycache__/
 *.pyc
+"src/main/resources/application.yml" 

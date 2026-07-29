@@ -44,7 +44,7 @@ public class JobPostingConverter {
                 posting.getSourceUrl(), posting.getConfirmTime(), posting.getDueTime(),
                 resolveStatus(posting),
                 posting.getLocationFull(), posting.getMainTasks(), posting.getRequirements(),
-                posting.getPreferredPoints(), posting.getSkillTags(), posting.getSkillsInferred());
+                posting.getPreferredPoints(), posting.getSkillTags(), posting.getSkillsInferred(), null);
     }
 
     private void applyStatus(Job job, JobStatus status) {
@@ -85,7 +85,7 @@ public class JobPostingConverter {
                 .position(job.getTitle())
                 .careerLevel(job.getCareerLevel())
                 .employmentType(job.getEmploymentType())
-                .remoteAvailable(job.isRemoteAvailable())
+                .remoteAvailable(job.getRemoteAvailable())
                 .dueTime(job.getDeadlineAt())
                 .thumbnailUrl(job.getThumbnailUrl())
                 .skillTags(job.getSkillTags())

@@ -86,7 +86,8 @@ public class JobParserService {
                         jobDto.requirements(),
                         jobDto.preferredPoints(),
                         jobDto.skills(),
-                        null
+                        null,
+                        null  // embedding은 별도 배치로 계산
                 );
             } else {
                 job = Job.builder()

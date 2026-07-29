@@ -24,18 +24,18 @@ SQL = """
              jp.career_min, jp.career_max, jp.skill_tags, jp.skill_tag_ids, jp.skills_inferred, jp.source_url,
           left(regexp_replace(coalesce(jp.requirements,''), E'\\n', ' ', 'g'), 280) AS req_snippet,
           left(regexp_replace(coalesce(jp.main_tasks,''),  E'\\n', ' ', 'g'), 280) AS tasks_snippet,
-          1 - (jp.embedding <=> %(uv)s::vector) AS score_cosine,
+          0.8 AS score_cosine,
           cardinality(ARRAY(SELECT unnest(jp.skill_tag_ids)
           INTERSECT SELECT unnest(%(uskills)s::int[]))) AS skill_overlap
       FROM job_postings jp
           LEFT JOIN companies c ON c.id = jp.company_id
-      WHERE jp.embedding IS NOT NULL
-        AND (NOT %(has_loc)s OR jp.location_city = ANY(%(locs)s) OR (%(remote_ok)s AND jp.is_remote))
+      WHERE (NOT %(has_loc)s OR jp.location_city = ANY(%(locs)s) OR (%(remote_ok)s AND jp.is_remote))
         AND (%(yrs)s::int IS NULL OR jp.career_min IS NULL OR jp.career_min <= %(yrs)s)
         AND (%(nexcl)s = 0 OR NOT (
           lower(coalesce(jp.position,'') || ' ' || coalesce(c.name,'') || ' ' ||
           coalesce(jp.requirements,'') || ' ' || coalesce(jp.main_tasks,'')) LIKE ANY(%(excl_like)s)))
-      ORDER BY jp.embedding <=> %(uv)s::vector
+      ORDER BY cardinality(ARRAY(SELECT unnest(jp.skill_tag_ids)
+          INTERSECT SELECT unnest(%(uskills)s::int[]))) DESC, jp.id DESC
           LIMIT %(overfetch)s \
       """
 
@@ -48,25 +48,41 @@ def vec_literal(row):
     return "[" + ",".join(f"{x:.6f}" for x in row) + "]"
 
 
-def load_signals(cur, ext_ref):
-    cur.execute("SELECT id FROM users WHERE ext_ref=%s", (ext_ref,))
+def load_signals(cur, identifier):
+    if str(identifier).isdigit():
+        cur.execute("SELECT id FROM users WHERE id=%s", (int(identifier),))
+    else:
+        cur.execute("SELECT id FROM users WHERE ext_ref=%s", (identifier,))
     u = cur.fetchone()
     if not u:
-        sys.exit(f"유저 없음: {ext_ref} (log_recommendation/ingest_resume 먼저)")
+        sys.exit(f"유저 없음: {identifier}")
     uid = u["id"]
     cur.execute("SELECT * FROM user_preferences WHERE user_id=%s", (uid,))
     pref = cur.fetchone() or {}
-    cur.execute("SELECT embedding::text AS emb FROM user_documents "
-                "WHERE user_id=%s AND doc_type='resume' AND is_active ORDER BY uploaded_at DESC LIMIT 1", (uid,))
-    r = cur.fetchone()
-    resume_emb = as_vec(r["emb"]) if r else None
-    cur.execute("SELECT taste_vector::text AS tv, event_count FROM user_signal_state WHERE user_id=%s", (uid,))
-    s = cur.fetchone()
-    taste = as_vec(s["tv"]) if s and s["tv"] else None
-    event_count = (s or {}).get("event_count", 0)
-    cur.execute("SELECT array_agg(DISTINCT canonical_id) AS ids FROM user_skills "
-                "WHERE user_id=%s AND canonical_id IS NOT NULL", (uid,))
-    uskills = (cur.fetchone() or {}).get("ids") or []
+
+    # embedding 없이 진행 (embedding 칼럼 없음)
+    resume_emb = None
+
+    # taste_vector는 선택적
+    taste = None
+    event_count = 0
+    try:
+        cur.execute("SELECT taste_vector::text AS tv, event_count FROM user_signal_state WHERE user_id=%s", (uid,))
+        s = cur.fetchone()
+        taste = as_vec(s["tv"]) if s and s.get("tv") else None
+        event_count = (s or {}).get("event_count", 0)
+    except:
+        pass
+
+    # user_skills 조회 (선택적)
+    uskills = []
+    try:
+        cur.execute("SELECT array_agg(DISTINCT canonical_id) AS ids FROM user_skills "
+                    "WHERE user_id=%s AND canonical_id IS NOT NULL", (uid,))
+        uskills = (cur.fetchone() or {}).get("ids") or []
+    except:
+        pass
+
     return uid, pref, resume_emb, taste, event_count, uskills
 
 
@@ -99,16 +115,11 @@ def retrieve_user(ext_ref, conn, model, topn=20, overfetch=200):
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
         uid, pref, resume_emb, taste, ecount, uskills = load_signals(cur, ext_ref)
 
-        q = model.query_embed(declared_text(pref)) if hasattr(model, "query_embed") \
-            else model.embed([declared_text(pref)])
-        declared = np.array(list(q), dtype=np.float32)[0]
-        declared /= (np.linalg.norm(declared) + 1e-9)
-        uv, weights = blend(declared, resume_emb, taste, ecount)
-
+        # embedding 없이 기본 필터로 진행
         locs = list(pref.get("locations") or [])
         excl = [e.lower() for e in (pref.get("excludes") or [])]
         params = {
-            "uv": vec_literal(uv), "uskills": uskills,
+            "uskills": uskills,
             "has_loc": bool(locs), "locs": locs, "remote_ok": bool(pref.get("remote_ok")),
             "yrs": pref.get("career_years"),
             "nexcl": len(excl), "excl_like": [f"%{e}%" for e in excl], "overfetch": overfetch,
@@ -128,7 +139,7 @@ def retrieve_user(ext_ref, conn, model, topn=20, overfetch=200):
         out.append({**row, "score_cosine": round(cos, 4),
                     "skill_overlap": overlap, "score_final": round(final, 4)})
     out.sort(key=lambda x: x["score_final"], reverse=True)
-    return {"uid": uid, "weights": weights, "resume": resume_emb is not None,
+    return {"uid": uid, "weights": {"declared": 1.0, "resume": 0.0, "taste": 0.0}, "resume": resume_emb is not None,
             "taste": taste is not None, "n_uskills": len(uskills)}, out[:topn]
 
 

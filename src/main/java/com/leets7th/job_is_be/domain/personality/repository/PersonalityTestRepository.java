@@ -2,6 +2,7 @@ package com.leets7th.job_is_be.domain.personality.repository;
 
 import com.leets7th.job_is_be.domain.personality.entity.PersonalityTest;
 import com.leets7th.job_is_be.domain.personality.enums.PersonalityTestSource;
+import jakarta.persistence.Column;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;

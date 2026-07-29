@@ -20,7 +20,7 @@ import java.util.List;
  */
 @Entity
 @Table(
-        name = "jobs",
+        name = "job_postings",
         uniqueConstraints = @UniqueConstraint(name = "uk_jobs_source_external_id", columnNames = {"source", "external_id"}),
         indexes = {
                 @Index(name = "idx_created_at_id", columnList = "created_at DESC, id DESC")
@@ -56,11 +56,11 @@ public class Job extends BaseEntity {
     @Column(name = "employment_type", length = 30)
     private String employmentType; // 정규직 등
 
-    @Column(name = "remote_available", nullable = false)
-    private boolean remoteAvailable;
+    @Column(name = "remote_available")
+    private Boolean remoteAvailable;
 
-    @Column(name = "salary_disclosed", nullable = false)
-    private boolean salaryDisclosed; // §11 연봉 원문 확인 문구 처리 기준
+    @Column(name = "salary_disclosed")
+    private Boolean salaryDisclosed; // §11 연봉 원문 확인 문구 처리 기준
 
     @Column(length = 50)
     private String source; // 원티드 등 원문 출처
@@ -128,15 +128,18 @@ public class Job extends BaseEntity {
     @Column(name = "skills_inferred")
     private Boolean skillsInferred;
 
+    @Column(name = "embedding", columnDefinition = "TEXT")
+    private String embedding;  // pgvector 형식 (JSON 배열 문자열로 저장)
+
     @Builder
     public Job(Company company, JobCategory jobCategory, Region region, String title,
-               String careerLevel, String employmentType, boolean remoteAvailable,
-               boolean salaryDisclosed, String source, Long externalId, String sourceUrl,
+               String careerLevel, String employmentType, Boolean remoteAvailable,
+               Boolean salaryDisclosed, String source, Long externalId, String sourceUrl,
                OffsetDateTime postedAt, OffsetDateTime deadlineAt, String editorNote,
                String locationFull, String intro, String mainTasks, String requirements,
                String preferredPoints, String benefits, Integer careerMin, Integer careerMax,
                String rewardTotal, String thumbnailUrl, String skills, String categories,
-               List<String> skillTags, Boolean skillsInferred) {
+               List<String> skillTags, Boolean skillsInferred, String embedding) {
         this.company = company;
         this.jobCategory = jobCategory;
         this.region = region;
@@ -165,6 +168,7 @@ public class Job extends BaseEntity {
         this.categories = categories;
         this.skillTags = skillTags;
         this.skillsInferred = skillsInferred;
+        this.embedding = embedding;
         this.status = JobStatus.ACTIVE;
     }
 
@@ -182,10 +186,10 @@ public class Job extends BaseEntity {
 
     // 크롤링 재수집 시 (source, externalId)로 매칭된 기존 공고에 최신 원문 내용을 반영
     public void syncFrom(Company company, String title, String careerLevel, String employmentType,
-                         boolean remoteAvailable, String sourceUrl,
+                         Boolean remoteAvailable, String sourceUrl,
                          OffsetDateTime postedAt, OffsetDateTime deadlineAt, JobStatus status,
                          String locationFull, String mainTasks, String requirements,
-                         String preferredPoints, List<String> skillTags, Boolean skillsInferred) {
+                         String preferredPoints, List<String> skillTags, Boolean skillsInferred, String embedding) {
         this.company = company;
         this.title = title;
         this.careerLevel = careerLevel;
@@ -201,5 +205,6 @@ public class Job extends BaseEntity {
         this.preferredPoints = preferredPoints;
         this.skillTags = skillTags;
         this.skillsInferred = skillsInferred;
+        this.embedding = embedding;
     }
 }

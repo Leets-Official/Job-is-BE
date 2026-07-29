@@ -37,7 +37,7 @@ def main():
     conn.close()
     print(f"[1/2] 후보 {len(cands)}건 검색 (pgvector KNN + 정형필터)", file=sys.stderr)
     json.dump({"persona": persona, "candidates": cands},
-              open(f"candidates_pg_{a.persona}.json", "w"), ensure_ascii=False, indent=2)
+              open(f"candidates_pg_{a.persona}.json", "w", encoding="utf-8"), ensure_ascii=False, indent=2)
 
     # 2) LLM 최종 선별 (precision) — llm_select 그대로
     try:
