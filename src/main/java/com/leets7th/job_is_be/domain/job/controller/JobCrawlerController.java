@@ -1,5 +1,6 @@
 package com.leets7th.job_is_be.domain.job.controller;
 
+import com.leets7th.job_is_be.domain.job.controller.docs.JobCrawlerControllerDocs;
 import com.leets7th.job_is_be.domain.job.service.JobCrawlerManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/admin/crawler")
 @RequiredArgsConstructor
-public class JobCrawlerController {
+public class JobCrawlerController implements JobCrawlerControllerDocs {
 
     private final JobCrawlerManager jobCrawlerManager;
 

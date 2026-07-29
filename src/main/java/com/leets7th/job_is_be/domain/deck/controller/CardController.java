@@ -1,5 +1,6 @@
 package com.leets7th.job_is_be.domain.deck.controller;
 
+import com.leets7th.job_is_be.domain.deck.controller.docs.CardControllerDocs;
 import com.leets7th.job_is_be.domain.deck.dto.CardResponse;
 import com.leets7th.job_is_be.domain.deck.dto.DismissReasonRequest;
 import com.leets7th.job_is_be.domain.deck.service.CardService;
@@ -21,7 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/decks")
 @RequiredArgsConstructor
-public class CardController {
+public class CardController implements CardControllerDocs {
 
     private final CardService cardService;
 

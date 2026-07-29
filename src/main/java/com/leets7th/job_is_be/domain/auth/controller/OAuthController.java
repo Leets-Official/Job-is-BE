@@ -1,5 +1,6 @@
 package com.leets7th.job_is_be.domain.auth.controller;
 
+import com.leets7th.job_is_be.domain.auth.controller.docs.OAuthControllerDocs;
 import com.leets7th.job_is_be.domain.auth.dto.OAuthExchangeRequest;
 import com.leets7th.job_is_be.domain.auth.dto.OAuthExchangeResponse;
 import com.leets7th.job_is_be.domain.auth.service.OAuthLoginService;
@@ -29,7 +30,7 @@ import java.net.URI;
 
 @RestController
 @RequestMapping("/api/auth/oauth")
-public class OAuthController {
+public class OAuthController implements OAuthControllerDocs {
 
     private final OAuthLoginService oauthLoginService;
     private final RefreshTokenCookieManager cookieManager;

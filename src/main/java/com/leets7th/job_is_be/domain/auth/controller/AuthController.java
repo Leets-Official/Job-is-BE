@@ -1,5 +1,6 @@
 package com.leets7th.job_is_be.domain.auth.controller;
 
+import com.leets7th.job_is_be.domain.auth.controller.docs.AuthControllerDocs;
 import com.leets7th.job_is_be.domain.auth.dto.CsrfTokenResponse;
 import com.leets7th.job_is_be.domain.auth.dto.SessionResponse;
 import com.leets7th.job_is_be.domain.auth.dto.TokenReissueResponse;
@@ -22,7 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/auth")
-public class AuthController {
+public class AuthController implements AuthControllerDocs {
 
     private final AuthService authService;
     private final RefreshTokenCookieManager cookieManager;

@@ -1,5 +1,6 @@
 package com.leets7th.job_is_be.domain.user.controller;
 
+import com.leets7th.job_is_be.domain.user.controller.docs.ProfileControllerDocs;
 import com.leets7th.job_is_be.domain.user.dto.ProfileDraftRequest;
 import com.leets7th.job_is_be.domain.user.dto.ProfileDraftResponse;
 import com.leets7th.job_is_be.domain.user.dto.ProfileResponse;
@@ -20,7 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/profile")
-public class ProfileController {
+public class ProfileController implements ProfileControllerDocs {
 
     private final ProfileService profileService;
 
