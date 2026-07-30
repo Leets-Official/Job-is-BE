@@ -1,5 +1,6 @@
 package com.leets7th.job_is_be.domain.auth.controller;
 
+import com.leets7th.job_is_be.domain.auth.controller.docs.AccountControllerDocs;
 import com.leets7th.job_is_be.domain.auth.dto.AccountResponse;
 import com.leets7th.job_is_be.domain.auth.dto.ConsentRequest;
 import com.leets7th.job_is_be.domain.auth.dto.OAuthExchangeResponse;
@@ -26,7 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/auth")
-public class AccountController {
+public class AccountController implements AccountControllerDocs {
 
     private final AccountService accountService;
     private final AccountRecoveryService accountRecoveryService;

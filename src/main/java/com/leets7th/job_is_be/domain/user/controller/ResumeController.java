@@ -1,5 +1,6 @@
 package com.leets7th.job_is_be.domain.user.controller;
 
+import com.leets7th.job_is_be.domain.user.controller.docs.ResumeControllerDocs;
 import com.leets7th.job_is_be.domain.user.dto.PresignedUrlRequest;
 import com.leets7th.job_is_be.domain.user.dto.PresignedUrlResponse;
 import com.leets7th.job_is_be.domain.user.dto.ResumeConfirmRequest;
@@ -24,7 +25,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/profile/files")
-public class ResumeController {
+public class ResumeController implements ResumeControllerDocs {
 
     private final ResumeService resumeService;
 

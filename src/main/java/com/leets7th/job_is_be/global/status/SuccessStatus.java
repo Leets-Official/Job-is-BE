@@ -80,6 +80,14 @@ public enum SuccessStatus implements BaseStatus {
      * Metadata / TechStack
      */
     TECH_STACK_GET_SUCCESS(HttpStatus.OK, "TECH_200_1", "기술 스택 목록을 조회했습니다."),
+    REGION_GET_SUCCESS(HttpStatus.OK, "METADATA_200_1", "지역 목록을 조회했습니다."),
+    JOB_CATEGORY_GET_SUCCESS(HttpStatus.OK, "METADATA_200_2", "직무 카테고리 목록을 조회했습니다."),
+    CAREER_LEVEL_GET_SUCCESS(HttpStatus.OK, "METADATA_200_3", "경력 수준 목록을 조회했습니다."),
+
+    /**
+     * Crawler (Admin)
+     */
+    CRAWLER_PIPELINE_RUN_SUCCESS(HttpStatus.OK, "CRAWLER_200_1", "크롤링 및 DB 적재 파이프라인을 실행했습니다."),
 
     /**
      * History
