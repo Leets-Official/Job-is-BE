@@ -70,7 +70,7 @@ class JobLinkValidationServiceTest {
 
         // then
         assertThat(response.isValid()).isTrue();
-        assertThat(response.getStatusCode()).isEqualTo(200);
+        assertThat(response.statusCode()).isEqualTo(200);
     }
 
     @Test
@@ -95,7 +95,7 @@ class JobLinkValidationServiceTest {
 
         // then
         assertThat(response.isValid()).isFalse();
-        assertThat(response.getStatusCode()).isEqualTo(404);
+        assertThat(response.statusCode()).isEqualTo(404);
     }
 
     @Test
@@ -120,6 +120,6 @@ class JobLinkValidationServiceTest {
 
         // then
         assertThat(response.isValid()).isFalse();
-        assertThat(response.getStatusCode()).isNull();
+        assertThat(response.statusCode()).isNull();
     }
 }

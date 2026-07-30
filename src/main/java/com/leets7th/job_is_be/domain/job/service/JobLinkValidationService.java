@@ -87,8 +87,8 @@ public class JobLinkValidationService {
             return headResult;
         }
 
-        // 2차: GET 요청 Fallback
-        log.info("HEAD 요청 실패로 GET 요청 재시도를 진행합니다. URL: {}", url);
+        // 2차: GET 요청 Fallback (보안을 위해 Host만 기록)
+        log.info("HEAD 요청 실패로 GET 요청 재시도를 진행합니다. Host: {}", extractHost(url));
         return executeRequest(url, HttpMethod.GET);
     }
 
@@ -115,8 +115,8 @@ public class JobLinkValidationService {
             int code = e.getStatusCode().value();
             return JobLinkValidateResponse.of(false, code, ErrorStatus.JOB_LINK_UNREACHABLE.getMessage() + " (상태 코드: " + code + ")");
         } catch (Exception e) {
-            // 연결/타임아웃 에러 처리
-            log.warn("링크 유효성 검증 실패 (Method: {}, URL: {}): {}", method, url, e.getMessage());
+            // 연결/타임아웃 에러 처리 (보안을 위해 Host만 기록)
+            log.warn("링크 유효성 검증 실패 (Method: {}, Host: {}): {}", method, extractHost(url), e.getMessage());
             return JobLinkValidateResponse.of(false, null, ErrorStatus.JOB_LINK_CONNECT_FAILED.getMessage());
         }
     }
@@ -135,11 +135,31 @@ public class JobLinkValidationService {
                 return true;
             }
 
-            // 사설/루프백/링크로컬 IP 차단
-            InetAddress inetAddress = InetAddress.getByName(host);
-            return inetAddress.isLoopbackAddress() || inetAddress.isSiteLocalAddress() || inetAddress.isLinkLocalAddress();
+            // 사설/루프백/링크로컬 IP 차단 (다중 A/AAAA 레코드 전체 검증)
+            InetAddress[] inetAddresses = InetAddress.getAllByName(host);
+            for (InetAddress inetAddress : inetAddresses) {
+                if (inetAddress.isLoopbackAddress()
+                        || inetAddress.isSiteLocalAddress()
+                        || inetAddress.isLinkLocalAddress()
+                        || inetAddress.isAnyLocalAddress()) {
+                    return true;
+                }
+            }
+            return false;
         } catch (Exception e) {
             return true; // Parsing failure 등 이상 URL은 차단
+        }
+    }
+
+    /**
+     * [보안] 로그 기록 시 민감 정보(토큰, 쿼리 파라미터) 유출 방지용 Host 추출 메서드
+     */
+    private String extractHost(String urlStr) {
+        try {
+            URI uri = new URI(urlStr);
+            return uri.getHost() != null ? uri.getHost() : "unknown-host";
+        } catch (Exception e) {
+            return "invalid-url";
         }
     }
 }

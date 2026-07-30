@@ -9,7 +9,7 @@ public record JobLinkValidateRequest(
         @Schema(description = "검증할 원문 공고 URL", example = "https://example.com/jobs/123")
         @NotBlank(message = "검증할 URL은 필수 입력값입니다.")
         @Pattern(
-                regexp = "^(https?|ftp)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]",
+                regexp = "^https?://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]",
                 message = "올바른 URL 형식이 아닙니다."
         )
         String url
