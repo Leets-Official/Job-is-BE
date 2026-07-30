@@ -77,6 +77,8 @@ public enum SuccessStatus implements BaseStatus {
     JOB_SIMILAR_SUCCESS(HttpStatus.OK, "JOB_200_8", "유사 추천 공고를 조회했습니다."),
     JOB_SOURCE_CHECK_SUCCESS(HttpStatus.OK, "JOB_200_8", "원문 링크 유효성을 확인했습니다."),
 
+    JOB_SIMILAR_SUCCESS(HttpStatus.OK, "JOB_200_8", "유사 추천 공고를 조회했습니다."),
+    JOB_SOURCE_CHECK_SUCCESS(HttpStatus.OK, "JOB_200_9", "원문 링크 유효성을 확인했습니다."),
     /**
      * Metadata / TechStack
      */

@@ -1,15 +1,16 @@
 package com.leets7th.job_is_be.domain.job.controller;
 
+import com.leets7th.job_is_be.domain.job.controller.docs.JobControllerDocs;
 import com.leets7th.job_is_be.domain.job.dto.JobDetailResponse;
 import com.leets7th.job_is_be.domain.job.dto.JobSearchRequest;
 import com.leets7th.job_is_be.domain.job.dto.JobSummaryResponse;
 import com.leets7th.job_is_be.domain.job.dto.SimilarJobsResponseDto;
-import com.leets7th.job_is_be.domain.job.controller.docs.JobControllerDocs;
 import com.leets7th.job_is_be.domain.job.service.JobService;
 import com.leets7th.job_is_be.domain.job.service.JobSimilarService;
 import com.leets7th.job_is_be.global.response.ApiResponse;
 import com.leets7th.job_is_be.global.response.PageResponse;
 import com.leets7th.job_is_be.global.status.SuccessStatus;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
