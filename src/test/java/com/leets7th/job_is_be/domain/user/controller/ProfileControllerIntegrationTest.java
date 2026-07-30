@@ -4,9 +4,11 @@ import com.leets7th.job_is_be.domain.job.entity.JobCategory;
 import com.leets7th.job_is_be.domain.job.entity.Region;
 import com.leets7th.job_is_be.domain.job.repository.JobCategoryRepository;
 import com.leets7th.job_is_be.domain.job.repository.RegionRepository;
+import com.leets7th.job_is_be.domain.job.repository.TechStackRepository;
 import com.leets7th.job_is_be.domain.user.entity.User;
 import com.leets7th.job_is_be.domain.user.enums.SocialType;
 import com.leets7th.job_is_be.domain.user.repository.UserRepository;
+import com.leets7th.job_is_be.domain.user.repository.UserTechStackRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -42,6 +45,10 @@ class ProfileControllerIntegrationTest {
     private JobCategoryRepository jobCategoryRepository;
     @Autowired
     private RegionRepository regionRepository;
+    @Autowired
+    private TechStackRepository techStackRepository;
+    @Autowired
+    private UserTechStackRepository userTechStackRepository;
 
     private Long userId;
     private List<Long> jobCategoryIds;
@@ -249,6 +256,60 @@ class ProfileControllerIntegrationTest {
         mockMvc.perform(get("/api/profile").with(userJwt()))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value("PROFILE_404_1"));
+    }
+
+    @Test
+    void normalizesAndReplacesUserTechStacks() throws Exception {
+        mockMvc.perform(put("/api/profile/draft")
+                        .with(userJwt())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "onboardingStep": "PROFILE",
+                                  "techStacks": [" Java ", "java", "Spring Boot"]
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.techStacks.length()").value(2))
+                .andExpect(jsonPath("$.data.techStacks[0]").value("Java"))
+                .andExpect(jsonPath("$.data.techStacks[1]").value("Spring Boot"));
+
+        assertThat(techStackRepository.findByNormalizedName("java")).isPresent();
+        assertThat(userTechStackRepository.findAllByUserIdOrderByIdAsc(userId))
+                .extracting(userTechStack -> userTechStack.getTechStack().getName())
+                .containsExactly("Java", "Spring Boot");
+
+        mockMvc.perform(put("/api/profile/draft")
+                        .with(userJwt())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "onboardingStep": "QUIZ",
+                                  "techStacks": ["Kotlin"]
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.techStacks.length()").value(1))
+                .andExpect(jsonPath("$.data.techStacks[0]").value("Kotlin"));
+
+        assertThat(userTechStackRepository.findAllByUserIdOrderByIdAsc(userId))
+                .extracting(userTechStack -> userTechStack.getTechStack().getName())
+                .containsExactly("Kotlin");
+    }
+
+    @Test
+    void rejectsBlankTechStackName() throws Exception {
+        mockMvc.perform(put("/api/profile/draft")
+                        .with(userJwt())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "onboardingStep": "PROFILE",
+                                  "techStacks": [" "]
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("PROFILE_400_6"));
     }
 
     private org.springframework.test.web.servlet.request.RequestPostProcessor userJwt() {

@@ -3,6 +3,7 @@ package com.leets7th.job_is_be.domain.auth.service;
 import com.leets7th.job_is_be.domain.auth.dto.OAuthExchangeResponse;
 import com.leets7th.job_is_be.domain.auth.oauth.OAuthClientRegistry;
 import com.leets7th.job_is_be.domain.auth.oauth.OAuthLoginCodeStore;
+import com.leets7th.job_is_be.domain.auth.oauth.OAuthRestoreCodeStore;
 import com.leets7th.job_is_be.domain.auth.oauth.OAuthStateStore;
 import com.leets7th.job_is_be.domain.auth.oauth.OAuthUserInfo;
 import com.leets7th.job_is_be.domain.auth.oauth.SocialOAuthClient;
@@ -35,6 +36,7 @@ public class OAuthLoginService {
     private final JwtTokenProvider tokenProvider;
     private final RefreshTokenSessionStore refreshTokenSessionStore;
     private final OAuthLoginCodeStore loginCodeStore;
+    private final OAuthRestoreCodeStore restoreCodeStore;
 
     public OAuthLoginService(
             OAuthClientRegistry clientRegistry,
@@ -44,7 +46,8 @@ public class OAuthLoginService {
             UserWithdrawalRepository userWithdrawalRepository,
             JwtTokenProvider tokenProvider,
             RefreshTokenSessionStore refreshTokenSessionStore,
-            OAuthLoginCodeStore loginCodeStore
+            OAuthLoginCodeStore loginCodeStore,
+            OAuthRestoreCodeStore restoreCodeStore
     ) {
         this.clientRegistry = clientRegistry;
         this.stateStore = stateStore;
@@ -54,6 +57,7 @@ public class OAuthLoginService {
         this.tokenProvider = tokenProvider;
         this.refreshTokenSessionStore = refreshTokenSessionStore;
         this.loginCodeStore = loginCodeStore;
+        this.restoreCodeStore = restoreCodeStore;
     }
 
     public AuthorizationRequest createAuthorizationRequest(String provider) {
@@ -77,6 +81,10 @@ public class OAuthLoginService {
         validateUserInfo(userInfo);
         LoginUser loginUser = findOrCreateUser(userInfo);
         Long userId = loginUser.user().getId();
+        if (loginUser.restorableUntil() != null) {
+            String restoreCode = restoreCodeStore.create(userId, loginUser.restorableUntil());
+            return OAuthLoginResult.restoration(restoreCode, loginUser.restorableUntil());
+        }
         JwtTokenProvider.TokenPair tokenPair = tokenProvider.issueTokenPair(userId);
         boolean onboardingCompleted = userProfileRepository.findByUserId(userId)
                 .map(profile -> profile.isOnboardingCompleted())
@@ -94,7 +102,7 @@ public class OAuthLoginService {
                 )
         );
 
-        return new OAuthLoginResult(loginCode);
+        return OAuthLoginResult.login(loginCode);
     }
 
     public ExchangeResult exchange(String loginCode) {
@@ -136,7 +144,7 @@ public class OAuthLoginService {
     private LoginUser findOrCreateUser(OAuthUserInfo userInfo) {
         return userRepository
                 .findBySocialIdAndSocialType(userInfo.socialId(), userInfo.socialType())
-                .map(user -> new LoginUser(restoreIfWithdrawn(user), false))
+                .map(user -> existingUser(user))
                 .orElseGet(() -> createUser(userInfo));
     }
 
@@ -151,12 +159,12 @@ public class OAuthLoginService {
                 .socialType(userInfo.socialType())
                 .email(normalizedEmail)
                 .build();
-        return new LoginUser(userRepository.save(user), true);
+        return new LoginUser(userRepository.save(user), true, null);
     }
 
-    private User restoreIfWithdrawn(User user) {
+    private LoginUser existingUser(User user) {
         if (user.getStatus() != UserStatus.WITHDRAWN) {
-            return user;
+            return new LoginUser(user, false, null);
         }
 
         UserWithdrawal withdrawal = userWithdrawalRepository
@@ -168,15 +176,35 @@ public class OAuthLoginService {
             throw new GeneralException(ErrorStatus.WITHDRAWAL_RESTORE_EXPIRED);
         }
 
-        user.restore();
-        withdrawal.restore(now);
-        return user;
+        return new LoginUser(user, false, withdrawal.getScheduledDeletionAt());
     }
 
-    private record LoginUser(User user, boolean newUser) {
+    private record LoginUser(
+            User user,
+            boolean newUser,
+            LocalDateTime restorableUntil
+    ) {
     }
 
-    public record OAuthLoginResult(String loginCode) {
+    public record OAuthLoginResult(
+            String loginCode,
+            String restoreCode,
+            LocalDateTime restorableUntil
+    ) {
+        public static OAuthLoginResult login(String loginCode) {
+            return new OAuthLoginResult(loginCode, null, null);
+        }
+
+        public static OAuthLoginResult restoration(
+                String restoreCode,
+                LocalDateTime restorableUntil
+        ) {
+            return new OAuthLoginResult(null, restoreCode, restorableUntil);
+        }
+
+        public boolean restorationRequired() {
+            return restoreCode != null;
+        }
     }
 
     public record ExchangeResult(OAuthExchangeResponse response, String refreshToken) {

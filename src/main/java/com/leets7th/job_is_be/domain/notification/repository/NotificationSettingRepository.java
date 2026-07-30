@@ -9,4 +9,6 @@ import java.util.Optional;
 public interface NotificationSettingRepository extends JpaRepository<NotificationSetting, Long> {
 
     Optional<NotificationSetting> findByUser(User user);
+
+    Optional<NotificationSetting> findByUnsubscribeToken(String unsubscribeToken);
 }

@@ -1,6 +1,7 @@
 package com.leets7th.job_is_be.domain.auth.service;
 
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.SetOperations;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Component;
 
@@ -15,6 +16,7 @@ import java.util.List;
 public class RefreshTokenSessionStore {
 
     private static final String KEY_PREFIX = "auth:refresh:";
+    private static final String USER_SESSION_KEY_PREFIX = "auth:refresh:user:";
     private static final String VALUE_SEPARATOR = ":";
     private static final DefaultRedisScript<Long> ROTATE_SCRIPT = new DefaultRedisScript<>("""
             local current = redis.call('GET', KEYS[1])
@@ -23,7 +25,18 @@ public class RefreshTokenSessionStore {
             end
             redis.call('SET', KEYS[2], ARGV[2], 'PX', ARGV[3])
             redis.call('DEL', KEYS[1])
+            redis.call('SREM', KEYS[3], ARGV[4])
+            redis.call('SADD', KEYS[3], ARGV[5])
+            redis.call('PEXPIRE', KEYS[3], ARGV[3])
             return 1
+            """, Long.class);
+    private static final DefaultRedisScript<Long> REVOKE_ALL_SCRIPT = new DefaultRedisScript<>("""
+            local sessionIds = redis.call('SMEMBERS', KEYS[1])
+            for _, sessionId in ipairs(sessionIds) do
+                redis.call('DEL', ARGV[1] .. sessionId)
+            end
+            redis.call('DEL', KEYS[1])
+            return #sessionIds
             """, Long.class);
 
     private final StringRedisTemplate redisTemplate;
@@ -38,10 +51,14 @@ public class RefreshTokenSessionStore {
                 userId + VALUE_SEPARATOR + hash(refreshToken),
                 ttl
         );
+        SetOperations<String, String> sessions = redisTemplate.opsForSet();
+        sessions.add(userSessionKey(userId), sessionId);
+        redisTemplate.expire(userSessionKey(userId), ttl);
     }
 
     public boolean consume(String sessionId, Long userId, String refreshToken) {
         String storedValue = redisTemplate.opsForValue().getAndDelete(key(sessionId));
+        redisTemplate.opsForSet().remove(userSessionKey(userId), sessionId);
         if (storedValue == null) {
             return false;
         }
@@ -63,16 +80,31 @@ public class RefreshTokenSessionStore {
     ) {
         Long result = redisTemplate.execute(
                 ROTATE_SCRIPT,
-                List.of(key(oldSessionId), key(newSessionId)),
+                List.of(key(oldSessionId), key(newSessionId), userSessionKey(userId)),
                 storedValue(userId, oldRefreshToken),
                 storedValue(userId, newRefreshToken),
-                String.valueOf(ttl.toMillis())
+                String.valueOf(ttl.toMillis()),
+                oldSessionId,
+                newSessionId
         );
         return Long.valueOf(1L).equals(result);
     }
 
+    public long revokeAll(Long userId) {
+        Long revokedCount = redisTemplate.execute(
+                REVOKE_ALL_SCRIPT,
+                List.of(userSessionKey(userId)),
+                KEY_PREFIX
+        );
+        return revokedCount == null ? 0 : revokedCount;
+    }
+
     private String key(String sessionId) {
         return KEY_PREFIX + sessionId;
+    }
+
+    private String userSessionKey(Long userId) {
+        return USER_SESSION_KEY_PREFIX + userId;
     }
 
     private String storedValue(Long userId, String refreshToken) {

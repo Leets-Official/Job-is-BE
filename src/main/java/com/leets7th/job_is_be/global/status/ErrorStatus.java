@@ -34,10 +34,14 @@ public enum ErrorStatus implements BaseStatus {
     OAUTH_EMAIL_REQUIRED(HttpStatus.BAD_REQUEST, "AUTH_400_3", "소셜 계정의 이메일을 확인할 수 없습니다."),
     DEV_LOGIN_USER_ID_REQUIRED(HttpStatus.BAD_REQUEST, "AUTH_400_4", "개발자 로그인에 사용할 userId가 필요합니다."),
     OAUTH_LOGIN_CODE_MISSING(HttpStatus.BAD_REQUEST, "AUTH_400_5", "OAuth 로그인 코드가 없습니다."),
+    OAUTH_RESTORE_CODE_MISSING(HttpStatus.BAD_REQUEST, "AUTH_400_6", "회원 탈퇴 복구 코드가 없습니다."),
     OAUTH_STATE_INVALID(HttpStatus.UNAUTHORIZED, "AUTH_401_4", "유효하지 않거나 만료된 OAuth 요청입니다."),
     OAUTH_LOGIN_CODE_INVALID(HttpStatus.UNAUTHORIZED, "AUTH_401_5", "유효하지 않거나 만료된 OAuth 로그인 코드입니다."),
+    OAUTH_RESTORE_CODE_INVALID(HttpStatus.UNAUTHORIZED, "AUTH_401_6", "유효하지 않거나 만료된 회원 탈퇴 복구 코드입니다."),
     SOCIAL_ACCOUNT_CONFLICT(HttpStatus.CONFLICT, "AUTH_409_1", "이미 다른 소셜 계정으로 가입된 이메일입니다."),
+    WITHDRAWAL_ALREADY_REQUESTED(HttpStatus.CONFLICT, "AUTH_409_2", "이미 회원 탈퇴가 요청된 계정입니다."),
     WITHDRAWAL_RESTORE_EXPIRED(HttpStatus.FORBIDDEN, "AUTH_403_1", "계정 복구 가능 기간이 지났습니다."),
+    WITHDRAWN_ACCOUNT_TOKEN_REISSUE(HttpStatus.FORBIDDEN, "AUTH_403_2", "탈퇴 요청된 계정은 토큰을 재발급할 수 없습니다."),
     OAUTH_PROVIDER_ERROR(HttpStatus.BAD_GATEWAY, "AUTH_502_1", "소셜 로그인 서버 연동에 실패했습니다."),
     OAUTH_USER_INFO_INVALID(HttpStatus.BAD_GATEWAY, "AUTH_502_2", "소셜 로그인 사용자 정보가 올바르지 않습니다."),
     OAUTH_NOT_CONFIGURED(HttpStatus.SERVICE_UNAVAILABLE, "AUTH_503_1", "소셜 로그인 설정이 완료되지 않았습니다."),
@@ -46,11 +50,19 @@ public enum ErrorStatus implements BaseStatus {
     /**
      * Profile
      */
+    QUIZ_REQUEST_INVALID(HttpStatus.BAD_REQUEST, "QUIZ_400_1", "퀴즈 요청값을 확인해 주세요."),
+    QUIZ_QUESTION_INVALID(HttpStatus.BAD_REQUEST, "QUIZ_400_2", "존재하지 않는 퀴즈 문항입니다."),
+    QUIZ_CHOICE_INVALID(HttpStatus.BAD_REQUEST, "QUIZ_400_3", "선택지는 1 또는 2여야 합니다."),
+    QUIZ_TEST_NOT_FOUND(HttpStatus.NOT_FOUND, "QUIZ_404_1", "직무 성향 테스트를 찾을 수 없습니다."),
+    QUIZ_TEST_INCOMPLETE(HttpStatus.CONFLICT, "QUIZ_409_1", "모든 문항에 응답한 후 결과를 반영할 수 있습니다."),
+    QUIZ_TEST_ALREADY_COMPLETED(HttpStatus.CONFLICT, "QUIZ_409_2", "이미 완료된 직무 성향 테스트입니다."),
+
     PROFILE_ONBOARDING_STEP_REQUIRED(HttpStatus.BAD_REQUEST, "PROFILE_400_1", "온보딩 진행 단계가 필요합니다."),
     PROFILE_JOB_CATEGORY_COUNT_INVALID(HttpStatus.BAD_REQUEST, "PROFILE_400_2", "관심 직무는 중복 없이 최대 3개까지 선택할 수 있습니다."),
     PROFILE_PRIMARY_JOB_CATEGORY_INVALID(HttpStatus.BAD_REQUEST, "PROFILE_400_3", "대표 관심 직무는 선택한 관심 직무에 포함되어야 합니다."),
     PROFILE_VALUE_TOO_LONG(HttpStatus.BAD_REQUEST, "PROFILE_400_4", "프로필 입력값이 허용 길이를 초과했습니다."),
     PROFILE_REQUIRED_FIELDS_MISSING(HttpStatus.BAD_REQUEST, "PROFILE_400_5", "온보딩 완료에 필요한 프로필 항목을 입력해 주세요."),
+    PROFILE_TECH_STACK_INVALID(HttpStatus.BAD_REQUEST, "PROFILE_400_6", "기술 스택 이름은 1자 이상 100자 이하로 입력해 주세요."),
     PROFILE_NOT_FOUND(HttpStatus.NOT_FOUND, "PROFILE_404_1", "완료된 프로필을 찾을 수 없습니다."),
     PROFILE_JOB_CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "PROFILE_404_2", "선택한 관심 직무를 찾을 수 없습니다."),
     PROFILE_REGION_NOT_FOUND(HttpStatus.NOT_FOUND, "PROFILE_404_3", "선택한 희망 지역을 찾을 수 없습니다."),
@@ -97,7 +109,12 @@ public enum ErrorStatus implements BaseStatus {
      * Notification
      */
     NOTIFICATION_INVALID_SEND_SLOT(HttpStatus.BAD_REQUEST, "NOTIFICATION_400_1", "허용되지 않는 발송 시간대입니다."),
-    NOTIFICATION_SNOOZE_DURATION_REQUIRED(HttpStatus.BAD_REQUEST, "NOTIFICATION_400_2", "스누즈 기간을 선택해주세요.");
+    NOTIFICATION_SNOOZE_DURATION_REQUIRED(HttpStatus.BAD_REQUEST, "NOTIFICATION_400_2", "스누즈 기간을 선택해주세요."),
+
+    /**
+     * Unsubscribe
+     */
+    UNSUBSCRIBE_TOKEN_INVALID(HttpStatus.NOT_FOUND, "UNSUBSCRIBE_404_1", "유효하지 않은 수신거부 링크입니다.");
 
     private final HttpStatus httpStatus;
     private final String code;

@@ -20,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 
 import java.net.URI;
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -58,7 +59,7 @@ class OAuthControllerTest {
         prepareStateCookieClear();
         when(stateCookieManager.extract(request)).thenReturn("state-cookie");
         when(oauthLoginService.login("kakao", "provider-code", "state", "state-cookie"))
-                .thenReturn(new OAuthLoginService.OAuthLoginResult("login-code"));
+                .thenReturn(OAuthLoginService.OAuthLoginResult.login("login-code"));
 
         ResponseEntity<Void> response = controller.callback(
                 "kakao",
@@ -74,6 +75,32 @@ class OAuthControllerTest {
                 response.getHeaders().getLocation().toString()
         );
         verify(cookieManager, never()).create(org.mockito.ArgumentMatchers.anyString());
+    }
+
+    @Test
+    void redirectsWithdrawnAccountWithOneTimeRestoreCode() {
+        prepareStateCookieClear();
+        when(stateCookieManager.extract(request)).thenReturn("state-cookie");
+        when(oauthLoginService.login("kakao", "provider-code", "state", "state-cookie"))
+                .thenReturn(OAuthLoginService.OAuthLoginResult.restoration(
+                        "restore-code",
+                        LocalDateTime.of(2026, 8, 25, 12, 0)
+                ));
+
+        ResponseEntity<Void> response = controller.callback(
+                "kakao",
+                "provider-code",
+                "state",
+                null,
+                request
+        );
+
+        assertEquals(HttpStatus.FOUND, response.getStatusCode());
+        assertEquals(
+                "http://localhost:5173/oauth/callback"
+                        + "#restoreCode=restore-code&restorableUntil=2026-08-25T12:00",
+                response.getHeaders().getLocation().toString()
+        );
     }
 
     @Test
