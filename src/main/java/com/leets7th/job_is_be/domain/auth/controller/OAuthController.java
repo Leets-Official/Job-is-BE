@@ -16,6 +16,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -102,16 +103,21 @@ public class OAuthController implements OAuthControllerDocs {
             @RequestBody OAuthExchangeRequest request
     ) {
         OAuthLoginService.ExchangeResult result = oauthLoginService.exchange(request.loginCode());
+        return withCookie(
+                ApiResponse.success(SuccessStatus.OAUTH_EXCHANGE_SUCCESS, result.response()),
+                cookieManager.create(result.refreshToken())
+        );
+    }
 
+    private <T> ResponseEntity<ApiResponse<T>> withCookie(
+            ResponseEntity<ApiResponse<T>> response,
+            ResponseCookie cookie
+    ) {
         return ResponseEntity
-                .status(SuccessStatus.OAUTH_EXCHANGE_SUCCESS.getHttpStatus())
-                .header(HttpHeaders.SET_COOKIE, cookieManager.create(result.refreshToken()).toString())
-                .body(new ApiResponse<>(
-                        true,
-                        SuccessStatus.OAUTH_EXCHANGE_SUCCESS.getCode(),
-                        SuccessStatus.OAUTH_EXCHANGE_SUCCESS.getMessage(),
-                        result.response()
-                ));
+                .status(response.getStatusCode())
+                .headers(response.getHeaders())
+                .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                .body(response.getBody());
     }
 
     private ResponseEntity<Void> redirectFailure(BaseStatus errorStatus) {

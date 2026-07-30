@@ -11,6 +11,7 @@ import com.leets7th.job_is_be.global.status.SuccessStatus;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.web.csrf.CsrfToken;
@@ -54,16 +55,10 @@ public class AuthController implements AuthControllerDocs {
     @PostMapping("/token/reissue")
     public ResponseEntity<ApiResponse<TokenReissueResponse>> reissue(HttpServletRequest request) {
         AuthService.ReissueResult result = authService.reissue(cookieManager.extract(request));
-
-        return ResponseEntity
-                .status(SuccessStatus.TOKEN_REISSUE_SUCCESS.getHttpStatus())
-                .header(HttpHeaders.SET_COOKIE, cookieManager.create(result.refreshToken()).toString())
-                .body(new ApiResponse<>(
-                        true,
-                        SuccessStatus.TOKEN_REISSUE_SUCCESS.getCode(),
-                        SuccessStatus.TOKEN_REISSUE_SUCCESS.getMessage(),
-                        result.response()
-                ));
+        return withCookie(
+                ApiResponse.success(SuccessStatus.TOKEN_REISSUE_SUCCESS, result.response()),
+                cookieManager.create(result.refreshToken())
+        );
     }
 
     @GetMapping("/me")
@@ -77,15 +72,20 @@ public class AuthController implements AuthControllerDocs {
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse<Void>> logout(HttpServletRequest request) {
         authService.logout(cookieManager.extract(request));
+        return withCookie(
+                ApiResponse.success(SuccessStatus.LOGOUT_SUCCESS),
+                cookieManager.clear()
+        );
+    }
 
+    private <T> ResponseEntity<ApiResponse<T>> withCookie(
+            ResponseEntity<ApiResponse<T>> response,
+            ResponseCookie cookie
+    ) {
         return ResponseEntity
-                .status(SuccessStatus.LOGOUT_SUCCESS.getHttpStatus())
-                .header(HttpHeaders.SET_COOKIE, cookieManager.clear().toString())
-                .body(new ApiResponse<>(
-                        true,
-                        SuccessStatus.LOGOUT_SUCCESS.getCode(),
-                        SuccessStatus.LOGOUT_SUCCESS.getMessage(),
-                        null
-                ));
+                .status(response.getStatusCode())
+                .headers(response.getHeaders())
+                .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                .body(response.getBody());
     }
 }
