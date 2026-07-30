@@ -53,4 +53,6 @@ application-prod.yml
 ## Python ##
 __pycache__/
 *.pyc
-"src/main/resources/application.yml" 
+*.pyd
+.pytest_cache/
+src/main/resources/application.yml

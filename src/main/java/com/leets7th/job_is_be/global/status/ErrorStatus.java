@@ -100,6 +100,13 @@ public enum ErrorStatus implements BaseStatus {
     INITIAL_DATA_FILE_NOT_FOUND(HttpStatus.INTERNAL_SERVER_ERROR, "JOB_500_1", "초기 데이터 파일 경로를 찾을 수 없습니다."),
 
     JOB_ENGINE_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "JOB_500_2", "유사 공고 추출 처리 중 오류가 발생했습니다."),
+
+    // 원문 링크 검증 관련 에러 상태 코드
+    JOB_LINK_EMPTY(HttpStatus.BAD_REQUEST, "JOB_400_4", "등록된 원문 링크가 없습니다."),
+    JOB_LINK_INVALID_FORMAT(HttpStatus.BAD_REQUEST, "JOB_400_5", "올바른 URL 형식이 아닙니다. (http/https 필요)"),
+    JOB_LINK_UNREACHABLE(HttpStatus.BAD_REQUEST, "JOB_400_6", "HTTP 오류 응답 수신"),
+    JOB_LINK_CONNECT_FAILED(HttpStatus.BAD_REQUEST, "JOB_400_7", "연결 실패 또는 타임아웃이 발생했습니다."),
+
     /**
      * Notification
      */
