@@ -190,6 +190,9 @@ public class Job extends BaseEntity {
                          OffsetDateTime postedAt, OffsetDateTime deadlineAt, JobStatus status,
                          String locationFull, String mainTasks, String requirements,
                          String preferredPoints, List<String> skillTags, Boolean skillsInferred, String embedding) {
+        if (embedding != null) {
+            this.embedding = embedding;  // ← null이 아닐 때만 업데이트
+        }
         this.company = company;
         this.title = title;
         this.careerLevel = careerLevel;
@@ -205,6 +208,5 @@ public class Job extends BaseEntity {
         this.preferredPoints = preferredPoints;
         this.skillTags = skillTags;
         this.skillsInferred = skillsInferred;
-        this.embedding = embedding;
     }
 }

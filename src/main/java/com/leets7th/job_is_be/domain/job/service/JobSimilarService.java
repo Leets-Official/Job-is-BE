@@ -31,7 +31,7 @@ public class JobSimilarService {
     @org.springframework.beans.factory.annotation.Value("${crawler.python-path:python}")
     private String pythonPath;
 
-    @org.springframework.beans.factory.annotation.Value("${matching.database-url:postgresql://postgres:1234@localhost:5432/jobisbe}")
+    @org.springframework.beans.factory.annotation.Value("${matching.database-url}")
     private String databaseUrl;
 
     /**
@@ -39,7 +39,8 @@ public class JobSimilarService {
      */
     public SimilarJobsResponseDto getRecommendedJobsByPersonality(Long userId) {
         // 사용자 성향 존재 여부 검증 및 조회
-        PersonalityTest personality = personalityTestRepository.findByUserId(userId)
+        PersonalityTest personality = personalityTestRepository
+                .findFirstByUserIdAndCompletedTrueOrderByStartedAtDesc(userId)
                 .orElseThrow(() -> new GeneralException(ErrorStatus.PERSONALITY_NOT_FOUND));
 
         // 엔티티에 정의된 페르소나 필드 메서드명으로 변경 필요 (예: getPersona(), getExtRef() 등)
@@ -54,10 +55,12 @@ public class JobSimilarService {
     }
 
     private List<SimilarJobItemDto> executePythonRetrieve(String persona) {
+
+        java.io.File stderrFile = null;
         try {
             java.io.File workDir = new java.io.File(System.getProperty("user.dir"));
             java.io.File script = new java.io.File(workDir, "database/matching/engine/retrieve_user_json.py");
-            java.io.File stderrFile = java.io.File.createTempFile("retrieve-stderr-", ".log");
+            stderrFile = java.io.File.createTempFile("retrieve-stderr-", ".log");
 
             // 동적 페르소나를 인자로 파이썬 스크립트 실행
             ProcessBuilder pb = new ProcessBuilder(
@@ -76,6 +79,12 @@ public class JobSimilarService {
             pb.environment().put("PYTHONIOENCODING", "utf-8");
 
             Process process = pb.start();
+
+            boolean completed = process.waitFor(30, java.util.concurrent.TimeUnit.SECONDS);
+            if (!completed) {
+                process.destroy();  // 타임아웃 시 강제 종료
+                throw new GeneralException(ErrorStatus.INTERNAL_SERVER_ERROR);
+            }
 
             StringBuilder output = new StringBuilder();
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
@@ -115,11 +124,14 @@ public class JobSimilarService {
             List<SimilarJobItemDto> items = new ArrayList<>();
             if (candidatesNode != null && candidatesNode.isArray()) {
                 for (JsonNode node : candidatesNode) {
+                    double scoreRaw = node.get("score_final").asDouble() * 100;
+                    int fitScore = (int) Math.max(0, Math.min(100, scoreRaw));
+
                     items.add(new SimilarJobItemDto(
                             node.get("external_id").asText(),
                             node.get("position").asText(),
                             node.get("company").asText(),
-                            (int) (node.get("score_final").asDouble() * 100),
+                            fitScore,  // ← 변수를 사용 (생성자 바깥에서 선언)
                             "파이썬 리트리브 기반 추천",
                             List.of("코사인 유사도 일치", "스킬 교집합 매칭"),
                             new CriteriaMatrixDto("✓", "✓", "~", "~", "~", "!")
@@ -129,8 +141,12 @@ public class JobSimilarService {
             log.info("[Python Retrieve] Found {} candidates for persona: {}", items.size(), persona);
             return items;
         } catch (Exception e) {
-            log.error("[Python Retrieve] Exception occurred for persona: {}", persona, e);
             throw new GeneralException(ErrorStatus.INTERNAL_SERVER_ERROR);
+        } finally {
+            // ✅ 무조건 파일 삭제 (예외 발생해도 실행됨)
+            if (stderrFile != null && stderrFile.exists()) {
+                stderrFile.delete();
+            }
         }
     }
 }

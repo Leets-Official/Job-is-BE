@@ -13,6 +13,10 @@ import java.util.Optional;
 
 public interface PersonalityTestRepository extends JpaRepository<PersonalityTest, Long> {
 
+    // 완료된 가장 최신 테스트 조회
+    Optional<PersonalityTest> findFirstByUserIdAndCompletedTrueOrderByStartedAtDesc(Long userId);
+
+    // 미완료 테스트 조회 (기존)
     Optional<PersonalityTest> findFirstByUserIdAndSourceAndCompletedFalseOrderByStartedAtDesc(
             Long userId,
             PersonalityTestSource source
@@ -21,6 +25,4 @@ public interface PersonalityTestRepository extends JpaRepository<PersonalityTest
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select test from PersonalityTest test where test.id = :testId")
     Optional<PersonalityTest> findByIdForUpdate(@Param("testId") Long testId);
-
-    Optional<PersonalityTest> findByUserId(Long userId);
 }
