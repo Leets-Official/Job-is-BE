@@ -28,6 +28,13 @@ class ContentControllerIntegrationTest {
     }
 
     @Test
+    void rejectsUnauthenticatedDetailRequest() throws Exception {
+        mockMvc.perform(get("/api/contents/1"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("COMM_401"));
+    }
+
+    @Test
     void getsContentsInDisplayOrder() throws Exception {
         mockMvc.perform(get("/api/contents").with(userJwt()))
                 .andExpect(status().isOk())
