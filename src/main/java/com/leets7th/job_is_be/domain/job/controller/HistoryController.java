@@ -1,5 +1,6 @@
 package com.leets7th.job_is_be.domain.job.controller;
 
+import com.leets7th.job_is_be.domain.job.controller.docs.HistoryControllerDocs;
 import com.leets7th.job_is_be.domain.job.dto.HistoryItemResponse;
 import com.leets7th.job_is_be.domain.job.enums.HistoryFilterType;
 import com.leets7th.job_is_be.domain.job.service.HistoryService;
@@ -18,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/history")
 @RequiredArgsConstructor
-public class HistoryController {
+public class HistoryController implements HistoryControllerDocs {
 
     private final HistoryService historyService;
 

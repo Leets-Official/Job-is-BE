@@ -49,8 +49,9 @@ application-prod.yml
 .claude/
 .DS_Store
 
-
-## Python ##
-__pycache__/
+### Python ###
+**/__pycache__/
 *.pyc
-"src/main/resources/application.yml" 
+*.pyo
+*.pyd
+.pytest_cache/

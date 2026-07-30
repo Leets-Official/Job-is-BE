@@ -1,5 +1,6 @@
 package com.leets7th.job_is_be.domain.notification.controller;
 
+import com.leets7th.job_is_be.domain.notification.controller.docs.NotificationSettingControllerDocs;
 import com.leets7th.job_is_be.domain.notification.dto.NotificationSettingResponse;
 import com.leets7th.job_is_be.domain.notification.dto.NotificationSettingUpdateRequest;
 import com.leets7th.job_is_be.domain.notification.dto.SnoozeRequest;
@@ -21,7 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/settings/notification")
 @RequiredArgsConstructor
-public class NotificationSettingController {
+public class NotificationSettingController implements NotificationSettingControllerDocs {
 
     private final NotificationSettingService notificationSettingService;
 

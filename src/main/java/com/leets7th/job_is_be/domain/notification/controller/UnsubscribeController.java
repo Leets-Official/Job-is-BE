@@ -1,5 +1,6 @@
 package com.leets7th.job_is_be.domain.notification.controller;
 
+import com.leets7th.job_is_be.domain.notification.controller.docs.UnsubscribeControllerDocs;
 import com.leets7th.job_is_be.domain.notification.dto.UnsubscribeFeedbackRequest;
 import com.leets7th.job_is_be.domain.notification.dto.UnsubscribeResponse;
 import com.leets7th.job_is_be.domain.notification.service.UnsubscribeService;
@@ -21,7 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/unsubscribe/{token}")
 @RequiredArgsConstructor
-public class UnsubscribeController {
+public class UnsubscribeController implements UnsubscribeControllerDocs {
 
     private final UnsubscribeService unsubscribeService;
 

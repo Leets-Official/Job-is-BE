@@ -1,5 +1,6 @@
 package com.leets7th.job_is_be.domain.personality.controller;
 
+import com.leets7th.job_is_be.domain.personality.controller.docs.PersonalityQuizControllerDocs;
 import com.leets7th.job_is_be.domain.personality.dto.QuizAnswerRequest;
 import com.leets7th.job_is_be.domain.personality.dto.QuizAnswerResponse;
 import com.leets7th.job_is_be.domain.personality.dto.QuizApplyRequest;
@@ -22,7 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/quiz")
-public class PersonalityQuizController {
+public class PersonalityQuizController implements PersonalityQuizControllerDocs {
 
     private final PersonalityQuizService quizService;
 

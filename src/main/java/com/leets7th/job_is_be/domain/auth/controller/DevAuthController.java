@@ -1,5 +1,6 @@
 package com.leets7th.job_is_be.domain.auth.controller;
 
+import com.leets7th.job_is_be.domain.auth.controller.docs.DevAuthControllerDocs;
 import com.leets7th.job_is_be.domain.auth.dto.DevLoginRequest;
 import com.leets7th.job_is_be.domain.auth.dto.DevLoginResponse;
 import com.leets7th.job_is_be.domain.auth.service.DevAuthService;
@@ -15,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Profile("dev")
 @RestController
 @RequestMapping("/api/auth/dev")
-public class DevAuthController {
+public class DevAuthController implements DevAuthControllerDocs {
 
     private final DevAuthService devAuthService;
 

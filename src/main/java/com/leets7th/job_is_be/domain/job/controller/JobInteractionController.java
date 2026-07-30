@@ -1,5 +1,6 @@
 package com.leets7th.job_is_be.domain.job.controller;
 
+import com.leets7th.job_is_be.domain.job.controller.docs.JobInteractionControllerDocs;
 import com.leets7th.job_is_be.domain.job.dto.ApplyClickRequest;
 import com.leets7th.job_is_be.domain.job.dto.JobInteractionResponse;
 import com.leets7th.job_is_be.domain.job.service.JobInteractionService;
@@ -18,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/jobs")
 @RequiredArgsConstructor
-public class JobInteractionController {
+public class JobInteractionController implements JobInteractionControllerDocs {
 
     private final JobInteractionService jobInteractionService;
 

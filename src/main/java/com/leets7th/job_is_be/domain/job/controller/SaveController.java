@@ -1,5 +1,6 @@
 package com.leets7th.job_is_be.domain.job.controller;
 
+import com.leets7th.job_is_be.domain.job.controller.docs.SaveControllerDocs;
 import com.leets7th.job_is_be.domain.job.dto.SavedJobListResponse;
 import com.leets7th.job_is_be.domain.job.enums.SavedJobSortType;
 import com.leets7th.job_is_be.domain.job.service.JobService;
@@ -17,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/saves")
 @RequiredArgsConstructor
-public class SaveController {
+public class SaveController implements SaveControllerDocs {
 
     private final JobService jobService;
 

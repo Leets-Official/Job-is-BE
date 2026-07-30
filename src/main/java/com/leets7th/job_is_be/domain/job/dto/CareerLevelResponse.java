@@ -1,37 +1,27 @@
 package com.leets7th.job_is_be.domain.job.dto;
 
 import com.leets7th.job_is_be.domain.user.enums.CareerLevel;
-import lombok.Getter;
 
-@Getter
-public class CareerLevelResponse {
-    private final String key;          // "ENTRY", "JUNIOR", "EXPERIENCED"
-    private final String description;  // "신입", "주니어" 등
-    private final Integer minYears;    // SQL career_min 매핑
-    private final Integer maxYears;    // SQL career_max 매핑
-
+public record CareerLevelResponse(
+        String key,
+        String description,
+        Integer minYears,
+        Integer maxYears
+) {
     public CareerLevelResponse(CareerLevel level) {
-        this.key = level.name();
-        this.description = level.getDescription();
-
-        // SQL 스키마 기준에 따른 범위 할당
-        switch (level) {
-            case ENTRY -> {
-                this.minYears = 0;
-                this.maxYears = 0;
-            }
-            case JUNIOR -> {
-                this.minYears = 1;
-                this.maxYears = 3;
-            }
-            case EXPERIENCED -> {
-                this.minYears = 4;
-                this.maxYears = 99;
-            }
-            default -> {
-                this.minYears = null;
-                this.maxYears = null;
-            }
-        }
+        this(
+                level != null ? level.name() : null,
+                level != null ? level.getDescription() : null,
+                level != null ? switch (level) {
+                    case ENTRY -> 0;
+                    case JUNIOR -> 1;
+                    case EXPERIENCED -> 4;
+                } : null,
+                level != null ? switch (level) {
+                    case ENTRY -> 0;
+                    case JUNIOR -> 3;
+                    case EXPERIENCED -> 99;
+                } : null
+        );
     }
 }
