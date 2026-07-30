@@ -14,7 +14,7 @@ import numpy as np
 from fastembed import TextEmbedding
 
 MODEL = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
-SIZE_ALIAS = {"스타트업": {"벤처기업", "중소기업"}, "벤처기업": {"벤처기업"},
+SIZE_ALIAS = {"스타트업": {"스타트업", "벤처기업", "중소기업"}, "벤처기업": {"벤처기업"},
               "중견기업": {"중견기업"}, "대기업": {"대기업", "외국계(외국 투자기업)"}}
 
 

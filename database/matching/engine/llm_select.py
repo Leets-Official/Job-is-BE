@@ -64,11 +64,15 @@ def call_claude(prompt, k, model, api_key):
     req = urllib.request.Request(API, data=body, headers={
         "x-api-key": api_key, "anthropic-version": "2023-06-01",
         "content-type": "application/json"})
-    with urllib.request.urlopen(req, timeout=90) as r:
-        resp = json.loads(r.read())
-    text = "".join(b.get("text", "") for b in resp.get("content", []))
-    text = text.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip()
-    return json.loads(text)
+
+    try:
+        with urllib.request.urlopen(req, timeout=90) as r:
+            resp = json.loads(r.read())
+        text = "".join(b.get("text", "") for b in resp.get("content", []))
+        text = text.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip()
+        return json.loads(text)
+    except Exception as e:
+        raise RuntimeError(f"Claude API 호출 또는 응답 파싱 실패: {e}") from e
 
 
 def select(persona, candidates, k=5, model=MODEL, api_key=None, evidence=None):

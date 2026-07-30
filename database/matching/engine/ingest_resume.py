@@ -126,10 +126,17 @@ def main():
                 canonical_id=EXCLUDED.canonical_id, weight=EXCLUDED.weight, evidence=EXCLUDED.evidence""",
             (uid, skill, cid, (ev or "")[:200]))
 
-    # 확정된 연차를 선언 선호에도 반영(있으면)
+    # 확정된 연차를 선언 선호에도 반영(있으면 UPSERT)
     if meta["career_years"] is not None:
-        cur.execute("UPDATE user_preferences SET career_years=%s, updated_at=now() WHERE user_id=%s",
-                    (meta["career_years"], uid))
+        cur.execute(
+            """
+            INSERT INTO user_preferences (user_id, career_years, updated_at)
+            VALUES (%s, %s, now())
+                ON CONFLICT (user_id) DO UPDATE
+                                             SET career_years = EXCLUDED.career_years, updated_at = now()
+            """,
+            (uid, meta["career_years"])
+        )
     conn.commit()
 
     print(f"[resume] user#{uid} doc#{doc_id}: 스킬 {len(skills)}개 추출 "

@@ -39,6 +39,7 @@ def main():
     conn = psycopg2.connect(a.dsn)
     conn.autocommit = False
     cur = conn.cursor()
+
     # 단일 라운드트립 벌크 UPDATE (source+external_id 매칭)
     execute_values(
         cur,
@@ -47,13 +48,20 @@ def main():
            FROM (VALUES %s) AS v(src, ext, emb)
            WHERE jp.source = v.src AND jp.external_id = v.ext""",
         rows, template="(%s, %s, %s)", page_size=500)
+
+    # 실제 갱신된 행 수 검증 (0건 갱신 시 에러 처리)
+    updated_count = cur.rowcount
+    if updated_count == 0:
+        conn.rollback()
+        sys.exit(f"[ERROR] 갱신된 행이 0개입니다. --source('{a.source}') 값이나 external_id 매칭 여부를 확인하세요.")
     conn.commit()
 
     cur.execute("SELECT count(*) FROM job_postings WHERE embedding IS NOT NULL")
     n_emb = cur.fetchone()[0]
     cur.execute("SELECT count(*) FROM job_postings")
     n_tot = cur.fetchone()[0]
-    print(f"[embed] {n_emb}/{n_tot} 행에 embedding 적재됨")
+    print(f"[embed] {n_emb}/{n_tot} 행에 embedding 적재됨 (이번 실행으로 {updated_count}건 갱신)")
+
 
     if a.hnsw:
         cur.execute("CREATE INDEX IF NOT EXISTS idx_jp_emb "

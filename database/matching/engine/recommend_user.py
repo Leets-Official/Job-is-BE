@@ -32,9 +32,15 @@ def load_evidence(conn, uid):
     if not doc and not pref_memory:
         return None
     parsed = (doc or {}).get("parsed") or {}
+    # 원문 전송 대신 파싱된 안전한 구조화 데이터 및 마스킹/필터링된 요약정보 사용
+    parsed = (doc or {}).get("parsed") or {}
+
+    # 이력서 상단(개인정보 포함 구간) 전송을 피하고 파싱된 직무/경력 중심으로 전달
+    resume_summary_safe = f"직무: {parsed.get('title_line', '')}, 경력: {parsed.get('career_years', '미상')}년"
+
     return {
         "career_years": parsed.get("career_years"),
-        "resume_summary": ((doc or {}).get("raw_text") or "")[:700],
+        "resume_summary": resume_summary_safe,
         "skills_with_evidence": [{"skill": s["skill"], "evidence": s["evidence"]} for s in skills],
         "learned_preferences": pref_memory,   # 신호④: 피드백 요약(진화형 선호)
     }

@@ -36,7 +36,8 @@ SQL = """
         AND (%(yrs)s::int IS NULL OR jp.career_min IS NULL OR jp.career_min <= %(yrs)s)
         AND (%(nexcl)s = 0 OR NOT (
           lower(coalesce(jp.position,'') || ' ' || coalesce(c.name,'') || ' ' ||
-          coalesce(jp.requirements,'') || ' ' || coalesce(jp.main_tasks,''))
+          left(regexp_replace(coalesce(jp.requirements,''), E'\\n', ' ', 'g'), 280) || ' ' ||
+          left(regexp_replace(coalesce(jp.main_tasks,''), E'\\n', ' ', 'g'), 280))
           LIKE ANY(%(excl_like)s)))
       ORDER BY jp.embedding <=> %(qv)s::vector
           LIMIT %(overfetch)s \

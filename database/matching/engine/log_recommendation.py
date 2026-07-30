@@ -87,11 +87,14 @@ def main():
         "ON CONFLICT (user_id, bundle_date) DO UPDATE SET user_id=EXCLUDED.user_id RETURNING id",
         (uid, bdate))
     bundle_id = cur.fetchone()["id"]
-    # 멱등 재적재: 이 번들의 이벤트(노출/시뮬 피드백) 먼저 정리 후 아이템 교체
-    #   (rec_item_id 는 FK 아님 → 아이템만 지우면 이벤트가 고아로 남음)
-    #   ※ 운영에선 이미 노출된 번들을 재생성하며 실제 피드백을 지우지 않는 정책 필요
-    cur.execute("DELETE FROM user_events WHERE rec_item_id IN "
-                "(SELECT id FROM rec_items WHERE bundle_id=%s)", (bundle_id,))
+    # 멱등 재적재: 자동 생성되는 노출(impression) 이벤트만 정리 후 아이템 교체
+    #(like/dislike/apply 등 실제 사용자 피드백 신호는 보존)
+    cur.execute(
+        """DELETE FROM user_events
+           WHERE event_type = 'impression'
+             AND rec_item_id IN (SELECT id FROM rec_items WHERE bundle_id=%s)""",
+        (bundle_id,)
+    )
     cur.execute("DELETE FROM rec_items WHERE bundle_id=%s", (bundle_id,))
 
     # external_id → job_postings.id

@@ -247,7 +247,7 @@ def main():
             with conn.cursor() as wcur:
                 for i in todo:
                     wcur.execute(
-                        "UPDATE job_postings SET embedding=%s WHERE id=%s",
+                        "UPDATE job_postings SET embedding=%s::vector WHERE id=%s",
                         (vec_literal(cached[i]), rows[i]["id"]),
                     )
             conn.commit()

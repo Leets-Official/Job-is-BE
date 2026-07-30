@@ -5,7 +5,7 @@
 ANTHROPIC_API_KEY 있으면 LLM 선별까지 자동. 없으면 후보군 + 프롬프트만 저장(에이전트로 선별).
 """
 from __future__ import annotations
-import argparse, json, sys
+import argparse, json, os, sys
 import numpy as np
 from fastembed import TextEmbedding
 import retrieve as R
