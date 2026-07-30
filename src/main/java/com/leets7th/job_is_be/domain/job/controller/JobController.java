@@ -69,10 +69,9 @@ public class JobController implements JobControllerDocs {
         return ApiResponse.success(SuccessStatus.JOB_DETAIL_SUCCESS, response);
     }
 
-    @Operation(summary = "유사 추천 공고 조회", description = "사용자의 성향 퀴즈 결과를 기반으로 맞춤 공고 목록을 추천합니다.")
-    @GetMapping("/{jobId}/similar")
+    @GetMapping("/similar")
     public ResponseEntity<ApiResponse<SimilarJobsResponseDto>> getRecommendedJobsByPersonality(
-            @RequestParam Long userId
+            @AuthenticationPrincipal Long userId
     ) {
         SimilarJobsResponseDto response = jobSimilarService.getRecommendedJobsByPersonality(userId);
         return ApiResponse.success(SuccessStatus.JOB_SIMILAR_SUCCESS, response);
