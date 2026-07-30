@@ -123,3 +123,4 @@ class JobLinkValidationServiceTest {
         assertThat(response.statusCode()).isNull();
     }
 }
+
