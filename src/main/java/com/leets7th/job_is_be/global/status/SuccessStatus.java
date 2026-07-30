@@ -95,6 +95,12 @@ public enum SuccessStatus implements BaseStatus {
     HISTORY_LIST_GET_SUCCESS(HttpStatus.OK, "HISTORY_200_1", "열람·스킵·저장·지원 의향 내역을 조회했습니다."),
 
     /**
+     * Content
+     */
+    CONTENT_LIST_GET_SUCCESS(HttpStatus.OK, "CONTENT_200_1", "오늘의 소식 목록을 조회했습니다."),
+    CONTENT_DETAIL_GET_SUCCESS(HttpStatus.OK, "CONTENT_200_2", "뉴스/혜택 상세를 조회했습니다."),
+
+    /**
      * Notification
      */
     NOTIFICATION_SETTING_GET_SUCCESS(HttpStatus.OK, "NOTIFICATION_200_1", "알림 수신 설정을 조회했습니다."),

@@ -106,6 +106,11 @@ public enum ErrorStatus implements BaseStatus {
     JOB_LINK_CONNECT_FAILED(HttpStatus.BAD_REQUEST, "JOB_400_7", "연결 실패 또는 타임아웃이 발생했습니다."),
 
     /**
+     * Content
+     */
+    CONTENT_NOT_FOUND(HttpStatus.NOT_FOUND, "CONTENT_404_1", "뉴스/혜택 콘텐츠를 찾을 수 없습니다."),
+
+    /**
      * Notification
      */
     NOTIFICATION_INVALID_SEND_SLOT(HttpStatus.BAD_REQUEST, "NOTIFICATION_400_1", "허용되지 않는 발송 시간대입니다."),
