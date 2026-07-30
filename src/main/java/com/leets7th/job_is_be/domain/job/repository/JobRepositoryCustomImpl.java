@@ -6,9 +6,9 @@ import com.leets7th.job_is_be.domain.job.entity.Job;
 import com.leets7th.job_is_be.domain.job.entity.QCompany;
 import com.leets7th.job_is_be.domain.job.entity.QJobCategory;
 import com.leets7th.job_is_be.domain.job.entity.QRegion;
-import com.leets7th.job_is_be.domain.job.enums.TechStackType;
-import com.querydsl.core.BooleanBuilder;
-import com.querydsl.core.types.Projections;
+import com.leets7th.job_is_be.domain.job.enums.CareerRange;
+import com.leets7th.job_is_be.domain.job.enums.JobStatus;
+import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -17,8 +17,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 
 import static com.leets7th.job_is_be.domain.job.entity.QJob.job;
@@ -35,19 +37,28 @@ public class JobRepositoryCustomImpl implements JobRepositoryCustom {
         QRegion region = QRegion.region;
         QJobCategory jobCategory = QJobCategory.jobCategory;
 
+        OffsetDateTime now = OffsetDateTime.now();
+
+        BooleanExpression[] conditions = new BooleanExpression[]{
+                candidateUniverse(now),
+                alwaysOpenIncluded(request),
+                keywordContains(company, request.keyword()),
+                categoryChildrenIn(request.categoryChildren()),
+                citiesIn(request.cities()),
+                districtsIn(request.districts()),
+                careerRangesIn(request.careerRanges()),
+                employmentTypesIn(request.employmentTypes()),
+                remoteOnly(request)
+        };
+
         // 공고 목록 조회 (LEFT JOIN & FETCH JOIN으로 N+1 방지 및 NULL 허용)
         List<Job> jobs = queryFactory
                 .selectFrom(job)
                 .leftJoin(job.company, company).fetchJoin()
                 .leftJoin(job.region, region).fetchJoin()
                 .leftJoin(job.jobCategory, jobCategory).fetchJoin()
-                .where(
-                        keywordContains(company, request.keyword()),
-                        regionsIn(region, request.regions()),
-                        skillTagsIn(request.skillTags()),
-                        categoryChildEq(jobCategory, request.categoryChild())
-                )
-                .orderBy(job.createdAt.desc(), job.id.desc())
+                .where(conditions)
+                .orderBy(orderBy(request))
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();
@@ -63,49 +74,107 @@ public class JobRepositoryCustomImpl implements JobRepositoryCustom {
                 .leftJoin(job.company, company)
                 .leftJoin(job.region, region)
                 .leftJoin(job.jobCategory, jobCategory)
-                .where(
-                        keywordContains(company, request.keyword()),
-                        regionsIn(region, request.regions()),
-                        skillTagsIn(request.skillTags()),
-                        categoryChildEq(jobCategory, request.categoryChild())
-                )
+                .where(conditions)
                 .fetchOne();
 
         long totalCount = total != null ? total : 0L;
         return new PageImpl<>(content, pageable, totalCount);
     }
 
+    /**
+     * 후보 유니버스(화면설계서 EXP §2.1) — ACTIVE 이면서 미마감 또는 상시채용인 공고만.
+     */
+    private BooleanExpression candidateUniverse(OffsetDateTime now) {
+        return job.status.eq(JobStatus.ACTIVE)
+                .and(job.deadlineAt.isNull().or(job.deadlineAt.gt(now)));
+    }
 
+    /**
+     * "상시채용 포함" off → 마감일이 있는 공고만 남긴다(§4.2).
+     */
+    private BooleanExpression alwaysOpenIncluded(JobSearchRequest request) {
+        return request.includeAlwaysOpenOrDefault() ? null : job.deadlineAt.isNotNull();
+    }
 
+    /**
+     * 키워드 — 공고명 · 회사명 · 스킬 태그 부분 매칭(§3.2 ②).
+     */
     private BooleanExpression keywordContains(QCompany company, String keyword) {
-        return StringUtils.hasText(keyword)
-                ? job.title.containsIgnoreCase(keyword).or(company.name.containsIgnoreCase(keyword))
-                : null;
-    }
-
-    private BooleanExpression regionsIn(QRegion region, List<String> regions) {
-        if (regions == null || regions.isEmpty()) {
+        if (!StringUtils.hasText(keyword)) {
             return null;
         }
-        return regions.stream()
-                .map(region.name::containsIgnoreCase)
+        BooleanExpression skillTagMatches = Expressions.booleanTemplate(
+                "array_to_string({0}, ',') ilike {1}", job.skillTags, "%" + keyword + "%");
+
+        return job.title.containsIgnoreCase(keyword)
+                .or(company.name.containsIgnoreCase(keyword))
+                .or(skillTagMatches);
+    }
+
+    /**
+     * 세부직군 — category_child 배열에 선택값이 하나라도 포함되면 통과(§4.2).
+     */
+    private BooleanExpression categoryChildrenIn(List<String> categoryChildren) {
+        if (CollectionUtils.isEmpty(categoryChildren)) {
+            return null;
+        }
+        return categoryChildren.stream()
+                .filter(StringUtils::hasText)
+                .map(value -> (BooleanExpression) Expressions.booleanTemplate(
+                        "array_contains({0}, {1})", job.categoryChild, value))
                 .reduce(BooleanExpression::or)
                 .orElse(null);
     }
 
-    private BooleanExpression skillTagsIn(List<TechStackType> skillTags) {
-        if (skillTags == null || skillTags.isEmpty()) {
+    private BooleanExpression citiesIn(List<String> cities) {
+        return CollectionUtils.isEmpty(cities) ? null : job.locationCity.in(cities);
+    }
+
+    private BooleanExpression districtsIn(List<String> districts) {
+        return CollectionUtils.isEmpty(districts) ? null : job.locationDistrict.in(districts);
+    }
+
+    /**
+     * 경력 구간 — 선택 구간들의 OR(§4.2).
+     */
+    private BooleanExpression careerRangesIn(List<CareerRange> careerRanges) {
+        if (CollectionUtils.isEmpty(careerRanges)) {
             return null;
         }
-
-        return skillTags.stream()
-                .map(TechStackType::getValue)
-                .map(tag -> (BooleanExpression) Expressions.booleanTemplate("array_contains({0}, {1})", job.skillTags, tag))
+        return careerRanges.stream()
+                .map(this::careerRangeCondition)
                 .reduce(BooleanExpression::or)
                 .orElse(null);
     }
 
-    private BooleanExpression categoryChildEq(QJobCategory jobCategory, String categoryChild) {
-        return StringUtils.hasText(categoryChild) ? jobCategory.name.eq(categoryChild) : null;
+    private BooleanExpression careerRangeCondition(CareerRange range) {
+        return switch (range) {
+            case NEWCOMER -> job.isNewbie.isTrue().or(job.careerMin.eq(0));
+            case JUNIOR -> job.careerMin.loe(3).and(job.careerMax.goe(1));
+            case SENIOR -> job.careerMax.goe(4);
+        };
+    }
+
+    private BooleanExpression employmentTypesIn(List<String> employmentTypes) {
+        return CollectionUtils.isEmpty(employmentTypes) ? null : job.employmentType.in(employmentTypes);
+    }
+
+    private BooleanExpression remoteOnly(JobSearchRequest request) {
+        return request.remoteOnlyOrFalse() ? job.remoteAvailable.isTrue() : null;
+    }
+
+    /**
+     * 정렬(§3.4). 상시채용(마감일 NULL)은 마감임박순에서 항상 뒤로 보낸다.
+     * 추천순은 적합도 파이프라인이 붙기 전까지 "산출 불가 → 최신순 tie-break" 규칙으로 동작한다.
+     */
+    private OrderSpecifier<?>[] orderBy(JobSearchRequest request) {
+        OrderSpecifier<?> latest = job.postedAt.desc().nullsLast();
+
+        return switch (request.sortOrDefault()) {
+            case DEADLINE -> new OrderSpecifier<?>[]{
+                    job.deadlineAt.asc().nullsLast(), latest, job.id.desc()
+            };
+            case FIT, RECENT -> new OrderSpecifier<?>[]{latest, job.id.desc()};
+        };
     }
 }

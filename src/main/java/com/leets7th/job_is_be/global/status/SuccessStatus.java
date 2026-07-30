@@ -75,10 +75,10 @@ public enum SuccessStatus implements BaseStatus {
     JOB_SEARCH_SUCCESS(HttpStatus.OK, "JOB_200_6", "공고 목록을 조회했습니다."),
     JOB_DETAIL_SUCCESS(HttpStatus.OK, "JOB_200_7", "공고 상세 정보를 조회했습니다."),
     JOB_SIMILAR_SUCCESS(HttpStatus.OK, "JOB_200_8", "유사 추천 공고를 조회했습니다."),
-    JOB_SOURCE_CHECK_SUCCESS(HttpStatus.OK, "JOB_200_8", "원문 링크 유효성을 확인했습니다."),
-
-    JOB_SIMILAR_SUCCESS(HttpStatus.OK, "JOB_200_8", "유사 추천 공고를 조회했습니다."),
     JOB_SOURCE_CHECK_SUCCESS(HttpStatus.OK, "JOB_200_9", "원문 링크 유효성을 확인했습니다."),
+    JOB_SKIP_SUCCESS(HttpStatus.OK, "JOB_200_10", "공고를 관심 없음으로 표시했습니다."),
+    JOB_SKIP_UNDO_SUCCESS(HttpStatus.OK, "JOB_200_11", "관심 없음 표시를 해제했습니다."),
+
     /**
      * Metadata / TechStack
      */
@@ -86,6 +86,7 @@ public enum SuccessStatus implements BaseStatus {
     REGION_GET_SUCCESS(HttpStatus.OK, "METADATA_200_1", "지역 목록을 조회했습니다."),
     JOB_CATEGORY_GET_SUCCESS(HttpStatus.OK, "METADATA_200_2", "직무 카테고리 목록을 조회했습니다."),
     CAREER_LEVEL_GET_SUCCESS(HttpStatus.OK, "METADATA_200_3", "경력 수준 목록을 조회했습니다."),
+    EMPLOYMENT_TYPE_GET_SUCCESS(HttpStatus.OK, "METADATA_200_4", "고용형태 목록을 조회했습니다."),
 
     /**
      * Crawler (Admin)

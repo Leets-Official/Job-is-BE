@@ -42,6 +42,12 @@ public class MetadataController implements MetadataControllerDocs {
         return ApiResponse.success(SuccessStatus.CAREER_LEVEL_GET_SUCCESS, metadataQueryService.getAllCareerLevels());
     }
 
+    @GetMapping("/employment-types")
+    public ResponseEntity<ApiResponse<List<String>>> getAllEmploymentTypes() {
+        List<String> response = metadataQueryService.getAllEmploymentTypes();
+        return ApiResponse.success(SuccessStatus.EMPLOYMENT_TYPE_GET_SUCCESS, response);
+    }
+
     @GetMapping("/tech-stacks")
     public ResponseEntity<ApiResponse<List<TechStackResponse>>> getAllTechStacks() {
         List<TechStackResponse> response = Arrays.stream(TechStackType.values())

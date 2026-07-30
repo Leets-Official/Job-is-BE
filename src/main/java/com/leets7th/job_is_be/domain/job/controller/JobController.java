@@ -16,7 +16,6 @@ import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -50,11 +49,10 @@ public class JobController implements JobControllerDocs {
     }
 
     // 공고 탐색 및 검색
-    @GetMapping
+    @GetMapping("/search")
     public ResponseEntity<ApiResponse<PageResponse<JobSummaryResponse>>> searchJobs(
             @Valid @ModelAttribute @ParameterObject JobSearchRequest condition,
-            @PageableDefault(page = 0, size = 24, sort = {"createdAt", "id"}, direction = Sort.Direction.DESC)
-            @ParameterObject Pageable pageable
+            @PageableDefault(page = 0, size = 24) @ParameterObject Pageable pageable
     ) {
         Page<JobSummaryResponse> response = jobService.searchJobs(condition, pageable);
         return ApiResponse.success(SuccessStatus.JOB_SEARCH_SUCCESS, PageResponse.from(response));

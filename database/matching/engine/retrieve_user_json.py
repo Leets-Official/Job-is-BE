@@ -246,8 +246,10 @@ def main():
         try:
             with conn.cursor() as wcur:
                 for i in todo:
+                    # embedding 컬럼은 TEXT 다(Job 엔티티 매핑과 동일). pgvector 없이도 캐시가 동작하며
+                    # 읽을 때는 parse_vec() 이 "[...]" 문자열을 그대로 파싱한다.
                     wcur.execute(
-                        "UPDATE job_postings SET embedding=%s::vector WHERE id=%s",
+                        "UPDATE job_postings SET embedding=%s WHERE id=%s",
                         (vec_literal(cached[i]), rows[i]["id"]),
                     )
             conn.commit()

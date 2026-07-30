@@ -24,6 +24,16 @@ public interface JobRepository extends JpaRepository<Job, Long>, JobRepositoryCu
             + "ORDER BY j.postedAt DESC")
     List<Job> findApplicableJobs(@Param("status") JobStatus status, @Param("now") OffsetDateTime now, Pageable pageable);
 
+    // 탐색 필터 옵션 — 후보 유니버스에 실제로 존재하는 고용형태만 노출(EXP-02 §4.6 Ideal)
+    @Query("SELECT DISTINCT j.employmentType FROM Job j "
+            + "WHERE j.status = :status AND (j.deadlineAt IS NULL OR j.deadlineAt > :now) "
+            + "AND j.employmentType IS NOT NULL ORDER BY j.employmentType")
+    List<String> findDistinctEmploymentTypes(@Param("status") JobStatus status, @Param("now") OffsetDateTime now);
+
+    // 추천엔진(파이썬)이 돌려준 external_id 목록을 서빙용 Job으로 되돌리기 위한 조회
+    @Query("SELECT j FROM Job j LEFT JOIN FETCH j.company WHERE j.externalId IN :externalIds")
+    List<Job> findByExternalIdIn(@Param("externalIds") List<Long> externalIds);
+
     Optional<Job> findBySourceAndExternalId(String source, Long externalId);
 
     // 출처(source)와 외부 ID(externalId) 기준 존재 여부 확인

@@ -131,6 +131,21 @@ public class Job extends BaseEntity {
     @Column(name = "embedding", columnDefinition = "TEXT")
     private String embedding;  // pgvector 형식 (JSON 배열 문자열로 저장)
 
+    // 아래 4개는 크롤러 원문(JobPosting)이 채우는 컬럼을 탐색 필터/카드 표시용으로 읽기만 한다.
+    // insertable/updatable=false 로 두어 Job 쪽 쓰기(동기화)가 원문 값을 덮어쓰지 않도록 한다.
+    @Column(name = "location_city", length = 100, insertable = false, updatable = false)
+    private String locationCity;
+
+    @Column(name = "location_district", length = 100, insertable = false, updatable = false)
+    private String locationDistrict;
+
+    @Column(name = "is_newbie", insertable = false, updatable = false)
+    private Boolean isNewbie;
+
+    @JdbcTypeCode(SqlTypes.ARRAY)
+    @Column(name = "category_child", insertable = false, updatable = false)
+    private List<String> categoryChild;
+
     @Builder
     public Job(Company company, JobCategory jobCategory, Region region, String title,
                String careerLevel, String employmentType, Boolean remoteAvailable,

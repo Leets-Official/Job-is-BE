@@ -14,8 +14,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,6 +23,9 @@ import java.util.List;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class JobSimilarService {
+
+    // 임베딩 모델 최초 로딩 + 신규 공고 벡터 계산까지 감안한 여유값
+    private static final long PYTHON_TIMEOUT_SECONDS = 120;
 
     private final PersonalityTestRepository personalityTestRepository;
 
@@ -57,10 +58,12 @@ public class JobSimilarService {
     private List<SimilarJobItemDto> executePythonRetrieve(String persona) {
 
         java.io.File stderrFile = null;
+        java.io.File stdoutFile = null;
         try {
             java.io.File workDir = new java.io.File(System.getProperty("user.dir"));
             java.io.File script = new java.io.File(workDir, "database/matching/engine/retrieve_user_json.py");
             stderrFile = java.io.File.createTempFile("retrieve-stderr-", ".log");
+            stdoutFile = java.io.File.createTempFile("retrieve-stdout-", ".json");
 
             // 동적 페르소나를 인자로 파이썬 스크립트 실행
             ProcessBuilder pb = new ProcessBuilder(
@@ -71,7 +74,10 @@ public class JobSimilarService {
             );
 
             pb.directory(workDir);
-            // stderr 는 파일로 분리 (stdout 은 순수 JSON 이어야 함)
+            // stdout/stderr 를 모두 파일로 받는다.
+            // 파이프로 받으면서 waitFor 로 먼저 대기하면, 출력이 파이프 버퍼(윈도우 기본 4KB)를 넘는 순간
+            // 파이썬은 "자바가 읽어가길", 자바는 "파이썬이 끝나길" 기다리는 교착이 발생한다.
+            pb.redirectOutput(stdoutFile);
             pb.redirectError(stderrFile);
 
             // DATABASE_URL 환경 변수 설정 (파이썬이 DB 연결 가능하도록)
@@ -80,29 +86,19 @@ public class JobSimilarService {
 
             Process process = pb.start();
 
-            boolean completed = process.waitFor(30, java.util.concurrent.TimeUnit.SECONDS);
+            // 임베딩 모델 최초 로딩이 오래 걸릴 수 있어 여유를 둔다
+            boolean completed = process.waitFor(PYTHON_TIMEOUT_SECONDS, java.util.concurrent.TimeUnit.SECONDS);
             if (!completed) {
-                process.destroy();  // 타임아웃 시 강제 종료
+                process.destroyForcibly();
+                log.error("[Python Retrieve] {}초 안에 끝나지 않아 강제 종료했습니다. persona={}",
+                        PYTHON_TIMEOUT_SECONDS, persona);
                 throw new GeneralException(ErrorStatus.INTERNAL_SERVER_ERROR);
             }
 
-            StringBuilder output = new StringBuilder();
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    output.append(line);
-                }
-            }
+            int exitCode = process.exitValue();
 
-            int exitCode = process.waitFor();
-
-            String errorOutput = "";
-            try {
-                errorOutput = java.nio.file.Files.readString(stderrFile.toPath(), StandardCharsets.UTF_8);
-            } catch (Exception ignored) {
-                // stderr 읽기 실패는 무시
-            }
-            stderrFile.delete();
+            StringBuilder output = new StringBuilder(readFileQuietly(stdoutFile));
+            String errorOutput = readFileQuietly(stderrFile);
             log.info("[Python Retrieve] persona={}, exitCode={}, stdout_len={}, stderr_len={}",
                     persona, exitCode, output.length(), errorOutput.length());
 
@@ -111,7 +107,10 @@ public class JobSimilarService {
             }
 
             if (output.length() == 0) {
-                log.error("[Python Retrieve] No output from python script for persona: {}", persona);
+                // 스크립트가 stdout 에 아무것도 남기지 못하고 죽은 경우 — 원인은 stderr 에만 있다
+                log.error("[Python Retrieve] 파이썬이 출력을 내지 못했습니다. persona={}, exitCode={}, python={}, script={}\n--- stderr ---\n{}",
+                        persona, exitCode, pythonPath, script.getAbsolutePath(),
+                        errorOutput.isBlank() ? "(stderr 없음 — 실행 파일 경로를 확인하세요)" : errorOutput);
                 throw new GeneralException(ErrorStatus.INTERNAL_SERVER_ERROR);
             }
 
@@ -140,13 +139,29 @@ public class JobSimilarService {
             }
             log.info("[Python Retrieve] Found {} candidates for persona: {}", items.size(), persona);
             return items;
+        } catch (GeneralException e) {
+            throw e;
         } catch (Exception e) {
+            log.error("[Python Retrieve] 실행/파싱 실패 persona={}", persona, e);
             throw new GeneralException(ErrorStatus.INTERNAL_SERVER_ERROR);
         } finally {
-            // ✅ 무조건 파일 삭제 (예외 발생해도 실행됨)
-            if (stderrFile != null && stderrFile.exists()) {
-                stderrFile.delete();
-            }
+            // 예외가 나도 임시 파일은 반드시 정리한다
+            deleteQuietly(stdoutFile);
+            deleteQuietly(stderrFile);
+        }
+    }
+
+    private String readFileQuietly(java.io.File file) {
+        try {
+            return java.nio.file.Files.readString(file.toPath(), StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+    private void deleteQuietly(java.io.File file) {
+        if (file != null && file.exists() && !file.delete()) {
+            log.warn("[Python Retrieve] 임시 파일 삭제 실패: {}", file.getAbsolutePath());
         }
     }
 }
