@@ -26,20 +26,20 @@ public class MetadataController implements MetadataControllerDocs {
     private final MetadataQueryService metadataQueryService;
 
     @GetMapping("/regions")
-    public ResponseEntity<List<RegionResponse>> getAllRegions() {
+    public ResponseEntity<ApiResponse<List<RegionResponse>>> getAllRegions() {
         List<RegionResponse> response = metadataQueryService.getAllRegions();
-        return ResponseEntity.ok(response);
+        return ApiResponse.success(SuccessStatus.REGION_GET_SUCCESS, response);
     }
 
     @GetMapping("/job-categories")
-    public ResponseEntity<List<JobCategoryResponse>> getAllJobCategories() {
+    public ResponseEntity<ApiResponse<List<JobCategoryResponse>>> getAllJobCategories() {
         List<JobCategoryResponse> response = metadataQueryService.getAllJobCategories();
-        return ResponseEntity.ok(response);
+        return ApiResponse.success(SuccessStatus.JOB_CATEGORY_GET_SUCCESS, response);
     }
 
     @GetMapping("/career-levels")
-    public ResponseEntity<List<CareerLevelResponse>> getAllCareerLevels() {
-        return ResponseEntity.ok(metadataQueryService.getAllCareerLevels());
+    public ResponseEntity<ApiResponse<List<CareerLevelResponse>>> getAllCareerLevels() {
+        return ApiResponse.success(SuccessStatus.CAREER_LEVEL_GET_SUCCESS, metadataQueryService.getAllCareerLevels());
     }
 
     @GetMapping("/tech-stacks")
