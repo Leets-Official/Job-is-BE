@@ -20,5 +20,5 @@ public interface JobCrawlerControllerDocs {
             @ApiResponse(responseCode = "401", description = "인증 필요"),
             @ApiResponse(responseCode = "403", description = "ADMIN 권한 필요")
     })
-    ResponseEntity<String> triggerCrawlerPipeline();
+    ResponseEntity<com.leets7th.job_is_be.global.response.ApiResponse<String>> triggerCrawlerPipeline();
 }

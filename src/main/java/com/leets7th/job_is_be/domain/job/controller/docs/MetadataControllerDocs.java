@@ -22,21 +22,21 @@ public interface MetadataControllerDocs {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 필요")
     })
-    ResponseEntity<List<RegionResponse>> getAllRegions();
+    ResponseEntity<ApiResponse<List<RegionResponse>>> getAllRegions();
 
     @Operation(summary = "직무 카테고리 목록 조회", description = "DB에 등록된 직무 카테고리 메타데이터 목록을 조회합니다.")
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 필요")
     })
-    ResponseEntity<List<JobCategoryResponse>> getAllJobCategories();
+    ResponseEntity<ApiResponse<List<JobCategoryResponse>>> getAllJobCategories();
 
     @Operation(summary = "경력 수준 목록 조회", description = "시스템에 정의된 경력 수준 메타데이터를 조회합니다.")
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 필요")
     })
-    ResponseEntity<List<CareerLevelResponse>> getAllCareerLevels();
+    ResponseEntity<ApiResponse<List<CareerLevelResponse>>> getAllCareerLevels();
 
     @Operation(summary = "기술 스택 목록 조회", description = "시스템에 정의된 전체 기술 스택 메타데이터 목록을 조회합니다.")
     @ApiResponses({
