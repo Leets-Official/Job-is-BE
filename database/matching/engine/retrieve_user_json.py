@@ -27,14 +27,9 @@ import sys
 import numpy as np
 import psycopg2
 from psycopg2.extras import RealDictCursor
+from constants import SIZE_ALIAS
 
 DIM = 384
-SIZE_ALIAS = {
-    "스타트업": {"스타트업", "벤처기업", "중소기업"},
-    "벤처기업": {"벤처기업"},
-    "중견기업": {"중견기업"},
-    "대기업": {"대기업", "외국계(외국 투자기업)"},
-}
 
 
 def log(msg):
@@ -103,6 +98,17 @@ def existing_columns(cur, table):
         (table,),
     )
     return {r["column_name"] for r in cur.fetchall()}
+
+
+def column_udt(cur, table, column):
+    """컬럼의 실제 타입명(udt_name). 없으면 None."""
+    cur.execute(
+        "SELECT udt_name FROM information_schema.columns "
+        "WHERE table_name=%s AND column_name=%s",
+        (table, column),
+    )
+    row = cur.fetchone()
+    return (row or {}).get("udt_name")
 
 
 def fetch_jobs(cur, limit):
@@ -244,19 +250,24 @@ def main():
     # 임베딩 캐시 저장 (embedding 컬럼이 있을 때만)
     if todo and "embedding" in cols:
         try:
+            with conn.cursor(cursor_factory=RealDictCursor) as tcur:
+                emb_udt = column_udt(tcur, "job_postings", "embedding")
+            # user_schema.sql 은 embedding 을 vector(384) 로 만든다. 이때 캐스트가 없으면
+            # 텍스트→vector 타입 불일치로 UPDATE 가 실패한다(아래 except 가 삼켜 캐시가 영구 미적재).
+            # TEXT 로 만들어진 스키마도 있을 수 있어 실제 타입을 보고 캐스트를 붙인다.
+            cast = "::vector" if emb_udt == "vector" else ""
             with conn.cursor() as wcur:
                 for i in todo:
-                    # embedding 컬럼은 TEXT 다(Job 엔티티 매핑과 동일). pgvector 없이도 캐시가 동작하며
-                    # 읽을 때는 parse_vec() 이 "[...]" 문자열을 그대로 파싱한다.
+                    # 읽을 때는 parse_vec() 이 "[...]" 문자열을 그대로 파싱한다(두 타입 모두 동일).
                     wcur.execute(
-                        "UPDATE job_postings SET embedding=%s WHERE id=%s",
+                        f"UPDATE job_postings SET embedding=%s{cast} WHERE id=%s",
                         (vec_literal(cached[i]), rows[i]["id"]),
                     )
             conn.commit()
-            log(f"[db] 임베딩 캐시 저장 {len(todo)}건")
+            log(f"[db] 임베딩 캐시 저장 {len(todo)}건 (embedding={emb_udt or '미상'})")
         except Exception as e:
             conn.rollback()
-            log(f"[db] 임베딩 캐시 저장 실패(무시): {e}")
+            log(f"[db] 경고: 임베딩 캐시 저장 실패 — 추천은 계속하되 다음 실행도 재계산한다: {e}")
     conn.close()
 
     pskills = {s.lower() for s in (persona.get("skills") or [])}

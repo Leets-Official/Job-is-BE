@@ -41,16 +41,18 @@ def main():
     cur = conn.cursor()
 
     # 단일 라운드트립 벌크 UPDATE (source+external_id 매칭)
-    execute_values(
+    # RETURNING으로 실제 갱신된 행 ID를 명시적으로 반환 (page_size로 나뉠 때도 정확함)
+    updated_ids = execute_values(
         cur,
         """UPDATE job_postings AS jp
            SET embedding = v.emb::vector
            FROM (VALUES %s) AS v(src, ext, emb)
-           WHERE jp.source = v.src AND jp.external_id = v.ext""",
-        rows, template="(%s, %s, %s)", page_size=500)
+           WHERE jp.source = v.src AND jp.external_id = v.ext
+           RETURNING jp.id""",
+        rows, template="(%s, %s, %s)", page_size=500, fetch=True)
 
     # 실제 갱신된 행 수 검증 (0건 갱신 시 에러 처리)
-    updated_count = cur.rowcount
+    updated_count = len(updated_ids) if updated_ids else 0
     if updated_count == 0:
         conn.rollback()
         sys.exit(f"[ERROR] 갱신된 행이 0개입니다. --source('{a.source}') 값이나 external_id 매칭 여부를 확인하세요.")

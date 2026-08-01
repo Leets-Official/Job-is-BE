@@ -70,7 +70,7 @@ def load_signals(cur, identifier):
         cur.execute("SAVEPOINT sp_doc")
         cur.execute(
             "SELECT embedding::text AS emb FROM user_documents "
-            "WHERE user_id=%s AND embedding IS NOT NULL LIMIT 1",
+            "WHERE user_id=%s AND doc_type='resume' AND is_active AND embedding IS NOT NULL LIMIT 1",
             (uid,)
         )
         doc = cur.fetchone()
@@ -145,7 +145,10 @@ def retrieve_user(ext_ref, conn, model, topn=20, overfetch=200):
         excl = [e.lower() for e in (pref.get("excludes") or [])]
 
         # 유저 혼합 벡터 및 weights 생성
-        declared_emb = model.embed([declared_text(pref)])[0] if declared_text(pref) else np.zeros(384)
+        # embed() 는 fastembed>=0.3 에서 제너레이터를 돌려주므로 list() 로 풀고 첫 벡터를 꺼낸다.
+        declared = declared_text(pref)
+        declared_emb = (np.array(list(model.embed([declared])), dtype=np.float32)[0]
+                        if declared else np.zeros(384, dtype=np.float32))
         user_vec, weights = blend(declared_emb, resume_emb, taste, ecount)
 
         # SQL 전달용 params (qv 포함)

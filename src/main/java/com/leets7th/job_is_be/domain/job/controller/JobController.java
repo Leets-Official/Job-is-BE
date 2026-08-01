@@ -69,9 +69,10 @@ public class JobController implements JobControllerDocs {
 
     @GetMapping("/similar")
     public ResponseEntity<ApiResponse<SimilarJobsResponseDto>> getRecommendedJobsByPersonality(
-            @AuthenticationPrincipal Long userId
+            @AuthenticationPrincipal Jwt jwt
     ) {
-        SimilarJobsResponseDto response = jobSimilarService.getRecommendedJobsByPersonality(userId);
+        SimilarJobsResponseDto response =
+                jobSimilarService.getRecommendedJobsByPersonality(Long.valueOf(jwt.getSubject()));
         return ApiResponse.success(SuccessStatus.JOB_SIMILAR_SUCCESS, response);
     }
 }

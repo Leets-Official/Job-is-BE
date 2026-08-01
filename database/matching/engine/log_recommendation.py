@@ -87,8 +87,22 @@ def main():
         "ON CONFLICT (user_id, bundle_date) DO UPDATE SET user_id=EXCLUDED.user_id RETURNING id",
         (uid, bdate))
     bundle_id = cur.fetchone()["id"]
-    # 멱등 재적재: 자동 생성되는 노출(impression) 이벤트만 정리 후 아이템 교체
-    #(like/dislike/apply 등 실제 사용자 피드백 신호는 보존)
+
+    # 멱등 재적재: 기존 아이템을 교체하되 사용자 피드백은 보존한다.
+    # user_events.rec_item_id 에는 FK 가 없어 rec_items 를 지워도 DB 가 막아주지 않는다.
+    # 그대로 두면 삭제된 행을 가리키는 고아 참조가 남으므로,
+    # (user_id, posting_id) 를 기준으로 새 아이템에 다시 연결한다.
+    cur.execute(
+        """SELECT ev.id, ri.posting_id
+           FROM user_events ev
+                    JOIN rec_items ri ON ri.id = ev.rec_item_id
+           WHERE ri.bundle_id=%s AND ev.event_type <> 'impression'""",
+        (bundle_id,))
+    carry = {}
+    for row in cur.fetchall():
+        carry.setdefault(row["posting_id"], []).append(row["id"])
+
+    # 노출(impression)은 이번 적재에서 다시 생성되므로 정리한다.
     cur.execute(
         """DELETE FROM user_events
            WHERE event_type = 'impression'
@@ -106,6 +120,7 @@ def main():
 
     n_items = 0
     n_imp = 0
+    n_relinked = 0
     for r in recs:
         ext = r["external_id"]
         posting_id = pid.get(ext)
@@ -122,11 +137,23 @@ def main():
              Json(r.get("fit_points") or []), r.get("caution") or "", Json(sc), a.model))
         rec_item_id = cur.fetchone()["id"]
         n_items += 1
+        # 같은 공고에 남아 있던 이전 피드백을 새 아이템으로 재연결(보존)
+        carried = carry.pop(posting_id, None)
+        if carried:
+            cur.execute("UPDATE user_events SET rec_item_id=%s WHERE id = ANY(%s)",
+                        (rec_item_id, carried))
+            n_relinked += len(carried)
         # L5 : 노출(impression) 자동 로깅
         cur.execute(
             "INSERT INTO user_events (user_id, posting_id, rec_item_id, event_type) "
             "VALUES (%s,%s,%s,'impression')", (uid, posting_id, rec_item_id))
         n_imp += 1
+
+    # 이번 번들에서 빠진 공고의 피드백은 연결할 새 아이템이 없다.
+    # 삭제된 행을 계속 가리키지 않도록 참조만 끊고 이벤트 자체는 남긴다((user_id, posting_id) 로 추적 가능).
+    orphaned = [eid for ids in carry.values() for eid in ids]
+    if orphaned:
+        cur.execute("UPDATE user_events SET rec_item_id = NULL WHERE id = ANY(%s)", (orphaned,))
 
     # 루프 데모용 피드백(선택) : 1위 like, 마지막 dislike+사유
     if a.simulate and n_items >= 2:
@@ -155,6 +182,8 @@ def main():
            WHERE ri.bundle_id=%s
            GROUP BY ri.id, jp.position, c.name ORDER BY ri.rank""", (bundle_id,))
     print(f"[log] user#{uid} bundle#{bundle_id}: rec_items {n_items}, impressions {n_imp}"
+          + (f", 피드백 재연결 {n_relinked}" if n_relinked else "")
+          + (f", 참조해제 {len(orphaned)}" if orphaned else "")
           + (" (+simulate like/dislike)" if a.simulate else ""))
     for row in cur.fetchall():
         ss = row["stage_scores"] or {}

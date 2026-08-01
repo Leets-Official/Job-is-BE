@@ -189,11 +189,13 @@ public class RecommendationService {
         if (job.getSkillTags() != null && !job.getSkillTags().isEmpty()) {
             parts.add(String.join(", ", job.getSkillTags().stream().limit(SUMMARY_SKILL_LIMIT).toList()));
         }
-        parts.add(resolveDeadlineLabel(job.getDeadlineAt()));
 
+        // 마감 라벨은 항상 값이 나오므로("상시" 또는 "D-N") 판정 이후에 붙인다.
+        // 먼저 더하면 parts 가 비는 일이 없어 아래 분기가 죽고, 재료가 전무한 공고도 "상시" 한 단어만 남는다.
         if (parts.isEmpty()) {
             return null;
         }
+        parts.add(resolveDeadlineLabel(job.getDeadlineAt()));
 
         String summary = String.join(" · ", parts);
         return summary.length() <= SUMMARY_MAX_LENGTH ? summary : summary.substring(0, SUMMARY_MAX_LENGTH - 1) + "…";

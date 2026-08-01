@@ -118,10 +118,12 @@ public class JobRepositoryCustomImpl implements JobRepositoryCustom {
         if (CollectionUtils.isEmpty(categoryChildren)) {
             return null;
         }
+        // PostgreSQL 에는 array_contains 가 없다. 배열에 값이 있으면 첨자를, 없으면 NULL 을 돌려주는
+        // array_position 으로 판정한다(= ANY 는 HQL 이 부질의 한정자로 해석해 파싱이 깨진다).
         return categoryChildren.stream()
                 .filter(StringUtils::hasText)
                 .map(value -> (BooleanExpression) Expressions.booleanTemplate(
-                        "array_contains({0}, {1})", job.categoryChild, value))
+                        "array_position({0}, {1}) is not null", job.categoryChild, value))
                 .reduce(BooleanExpression::or)
                 .orElse(null);
     }
