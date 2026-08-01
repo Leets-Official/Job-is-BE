@@ -14,7 +14,7 @@ public record JobSearchRequest(
         @Schema(description = "스킬 태그 목록")
         List<TechStackType> skillTags,
 
-        @Schema(description = "지역 목록", allowableValues = {"서울", "경기", "인천", "부산"})
+        @Schema(description = "지역 목록 (시·도 이름, 예: 서울, 경기, 인천 등. /api/jobs/filters/regions 조회로 전체 목록 확인)")
         List<String> regions
         // ex) 최신 등록순: createdAt,desc
         // ex) 마감일 임박순 deadlineAt, asc

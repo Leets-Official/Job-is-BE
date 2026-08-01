@@ -16,6 +16,10 @@
 --              값을 고쳐 다시 넣으려면 해당 행을 지우고 실행할 것.
 -- ============================================================
 
+-- 이 파일은 UTF-8 이다. Windows cmd 의 psql 은 기본 클라이언트 인코딩이
+-- UHC(CP949)라 한글이 깨지므로 세션 인코딩을 먼저 지정한다.
+SET client_encoding TO 'UTF8';
+
 BEGIN;
 
 -- ------------------------------------------------------------
@@ -27,6 +31,14 @@ BEGIN;
 -- '원격'은 여기에 넣지 않는다. PRO-01 필드 표에서 지역 칩과 별개인
 -- '원격 포함 토글'(user_preferences.remote_ok)로 정의돼 있다.
 -- ------------------------------------------------------------
+-- 기존 행이 있는데 시퀀스가 뒤처져 있으면 id 충돌(regions_pkey)이 난다.
+-- 다음 발급값을 max(id)+1 로 맞춘다.
+SELECT setval(
+    pg_get_serial_sequence('regions', 'id'),
+    COALESCE((SELECT MAX(id) FROM regions), 0) + 1,
+    false
+);
+
 INSERT INTO regions (name, parent_id, sort_order, created_at, updated_at)
 SELECT v.name, NULL, v.sort_order, localtimestamp, localtimestamp
 FROM (VALUES
@@ -61,6 +73,13 @@ WHERE NOT EXISTS (
 -- 부록 A.1 의 '기타 = 자유 입력'은 마스터 행이 아니다.
 -- 자동완성에 매칭되지 않는 입력을 텍스트 그대로 받는 예외 경로를 뜻한다.
 -- ------------------------------------------------------------
+-- regions 와 같은 이유로 시퀀스를 먼저 맞춘다.
+SELECT setval(
+    pg_get_serial_sequence('job_categories', 'id'),
+    COALESCE((SELECT MAX(id) FROM job_categories), 0) + 1,
+    false
+);
+
 INSERT INTO job_categories (name, group_name, sort_order, created_at, updated_at)
 SELECT v.name, v.group_name, v.sort_order, localtimestamp, localtimestamp
 FROM (VALUES
