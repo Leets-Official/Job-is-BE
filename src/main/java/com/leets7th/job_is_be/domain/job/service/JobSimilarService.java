@@ -120,20 +120,24 @@ public class JobSimilarService {
             JsonNode rootNode = objectMapper.readTree(output.toString());
             JsonNode candidatesNode = rootNode.get("candidates");
 
+            JsonNode personaNode = rootNode.get("persona");
+
             List<SimilarJobItemDto> items = new ArrayList<>();
             if (candidatesNode != null && candidatesNode.isArray()) {
                 for (JsonNode node : candidatesNode) {
                     double scoreRaw = node.get("score_final").asDouble() * 100;
                     int fitScore = (int) Math.max(0, Math.min(100, scoreRaw));
 
+                    List<String> fitPoints = buildFitPoints(node, personaNode);
+
                     items.add(new SimilarJobItemDto(
                             node.get("external_id").asText(),
                             node.get("position").asText(),
                             node.get("company").asText(),
-                            fitScore,  // ← 변수를 사용 (생성자 바깥에서 선언)
-                            "파이썬 리트리브 기반 추천",
-                            List.of("코사인 유사도 일치", "스킬 교집합 매칭"),
-                            new CriteriaMatrixDto("✓", "✓", "~", "~", "~", "!")
+                            fitScore,
+                            buildReason(fitPoints),
+                            fitPoints,
+                            buildCriteriaMatrix(node, personaNode)
                     ));
                 }
             }
@@ -149,6 +153,90 @@ public class JobSimilarService {
             deleteQuietly(stdoutFile);
             deleteQuietly(stderrFile);
         }
+    }
+
+    /**
+     * 확인 가능한 신호만 근거로 남긴다. 파이썬 출력에 없는 축(직무·경력)은 주장하지 않는다.
+     */
+    private List<String> buildFitPoints(JsonNode candidate, JsonNode persona) {
+        List<String> points = new ArrayList<>();
+
+        List<String> matchedSkills = matchedSkills(candidate, persona);
+        if (!matchedSkills.isEmpty()) {
+            points.add(String.join(", ", matchedSkills) + " 스킬이 겹칩니다");
+        }
+        if (isLocationMatched(candidate, persona)) {
+            points.add("선호 지역과 일치합니다");
+        }
+        if (isCompanySizeMatched(candidate, persona)) {
+            points.add(text(candidate, "company_type") + " 규모를 선호합니다");
+        }
+
+        double cosine = candidate.path("score_cosine").asDouble();
+        if (cosine >= 0.6) {
+            points.add("공고 내용이 관심 직무와 유사합니다");
+        }
+        return points;
+    }
+
+    private String buildReason(List<String> fitPoints) {
+        // 근거가 하나도 없으면 단정하지 않는다(§9 추정 금지)
+        return fitPoints.isEmpty() ? "관심 직무와 일부 유사한 공고입니다" : fitPoints.get(0);
+    }
+
+    /**
+     * 확인 가능한 축만 판정하고, 파이썬 출력에 근거가 없는 축은 미확인(~)으로 둔다.
+     * 급여는 데이터가 없어 항상 "!"(화면설계서 §2.3).
+     */
+    private CriteriaMatrixDto buildCriteriaMatrix(JsonNode candidate, JsonNode persona) {
+        String skills = matchedSkills(candidate, persona).isEmpty() ? "~" : "✓";
+        String location = isLocationMatched(candidate, persona) ? "✓" : "~";
+        String preference = isCompanySizeMatched(candidate, persona) ? "✓" : "~";
+        String jobType = candidate.path("score_cosine").asDouble() >= 0.6 ? "✓" : "~";
+
+        // 경력은 파이썬 응답에 담기지 않아 판정 불가
+        return new CriteriaMatrixDto(jobType, "~", location, skills, preference, "!");
+    }
+
+    private List<String> matchedSkills(JsonNode candidate, JsonNode persona) {
+        List<String> personaSkills = textList(persona, "skills");
+        if (personaSkills.isEmpty()) {
+            return List.of();
+        }
+        return textList(candidate, "skill_tags").stream()
+                .filter(tag -> personaSkills.stream().anyMatch(tag::equalsIgnoreCase))
+                .toList();
+    }
+
+    private boolean isLocationMatched(JsonNode candidate, JsonNode persona) {
+        String location = text(candidate, "location_full");
+        if (location.isBlank()) {
+            return false;
+        }
+        return textList(persona, "locations").stream().anyMatch(location::contains);
+    }
+
+    private boolean isCompanySizeMatched(JsonNode candidate, JsonNode persona) {
+        String companyType = text(candidate, "company_type");
+        if (companyType.isBlank()) {
+            return false;
+        }
+        return textList(persona, "company_size_pref").contains(companyType);
+    }
+
+    private String text(JsonNode node, String field) {
+        JsonNode value = node == null ? null : node.get(field);
+        return value == null || value.isNull() ? "" : value.asText();
+    }
+
+    private List<String> textList(JsonNode node, String field) {
+        JsonNode array = node == null ? null : node.get(field);
+        if (array == null || !array.isArray()) {
+            return List.of();
+        }
+        List<String> values = new ArrayList<>();
+        array.forEach(element -> values.add(element.asText()));
+        return values;
     }
 
     private String readFileQuietly(java.io.File file) {
