@@ -8,7 +8,8 @@ import java.util.List;
 public record ProfileDraftResponse(
         OnboardingStep onboardingStep,
         List<ProfileJobCategoryResponse> jobCategories,
-        ProfileRegionResponse region,
+        List<ProfileRegionResponse> regions,
+        boolean remoteOk,
         CareerLevel careerLevel,
         List<String> preferenceNotes,
         List<String> excludeKeywords,

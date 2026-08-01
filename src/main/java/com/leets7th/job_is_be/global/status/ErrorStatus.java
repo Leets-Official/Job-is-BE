@@ -63,6 +63,7 @@ public enum ErrorStatus implements BaseStatus {
     PROFILE_VALUE_TOO_LONG(HttpStatus.BAD_REQUEST, "PROFILE_400_4", "프로필 입력값이 허용 길이를 초과했습니다."),
     PROFILE_REQUIRED_FIELDS_MISSING(HttpStatus.BAD_REQUEST, "PROFILE_400_5", "온보딩 완료에 필요한 프로필 항목을 입력해 주세요."),
     PROFILE_TECH_STACK_INVALID(HttpStatus.BAD_REQUEST, "PROFILE_400_6", "기술 스택 이름은 1자 이상 100자 이하로 입력해 주세요."),
+    PROFILE_REGION_COUNT_INVALID(HttpStatus.BAD_REQUEST, "PROFILE_400_7", "희망 지역은 중복 없이 최대 3개까지 선택할 수 있습니다."),
     PROFILE_NOT_FOUND(HttpStatus.NOT_FOUND, "PROFILE_404_1", "완료된 프로필을 찾을 수 없습니다."),
     PROFILE_JOB_CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "PROFILE_404_2", "선택한 관심 직무를 찾을 수 없습니다."),
     PROFILE_REGION_NOT_FOUND(HttpStatus.NOT_FOUND, "PROFILE_404_3", "선택한 희망 지역을 찾을 수 없습니다."),
