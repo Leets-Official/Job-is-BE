@@ -62,6 +62,7 @@ public enum SuccessStatus implements BaseStatus {
     RESUME_LIST_SUCCESS(HttpStatus.OK, "RESUME_200_2", "이력서/자소서 파일 목록을 조회했습니다."),
     RESUME_DELETE_SUCCESS(HttpStatus.OK, "RESUME_200_3", "이력서/자소서 파일을 삭제했습니다."),
     RESUME_UPLOAD_UPDATE_SUCCESS(HttpStatus.OK, "RESUME_200_4", "이력서/자소서 파일을 갱신했습니다."),
+    RESUME_DOWNLOAD_URL_SUCCESS(HttpStatus.OK, "RESUME_200_5", "다운로드용 Presigned URL을 발급했습니다."),
 
     /**
      * Job
