@@ -15,6 +15,7 @@ import java.util.List;
  */
 public record CardResponse(
         Long cardId,
+        Long deckId,
         Long jobId,
         OffsetDateTime postedAt,   // 공고 올라온 날짜
         String jobTitle,          // 공고명
@@ -34,6 +35,7 @@ public record CardResponse(
         Company company = job != null ? job.getCompany() : null;
         return new CardResponse(
                 card.getId(),
+                card.getDeck().getId(),
                 job != null ? job.getId() : null,
                 job != null ? job.getPostedAt() : null,
                 job != null ? job.getTitle() : null,
@@ -58,7 +60,7 @@ public record CardResponse(
         if (job.getRegion() != null) {
             tags.add(job.getRegion().getName());
         }
-        tags.add(job.isSalaryDisclosed() ? "연봉 공개" : "연봉 비공개");
+        tags.add((job.getSalaryDisclosed() != null && job.getSalaryDisclosed()) ? "연봉 공개" : "연봉 비공개");
         return tags;
     }
 }

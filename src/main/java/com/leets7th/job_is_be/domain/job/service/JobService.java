@@ -151,7 +151,8 @@ public class JobService {
      */
     @Transactional(readOnly = true)
     public Page<JobSummaryResponse> searchJobs(JobSearchRequest condition, Pageable pageable) {
-        Pageable fixedPageable = PageRequest.of(pageable.getPageNumber(), 24, pageable.getSort());
+        // 정렬은 Pageable 이 아니라 condition.sort(추천순/최신순/마감임박순)로 결정한다(EXP §3.4)
+        Pageable fixedPageable = PageRequest.of(pageable.getPageNumber(), 24);
         return jobRepository.searchJobs(condition, fixedPageable);
     }
 

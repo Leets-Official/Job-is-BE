@@ -1,8 +1,10 @@
 package com.leets7th.job_is_be.domain.user.controller;
 
+import com.leets7th.job_is_be.domain.user.controller.docs.ResumeControllerDocs;
 import com.leets7th.job_is_be.domain.user.dto.PresignedUrlRequest;
 import com.leets7th.job_is_be.domain.user.dto.PresignedUrlResponse;
 import com.leets7th.job_is_be.domain.user.dto.ResumeConfirmRequest;
+import com.leets7th.job_is_be.domain.user.dto.ResumeDownloadUrlResponse;
 import com.leets7th.job_is_be.domain.user.dto.ResumeResponse;
 import com.leets7th.job_is_be.domain.user.dto.ResumeUploadResponse;
 import com.leets7th.job_is_be.domain.user.service.ResumeService;
@@ -24,7 +26,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/profile/files")
-public class ResumeController {
+public class ResumeController implements ResumeControllerDocs {
 
     private final ResumeService resumeService;
 
@@ -68,6 +70,15 @@ public class ResumeController {
     ) {
         resumeService.deleteFile(userId(jwt), fileId);
         return ApiResponse.success(SuccessStatus.RESUME_DELETE_SUCCESS);
+    }
+
+    @GetMapping("/{fileId}/download-url")
+    public ResponseEntity<ApiResponse<ResumeDownloadUrlResponse>> issueDownloadUrl(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable Long fileId
+    ) {
+        ResumeDownloadUrlResponse response = resumeService.issueDownloadUrl(userId(jwt), fileId);
+        return ApiResponse.success(SuccessStatus.RESUME_DOWNLOAD_URL_SUCCESS, response);
     }
 
     private Long userId(Jwt jwt) {
