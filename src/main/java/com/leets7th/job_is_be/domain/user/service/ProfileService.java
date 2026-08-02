@@ -26,7 +26,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.time.LocalDateTime;
-import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -37,7 +36,6 @@ import java.util.stream.Collectors;
 public class ProfileService {
 
     private static final int MAX_JOB_CATEGORIES = 3;
-    private static final int MAX_REGIONS = 3;
 
     private final UserRepository userRepository;
     private final UserProfileRepository userProfileRepository;
@@ -121,11 +119,11 @@ public class ProfileService {
             replaceJobCategories(user, resolveJobCategories(categoryIds, primaryId), primaryId);
         }
 
-        if (request.regionIds() != null) {
-            replaceRegions(user, resolveRegions(request.regionIds()));
+        if (request.regionId() != null) {
+            replaceRegion(user, resolveRegion(request.regionId()));
         }
 
-        return toDraftResponse(profile, findJobCategories(userId), findRegions(userId));
+        return toDraftResponse(profile, findJobCategories(userId), findRegion(userId));
     }
 
     @Transactional(readOnly = true)
@@ -137,7 +135,7 @@ public class ProfileService {
         if (profile.isOnboardingCompleted()) {
             throw new GeneralException(ErrorStatus.PROFILE_ALREADY_COMPLETED);
         }
-        return toDraftResponse(profile, findJobCategories(userId), findRegions(userId));
+        return toDraftResponse(profile, findJobCategories(userId), findRegion(userId));
     }
 
     @Transactional
@@ -156,7 +154,7 @@ public class ProfileService {
         boolean missingRequiredValue = jobCategories.isEmpty()
                 || jobCategories.size() > MAX_JOB_CATEGORIES
                 || primaryCount != 1
-                || findRegions(userId).isEmpty()
+                || findRegion(userId) == null
                 || profile.getCareerLevel() == null;
         if (missingRequiredValue) {
             throw new GeneralException(ErrorStatus.PROFILE_REQUIRED_FIELDS_MISSING);
@@ -168,14 +166,14 @@ public class ProfileService {
     @Transactional(readOnly = true)
     public ProfileResponse getProfile(Long userId) {
         UserProfile profile = findCompletedProfile(userId);
-        return toProfileResponse(profile, findJobCategories(userId), findRegions(userId));
+        return toProfileResponse(profile, findJobCategories(userId), findRegion(userId));
     }
 
     @Transactional
     public ProfileResponse updateProfile(Long userId, ProfileUpdateRequest request) {
         if (request == null) {
             UserProfile profile = findCompletedProfile(userId);
-            return toProfileResponse(profile, findJobCategories(userId), findRegions(userId));
+            return toProfileResponse(profile, findJobCategories(userId), findRegion(userId));
         }
 
         User user = userRepository.findByIdForUpdate(userId)
@@ -206,8 +204,8 @@ public class ProfileService {
             replaceJobCategories(user, categories, primaryId);
         }
 
-        if (request.regionIds() != null) {
-            replaceRegions(user, resolveRegions(request.regionIds()));
+        if (request.regionId() != null) {
+            replaceRegion(user, resolveRegion(request.regionId()));
         }
 
         profile.updateProfile(
@@ -225,11 +223,11 @@ public class ProfileService {
         );
 
         List<UserJobCategory> updatedSelections = findJobCategories(userId);
-        List<UserRegion> updatedRegions = findRegions(userId);
-        if (updatedSelections.isEmpty() || updatedRegions.isEmpty() || profile.getCareerLevel() == null) {
+        UserRegion updatedRegion = findRegion(userId);
+        if (updatedSelections.isEmpty() || updatedRegion == null || profile.getCareerLevel() == null) {
             throw new GeneralException(ErrorStatus.PROFILE_REQUIRED_FIELDS_MISSING);
         }
-        return toProfileResponse(profile, updatedSelections, updatedRegions);
+        return toProfileResponse(profile, updatedSelections, updatedRegion);
     }
 
     private List<JobCategory> resolveJobCategories(List<Long> requestedIds, Long primaryId) {
@@ -257,25 +255,15 @@ public class ProfileService {
     }
 
     /**
-     * 희망 지역은 중복 없이 1~3개(PRO-01 필드 표). 빈 목록은 "선택 해제"로 허용하고,
+     * 희망 지역은 단일 선택. null 은 "선택 해제"로 허용하고,
      * 필수 검증은 온보딩 완료·프로필 수정 시점에서 따로 한다.
      */
-    private List<Region> resolveRegions(List<Long> requestedIds) {
-        List<Long> ids = requestedIds == null ? List.of() : requestedIds;
-        LinkedHashSet<Long> uniqueIds = new LinkedHashSet<>(ids);
-        if (uniqueIds.size() != ids.size() || uniqueIds.size() > MAX_REGIONS) {
-            throw new GeneralException(ErrorStatus.PROFILE_REGION_COUNT_INVALID);
+    private Region resolveRegion(Long requestedId) {
+        if (requestedId == null) {
+            return null;
         }
-        if (uniqueIds.isEmpty()) {
-            return List.of();
-        }
-
-        Map<Long, Region> regions = regionRepository.findAllById(uniqueIds).stream()
-                .collect(Collectors.toMap(Region::getId, Function.identity()));
-        if (regions.size() != uniqueIds.size()) {
-            throw new GeneralException(ErrorStatus.PROFILE_REGION_NOT_FOUND);
-        }
-        return uniqueIds.stream().map(regions::get).toList();
+        return regionRepository.findById(requestedId)
+                .orElseThrow(() -> new GeneralException(ErrorStatus.PROFILE_REGION_NOT_FOUND));
     }
 
     private void replaceJobCategories(User user, List<JobCategory> categories, Long primaryId) {
@@ -291,43 +279,38 @@ public class ProfileService {
         userJobCategoryRepository.saveAll(selections);
     }
 
-    private void replaceRegions(User user, List<Region> regions) {
+    private void replaceRegion(User user, Region region) {
         userRegionRepository.deleteAllByUserId(user.getId());
         userRegionRepository.flush();
-        if (regions.isEmpty()) {
+        if (region == null) {
             return;
         }
-        userRegionRepository.saveAll(regions.stream()
-                .map(region -> UserRegion.builder()
-                        .user(user)
-                        .region(region)
-                        .build())
-                .toList());
+        userRegionRepository.save(UserRegion.builder()
+                .user(user)
+                .region(region)
+                .build());
     }
 
     private List<UserJobCategory> findJobCategories(Long userId) {
         return userJobCategoryRepository.findAllByUserId(userId);
     }
 
-    private List<UserRegion> findRegions(Long userId) {
-        return userRegionRepository.findAllByUserId(userId);
+    private UserRegion findRegion(Long userId) {
+        return userRegionRepository.findFirstByUserIdOrderByIdDesc(userId).orElse(null);
     }
 
-    /** 지역 마스터의 sort_order 를 따라 노출한다(선택 순서가 아니라 화면 칩 순서 기준). */
-    private List<ProfileRegionResponse> toRegionResponses(List<UserRegion> userRegions) {
-        return userRegions.stream()
-                .map(UserRegion::getRegion)
-                .sorted(Comparator.comparing(
-                        Region::getSortOrder,
-                        Comparator.nullsLast(Comparator.naturalOrder())))
-                .map(region -> new ProfileRegionResponse(region.getId(), region.getName()))
-                .toList();
+    private ProfileRegionResponse toRegionResponse(UserRegion userRegion) {
+        if (userRegion == null || userRegion.getRegion() == null) {
+            return null;
+        }
+        Region region = userRegion.getRegion();
+        return new ProfileRegionResponse(region.getId(), region.getName());
     }
 
     private ProfileDraftResponse toDraftResponse(
             UserProfile profile,
             List<UserJobCategory> selections,
-            List<UserRegion> userRegions
+            UserRegion userRegion
     ) {
         List<UserJobCategory> orderedSelections = new ArrayList<>(selections);
         orderedSelections.sort((left, right) -> {
@@ -347,7 +330,7 @@ public class ProfileService {
         return new ProfileDraftResponse(
                 profile.getOnboardingStep(),
                 jobCategories,
-                toRegionResponses(userRegions),
+                toRegionResponse(userRegion),
                 profile.isRemoteOk(),
                 profile.getCareerLevel(),
                 valueCodec.decode(profile.getPreferenceNote()),
@@ -370,7 +353,7 @@ public class ProfileService {
     private ProfileResponse toProfileResponse(
             UserProfile profile,
             List<UserJobCategory> selections,
-            List<UserRegion> userRegions
+            UserRegion userRegion
     ) {
         List<ProfileJobCategoryResponse> jobCategories = selections.stream()
                 .sorted((left, right) -> {
@@ -388,7 +371,7 @@ public class ProfileService {
         return new ProfileResponse(
                 profile.getUser().getId(),
                 jobCategories,
-                toRegionResponses(userRegions),
+                toRegionResponse(userRegion),
                 profile.isRemoteOk(),
                 profile.getCareerLevel(),
                 valueCodec.decode(profile.getPreferenceNote()),

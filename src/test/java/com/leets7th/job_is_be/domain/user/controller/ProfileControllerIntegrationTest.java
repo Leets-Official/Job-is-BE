@@ -98,7 +98,7 @@ class ProfileControllerIntegrationTest {
                                   "onboardingStep": "PROFILE",
                                   "jobCategoryIds": [%d],
                                   "primaryJobCategoryId": %d,
-                                  "regionIds": null,
+                                  "regionId": null,
                                   "remoteOk": null,
                                   "careerLevel": null,
                                   "preferenceNotes": ["원격 가능"],
@@ -108,7 +108,7 @@ class ProfileControllerIntegrationTest {
                                 """.formatted(jobCategoryIds.get(0), jobCategoryIds.get(0))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.onboardingStep").value("PROFILE"))
-                .andExpect(jsonPath("$.data.regions").isEmpty())
+                .andExpect(jsonPath("$.data.region").doesNotExist())
                 .andExpect(jsonPath("$.data.remoteOk").value(false))
                 .andExpect(jsonPath("$.data.careerLevel").doesNotExist());
 
@@ -120,7 +120,7 @@ class ProfileControllerIntegrationTest {
                                   "onboardingStep": "REVIEW",
                                   "jobCategoryIds": [%d, %d],
                                   "primaryJobCategoryId": %d,
-                                  "regionIds": [%d, %d],
+                                  "regionId": %d,
                                   "remoteOk": true,
                                   "careerLevel": "ENTRY",
                                   "preferenceNotes": ["원격 가능", "정규직 우선"],
@@ -131,16 +131,13 @@ class ProfileControllerIntegrationTest {
                                 jobCategoryIds.get(0),
                                 jobCategoryIds.get(1),
                                 jobCategoryIds.get(0),
-                                regionIds.get(0),
-                                regionIds.get(1)
+                                regionIds.get(0)
                         )))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.onboardingStep").value("REVIEW"))
                 .andExpect(jsonPath("$.data.jobCategories.length()").value(2))
                 .andExpect(jsonPath("$.data.jobCategories[0].primary").value(true))
-                .andExpect(jsonPath("$.data.regions.length()").value(2))
-                .andExpect(jsonPath("$.data.regions[0].name").value("서울"))
-                .andExpect(jsonPath("$.data.regions[1].name").value("경기"))
+                .andExpect(jsonPath("$.data.region.name").value("서울"))
                 .andExpect(jsonPath("$.data.remoteOk").value(true));
 
         mockMvc.perform(post("/api/profile/onboarding/complete").with(userJwt()))
@@ -180,7 +177,7 @@ class ProfileControllerIntegrationTest {
                                   "onboardingStep": "REVIEW",
                                   "jobCategoryIds": [],
                                   "primaryJobCategoryId": null,
-                                  "regionIds": null,
+                                  "regionId": null,
                                   "careerLevel": null
                                 }
                                 """))
@@ -214,33 +211,44 @@ class ProfileControllerIntegrationTest {
     }
 
     @Test
-    void rejectsDuplicatedRegions() throws Exception {
+    void rejectsUnknownRegion() throws Exception {
         mockMvc.perform(put("/api/profile/draft")
                         .with(userJwt())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
                                   "onboardingStep": "PROFILE",
-                                  "regionIds": [%d, %d]
+                                  "regionId": 999999
                                 }
-                                """.formatted(regionIds.get(0), regionIds.get(0))))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value("PROFILE_400_7"));
+                                """))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
-    void acceptsUpToThreeRegions() throws Exception {
+    void replacesRegionWhenSelectedAgain() throws Exception {
         mockMvc.perform(put("/api/profile/draft")
                         .with(userJwt())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
                                   "onboardingStep": "PROFILE",
-                                  "regionIds": [%d, %d, %d]
+                                  "regionId": %d
                                 }
-                                """.formatted(regionIds.get(0), regionIds.get(1), regionIds.get(2))))
+                                """.formatted(regionIds.get(0))))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.regions.length()").value(3));
+                .andExpect(jsonPath("$.data.region.name").value("서울"));
+
+        mockMvc.perform(put("/api/profile/draft")
+                        .with(userJwt())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "onboardingStep": "PROFILE",
+                                  "regionId": %d
+                                }
+                                """.formatted(regionIds.get(1))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.region.name").value("경기"));
     }
 
     @Test
@@ -253,7 +261,7 @@ class ProfileControllerIntegrationTest {
                                   "onboardingStep": "PROFILE",
                                   "jobCategoryIds": [%d],
                                   "primaryJobCategoryId": %d,
-                                  "regionIds": [%d],
+                                  "regionId": %d,
                                   "careerLevel": "ENTRY",
                                   "preferenceNotes": ["remote"],
                                   "excludeKeywords": ["night shift"],
@@ -274,8 +282,7 @@ class ProfileControllerIntegrationTest {
                 .andExpect(jsonPath("$.data.onboardingStep").value("QUIZ"))
                 .andExpect(jsonPath("$.data.jobCategories.length()").value(1))
                 .andExpect(jsonPath("$.data.jobCategories[0].id").value(jobCategoryIds.get(0)))
-                .andExpect(jsonPath("$.data.regions.length()").value(1))
-                .andExpect(jsonPath("$.data.regions[0].id").value(regionIds.get(0)))
+                .andExpect(jsonPath("$.data.region.id").value(regionIds.get(0)))
                 .andExpect(jsonPath("$.data.careerLevel").value("ENTRY"))
                 .andExpect(jsonPath("$.data.preferenceNotes[0]").value("remote"))
                 .andExpect(jsonPath("$.data.excludeKeywords[0]").value("night shift"))

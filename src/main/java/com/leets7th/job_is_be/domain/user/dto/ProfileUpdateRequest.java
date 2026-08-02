@@ -6,12 +6,12 @@ import java.util.List;
 
 /**
  * 프로필 수정 요청. null 필드는 "변경 없음"을 뜻한다.
- * 희망 지역은 1~3개 다중 선택이며 원격 포함 여부는 별도 토글이다(PRO-01 필드 표).
+ * 희망 지역은 단일 선택이며 원격 포함 여부는 별도 토글이다.
  */
 public record ProfileUpdateRequest(
         List<Long> jobCategoryIds,
         Long primaryJobCategoryId,
-        List<Long> regionIds,
+        Long regionId,
         Boolean remoteOk,
         CareerLevel careerLevel,
         List<String> preferenceNotes,
