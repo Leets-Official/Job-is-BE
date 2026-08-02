@@ -29,5 +29,6 @@ public record CrawledJobDto(
         String employmentType,
         boolean remoteAvailable,
         OffsetDateTime postedAt,
-        OffsetDateTime deadlineAt
+        OffsetDateTime deadlineAt,
+        @JsonProperty("editor_note") String editorNote
 ) {}

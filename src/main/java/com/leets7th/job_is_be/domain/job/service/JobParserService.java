@@ -107,6 +107,7 @@ public class JobParserService {
                         .externalId(jobDto.externalId())
                         .skills(jobDto.skills() != null ? String.join(",", jobDto.skills()) : null)
                         .categories(jobDto.categories() != null ? String.join(",", jobDto.categories()) : null)
+                        .editorNote(jobDto.editorNote())
                         .build();
             }
 
