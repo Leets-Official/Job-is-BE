@@ -3,6 +3,7 @@ package com.leets7th.job_is_be.domain.user.service;
 import com.leets7th.job_is_be.domain.user.dto.PresignedUrlRequest;
 import com.leets7th.job_is_be.domain.user.dto.PresignedUrlResponse;
 import com.leets7th.job_is_be.domain.user.dto.ResumeConfirmRequest;
+import com.leets7th.job_is_be.domain.user.dto.ResumeDownloadUrlResponse;
 import com.leets7th.job_is_be.domain.user.dto.ResumeResponse;
 import com.leets7th.job_is_be.domain.user.dto.ResumeUploadResponse;
 import com.leets7th.job_is_be.domain.user.entity.Resume;
@@ -20,15 +21,20 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
+import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -80,6 +86,38 @@ public class ResumeService {
                 objectKey,
                 awsS3Properties.presignedUrlExpiration().toSeconds()
         );
+    }
+
+    @Transactional(readOnly = true)
+    public ResumeDownloadUrlResponse issueDownloadUrl(Long userId, Long fileId) {
+        User user = getUser(userId);
+        Resume resume = resumeRepository.findByIdAndUser(fileId, user)
+                .orElseThrow(() -> new GeneralException(ErrorStatus.RESUME_NOT_FOUND));
+
+        GetObjectRequest objectRequest = GetObjectRequest.builder()
+                .bucket(awsS3Properties.bucket())
+                .key(resume.getS3Key())
+                .responseContentDisposition(contentDisposition(resume.getFileName()))
+                .build();
+
+        GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
+                .signatureDuration(awsS3Properties.presignedUrlExpiration())
+                .getObjectRequest(objectRequest)
+                .build();
+
+        PresignedGetObjectRequest presignedRequest = s3Presigner.presignGetObject(presignRequest);
+
+        return new ResumeDownloadUrlResponse(
+                presignedRequest.url().toString(),
+                resume.getFileName(),
+                awsS3Properties.presignedUrlExpiration().toSeconds()
+        );
+    }
+
+    // S3 오브젝트 키(profile/{userId}/{category})엔 확장자가 없어서, 다운로드 시 원본 파일명이 붙도록 명시적으로 지정한다.
+    private String contentDisposition(String fileName) {
+        String encoded = URLEncoder.encode(fileName, StandardCharsets.UTF_8).replace("+", "%20");
+        return "attachment; filename*=UTF-8''" + encoded;
     }
 
     @Transactional
