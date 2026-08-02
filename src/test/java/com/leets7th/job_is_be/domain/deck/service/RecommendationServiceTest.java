@@ -84,7 +84,7 @@ class RecommendationServiceTest {
         Job job = Job.builder().title("백엔드 엔지니어").externalId(111L).employmentType("정규직").build();
         when(jobRepository.findByExternalIdIn(List.of(111L))).thenReturn(List.of(job));
 
-        CardResponse response = new CardResponse(1L, 2L, null, "백엔드 엔지니어", "성향과 기술 스택이 맞습니다",
+        CardResponse response = new CardResponse(1L, 2L, null, null, "백엔드 엔지니어", "성향과 기술 스택이 맞습니다",
                 BigDecimal.valueOf(84), List.of(), null, null, List.of(), null, "요약", 1, null);
         when(cardService.getDeckCards(any(), any())).thenReturn(List.of(response));
 
