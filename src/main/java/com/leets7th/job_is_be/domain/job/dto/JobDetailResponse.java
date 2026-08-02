@@ -12,7 +12,7 @@ public record JobDetailResponse (
         String position,
         String careerLevel,
         String employmentType,
-        boolean remoteAvailable,
+        Boolean remoteAvailable,
         String sourceUrl,
         OffsetDateTime dueTime,
 
@@ -40,7 +40,7 @@ public record JobDetailResponse (
                 .position(job.getTitle())
                 .careerLevel(job.getCareerLevel())
                 .employmentType(job.getEmploymentType())
-                .remoteAvailable(job.isRemoteAvailable())
+                .remoteAvailable(job.getRemoteAvailable())
                 .sourceUrl(job.getSourceUrl())
                 .dueTime(job.getDeadlineAt())
                 .intro(job.getIntro())

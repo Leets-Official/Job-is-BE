@@ -38,6 +38,14 @@ public interface MetadataControllerDocs {
     })
     ResponseEntity<ApiResponse<List<CareerLevelResponse>>> getAllCareerLevels();
 
+    @Operation(summary = "고용형태 목록 조회",
+            description = "탐색 후보 공고에 실제로 존재하는 고용형태 값 목록을 조회합니다. 탐색 필터의 고용형태 옵션으로 사용합니다.")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 필요")
+    })
+    ResponseEntity<ApiResponse<List<String>>> getAllEmploymentTypes();
+
     @Operation(summary = "기술 스택 목록 조회", description = "시스템에 정의된 전체 기술 스택 메타데이터 목록을 조회합니다.")
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),

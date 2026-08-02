@@ -66,6 +66,7 @@ class CardServiceTest {
                 .externalId(10L)
                 .build();
         Card card = Card.builder()
+                .deck(deck)
                 .job(job)
                 .position(1)
                 .fitScore(new BigDecimal("92.50"))

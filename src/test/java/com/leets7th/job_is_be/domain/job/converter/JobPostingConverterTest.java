@@ -93,7 +93,7 @@ class JobPostingConverterTest {
         converter.updateFrom(existing, posting);
 
         assertThat(existing.getTitle()).isEqualTo("new title");
-        assertThat(existing.isRemoteAvailable()).isTrue();
+        assertThat(existing.getRemoteAvailable()).isTrue();
         assertThat(existing.getStatus()).isEqualTo(JobStatus.REMOVED);
     }
 }

@@ -27,7 +27,7 @@ import java.io.FileReader;
  * app.data-init.enabled=true 를 준 환경(주로 로컬)에서만 빈으로 등록된다.
  */
 @Slf4j
-// @Component
+//@Component
 @ConditionalOnProperty(name = "app.data-init.enabled", havingValue = "true")
 @RequiredArgsConstructor
 public class JobDataInitializer implements CommandLineRunner {
@@ -50,9 +50,8 @@ public class JobDataInitializer implements CommandLineRunner {
     private void loadCompanies(String filePath, ObjectMapper mapper) {
         File file = new File(filePath);
         if (!file.exists()) {
-            // 시드 파일이 없다고 기동을 막지 않는다(CommandLineRunner 예외 = 앱 기동 실패)
-            log.warn("초기 회사 데이터 파일이 없어 적재를 건너뜁니다. 경로: {}", file.getAbsolutePath());
-            return;
+            log.error("초기 회사 데이터 파일이 존재하지 않습니다. 경로: {}", file.getAbsolutePath());
+            throw new GeneralException(ErrorStatus.INITIAL_DATA_FILE_NOT_FOUND);
         }
 
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
@@ -83,8 +82,8 @@ public class JobDataInitializer implements CommandLineRunner {
     private void loadJobs(String filePath, ObjectMapper mapper) {
         File file = new File(filePath);
         if (!file.exists()) {
-            log.warn("초기 공고 데이터 파일이 없어 적재를 건너뜁니다. 경로: {}", file.getAbsolutePath());
-            return;
+            log.error("초기 공고 데이터 파일이 존재하지 않습니다. 경로: {}", file.getAbsolutePath());
+            throw new GeneralException(ErrorStatus.INITIAL_DATA_FILE_NOT_FOUND);
         }
 
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
