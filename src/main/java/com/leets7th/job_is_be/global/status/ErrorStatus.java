@@ -98,6 +98,7 @@ public enum ErrorStatus implements BaseStatus {
     INVALID_PAGE(HttpStatus.BAD_REQUEST, "JOB_400_2", "잘못된 페이지 번호입니다."),
     INVALID_PAGE_SIZE(HttpStatus.BAD_REQUEST, "JOB_400_3", "잘못된 페이지 크기입니다."),
     INITIAL_DATA_FILE_NOT_FOUND(HttpStatus.INTERNAL_SERVER_ERROR, "JOB_500_1", "초기 데이터 파일 경로를 찾을 수 없습니다."),
+    JOB_ENGINE_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "JOB_500_2", "유사 공고 추출 처리 중 오류가 발생했습니다."),
 
     // 원문 링크 검증 관련 에러 상태 코드
     JOB_LINK_EMPTY(HttpStatus.BAD_REQUEST, "JOB_400_4", "등록된 원문 링크가 없습니다."),
@@ -117,9 +118,15 @@ public enum ErrorStatus implements BaseStatus {
     NOTIFICATION_SNOOZE_DURATION_REQUIRED(HttpStatus.BAD_REQUEST, "NOTIFICATION_400_2", "스누즈 기간을 선택해주세요."),
 
     /**
+     * Personality
+     */
+    PERSONALITY_NOT_FOUND(HttpStatus.NOT_FOUND, "PERSONALITY_404_1", "해당 사용자의 성향 분석 결과를 찾을 수 없습니다."),
+
+    /**
      * Unsubscribe
      */
     UNSUBSCRIBE_TOKEN_INVALID(HttpStatus.NOT_FOUND, "UNSUBSCRIBE_404_1", "유효하지 않은 수신거부 링크입니다.");
+
 
     private final HttpStatus httpStatus;
     private final String code;

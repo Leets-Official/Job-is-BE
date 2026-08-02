@@ -22,7 +22,8 @@ public class DeckController implements DeckControllerDocs {
 
     private final RecommendationService recommendationService;
 
-    // TODO: 실제 추천엔진 붙기 전까지 스웨거로 파이프라인을 수동 트리거해서 확인하기 위한 임시 엔드포인트
+    // 추천 파이프라인 수동 트리거. 화면설계서 REC §0.5의 06:00 자동 생성 배치는 아직 없어
+    // 그때까지 이 엔드포인트로 오늘 덱을 생성한다.
     @PostMapping("/generate")
     public ResponseEntity<ApiResponse<List<CardResponse>>> generateTodayDeck(
             @AuthenticationPrincipal Jwt jwt

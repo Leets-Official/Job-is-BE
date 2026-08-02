@@ -4,14 +4,17 @@ import com.leets7th.job_is_be.domain.job.dto.CareerLevelResponse;
 import com.leets7th.job_is_be.domain.job.dto.JobCategoryResponse;
 import com.leets7th.job_is_be.domain.job.dto.RegionResponse;
 import com.leets7th.job_is_be.domain.job.dto.TechStackResponse;
+import com.leets7th.job_is_be.domain.job.enums.JobStatus;
 import com.leets7th.job_is_be.domain.job.enums.TechStackType;
 import com.leets7th.job_is_be.domain.job.repository.JobCategoryRepository;
+import com.leets7th.job_is_be.domain.job.repository.JobRepository;
 import com.leets7th.job_is_be.domain.job.repository.RegionRepository;
 import com.leets7th.job_is_be.domain.user.enums.CareerLevel;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.OffsetDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -23,6 +26,7 @@ public class MetadataQueryService {
 
     private final RegionRepository regionRepository;
     private final JobCategoryRepository jobCategoryRepository;
+    private final JobRepository jobRepository;
 
     public List<RegionResponse> getAllRegions() {
         return regionRepository.findAll().stream()
@@ -40,6 +44,10 @@ public class MetadataQueryService {
         return Arrays.stream(CareerLevel.values())
                 .map(CareerLevelResponse::new)
                 .collect(Collectors.toList());
+    }
+
+    public List<String> getAllEmploymentTypes() {
+        return jobRepository.findDistinctEmploymentTypes(JobStatus.ACTIVE, OffsetDateTime.now());
     }
 
     public List<TechStackResponse> getAllTechStacks() {

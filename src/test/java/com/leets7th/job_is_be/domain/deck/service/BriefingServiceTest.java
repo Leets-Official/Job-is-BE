@@ -9,6 +9,8 @@ import com.leets7th.job_is_be.domain.deck.repository.DeckRepository;
 import com.leets7th.job_is_be.domain.job.entity.Job;
 import com.leets7th.job_is_be.domain.job.entity.JobCategory;
 import com.leets7th.job_is_be.domain.job.repository.JobRepository;
+import com.leets7th.job_is_be.domain.personality.entity.PersonalityTest;
+import com.leets7th.job_is_be.domain.personality.repository.PersonalityTestRepository;
 import com.leets7th.job_is_be.domain.user.entity.User;
 import com.leets7th.job_is_be.domain.user.enums.SocialType;
 import com.leets7th.job_is_be.domain.user.repository.UserRepository;
@@ -42,6 +44,8 @@ class BriefingServiceTest {
     private CardRepository cardRepository;
     @Mock
     private CardService cardService;
+    @Mock
+    private PersonalityTestRepository personalityTestRepository;
 
     @InjectMocks
     private BriefingService briefingService;
@@ -55,17 +59,35 @@ class BriefingServiceTest {
     }
 
     @Test
-    void 오늘_덱이_없으면_추린_건수는_0이고_기본_테마를_반환한다() {
+    void 성향_퀴즈가_없으면_온보딩_미완_상태를_반환한다() {
         when(userRepository.existsById(1L)).thenReturn(true);
         when(jobRepository.countApplicable(any(), any())).thenReturn(847L);
         when(deckRepository.findByUserIdAndDeckDate(anyLong(), any(LocalDate.class)))
+                .thenReturn(Optional.empty());
+        when(personalityTestRepository.findFirstByUserIdAndCompletedTrueOrderByStartedAtDesc(1L))
                 .thenReturn(Optional.empty());
 
         BriefingResponse response = briefingService.getTodayBriefing(1L);
 
         assertThat(response.curatedCount()).isEqualTo(0);
         assertThat(response.applicableCount()).isEqualTo(847L);
-        assertThat(response.theme()).isEqualTo("오늘의 맞춤 공고를 준비했습니다.");
+        assertThat(response.state()).isEqualTo("onboarding_incomplete");
+        assertThat(response.deckId()).isNull();
+        assertThat(response.theme()).isNull();
+    }
+
+    @Test
+    void 퀴즈는_풀었지만_덱이_아직_없으면_준비_전_상태를_반환한다() {
+        when(userRepository.existsById(1L)).thenReturn(true);
+        when(jobRepository.countApplicable(any(), any())).thenReturn(847L);
+        when(deckRepository.findByUserIdAndDeckDate(anyLong(), any(LocalDate.class)))
+                .thenReturn(Optional.empty());
+        when(personalityTestRepository.findFirstByUserIdAndCompletedTrueOrderByStartedAtDesc(1L))
+                .thenReturn(Optional.of(PersonalityTest.builder().build()));
+
+        BriefingResponse response = briefingService.getTodayBriefing(1L);
+
+        assertThat(response.state()).isEqualTo("pre_slot");
     }
 
     @Test
@@ -96,16 +118,18 @@ class BriefingServiceTest {
 
         assertThat(response.curatedCount()).isEqualTo(3);
         assertThat(response.theme()).isEqualTo("오늘은 데이터 분석가 직무 위주로 골랐습니다.");
+        assertThat(response.state()).isNull();
+        assertThat(response.firstOpenedAt()).isNull();
+        assertThat(deck.getFirstOpenedAt()).isNotNull();
     }
 
     @Test
-    void 브리핑_현황_조회시_오늘_덱이_없으면_예외를_던진다() {
+    void 브리핑_현황_조회시_오늘_덱이_없으면_빈_목록을_반환한다() {
         when(userRepository.existsById(1L)).thenReturn(true);
         when(deckRepository.findByUserIdAndDeckDate(anyLong(), any(LocalDate.class)))
                 .thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> briefingService.getTodayBriefingStatus(1L))
-                .isInstanceOf(GeneralException.class);
+        assertThat(briefingService.getTodayBriefingStatus(1L)).isEmpty();
     }
 
     @Test

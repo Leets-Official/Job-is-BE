@@ -58,7 +58,7 @@ public record CardResponse(
         if (job.getRegion() != null) {
             tags.add(job.getRegion().getName());
         }
-        tags.add(job.isSalaryDisclosed() ? "연봉 공개" : "연봉 비공개");
+        tags.add((job.getSalaryDisclosed() != null && job.getSalaryDisclosed()) ? "연봉 공개" : "연봉 비공개");
         return tags;
     }
 }
