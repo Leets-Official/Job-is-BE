@@ -32,7 +32,7 @@ public class JobSimilarService {
     @org.springframework.beans.factory.annotation.Value("${crawler.python-path:python}")
     private String pythonPath;
 
-    @org.springframework.beans.factory.annotation.Value("${matching.database-url}")
+    @org.springframework.beans.factory.annotation.Value("${matching.database-url:}")
     private String databaseUrl;
 
     /**
