@@ -40,17 +40,15 @@ public record JobSearchRequest(
 
         @Schema(description = "정렬 — FIT(추천순, 기본) / RECENT(최신순) / DEADLINE(마감임박순)",
                 defaultValue = "FIT")
-        JobSortType sort
+        JobSortType sort,
+
+        @Schema(description = "지역 목록 (시·도 이름, 예: 서울, 경기, 인천 등. /api/jobs/filters/regions 조회로 전체 목록 확인)")
+        List<String> regions
 ) {
     public boolean remoteOnlyOrFalse() {
         return Boolean.TRUE.equals(remoteOnly);
     }
 
-        @Schema(description = "지역 목록 (시·도 이름, 예: 서울, 경기, 인천 등. /api/jobs/filters/regions 조회로 전체 목록 확인)")
-        List<String> regions
-        // ex) 최신 등록순: createdAt,desc
-        // ex) 마감일 임박순 deadlineAt, asc
-) {}
     /** 미지정 시 상시채용 포함이 기본값(§4.2). */
     public boolean includeAlwaysOpenOrDefault() {
         return includeAlwaysOpen == null || includeAlwaysOpen;
