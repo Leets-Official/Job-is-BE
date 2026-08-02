@@ -115,8 +115,11 @@ public class ResumeService {
     }
 
     // S3 오브젝트 키(profile/{userId}/{category})엔 확장자가 없어서, 다운로드 시 원본 파일명이 붙도록 명시적으로 지정한다.
+    // URLEncoder는 '.', '-', '*', '_'를 인코딩하지 않지만 RFC 5987 attr-char엔 '*'가 없어 별도로 퍼센트 인코딩해야 한다.
     private String contentDisposition(String fileName) {
-        String encoded = URLEncoder.encode(fileName, StandardCharsets.UTF_8).replace("+", "%20");
+        String encoded = URLEncoder.encode(fileName, StandardCharsets.UTF_8)
+                .replace("+", "%20")
+                .replace("*", "%2A");
         return "attachment; filename*=UTF-8''" + encoded;
     }
 
