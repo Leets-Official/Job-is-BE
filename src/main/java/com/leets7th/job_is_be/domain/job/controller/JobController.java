@@ -67,6 +67,16 @@ public class JobController implements JobControllerDocs {
         return ApiResponse.success(SuccessStatus.JOB_DETAIL_SUCCESS, response);
     }
 
+    /**
+     * 로그인 사용자의 성향 퀴즈 결과 기반 추천. 특정 공고를 기준으로 하지 않으므로 jobId 를 받지 않는다.
+     */
+    @Operation(
+            summary = "성향 기반 추천 공고 조회",
+            description = """
+                    로그인 사용자의 성향 퀴즈 결과로 추천 공고를 조회한다. 사용자 식별은 JWT로 하므로 요청 파라미터는 없다.
+                    ※ '특정 공고와 비슷한 공고'를 찾는 API가 아니다. 기준은 공고가 아니라 사용자다.
+                    """
+    )
     @GetMapping("/similar")
     public ResponseEntity<ApiResponse<SimilarJobsResponseDto>> getRecommendedJobsByPersonality(
             @AuthenticationPrincipal Jwt jwt

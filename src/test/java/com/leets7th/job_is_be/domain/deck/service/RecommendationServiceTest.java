@@ -79,7 +79,7 @@ class RecommendationServiceTest {
         when(cardRepository.findByDeckId(any())).thenReturn(List.of());
 
         when(jobSimilarService.getRecommendedJobsByPersonality(1L))
-                .thenReturn(SimilarJobsResponseDto.of("1", List.of(item("111", 84))));
+                .thenReturn(SimilarJobsResponseDto.of(List.of(item("111", 84))));
 
         Job job = Job.builder().title("백엔드 엔지니어").externalId(111L).employmentType("정규직").build();
         when(jobRepository.findByExternalIdIn(List.of(111L))).thenReturn(List.of(job));
@@ -136,7 +136,7 @@ class RecommendationServiceTest {
         when(cardService.getDeckCards(any(), any())).thenReturn(List.of());
 
         when(jobSimilarService.getRecommendedJobsByPersonality(1L))
-                .thenReturn(SimilarJobsResponseDto.of("1", List.of()));
+                .thenReturn(SimilarJobsResponseDto.of(List.of()));
 
         recommendationService.generateTodayDeck(1L);
 
