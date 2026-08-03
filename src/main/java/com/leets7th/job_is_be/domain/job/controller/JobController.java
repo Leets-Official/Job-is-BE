@@ -58,12 +58,14 @@ public class JobController implements JobControllerDocs {
         return ApiResponse.success(SuccessStatus.JOB_SEARCH_SUCCESS, PageResponse.from(response));
     }
 
-    // 공고 상세 조회
+    // 공고 상세 조회 — 로그인 사용자면 매칭 정보(matching)를 함께 내려준다.
     @GetMapping("/{jobId}")
     public ResponseEntity<ApiResponse<JobDetailResponse>> getJobDetail(
-            @PathVariable Long jobId
+            @PathVariable Long jobId,
+            @AuthenticationPrincipal Jwt jwt
     ) {
-        JobDetailResponse response = jobService.getJobDetail(jobId);
+        Long userId = jwt != null ? Long.valueOf(jwt.getSubject()) : null;
+        JobDetailResponse response = jobService.getJobDetail(jobId, userId);
         return ApiResponse.success(SuccessStatus.JOB_DETAIL_SUCCESS, response);
     }
 

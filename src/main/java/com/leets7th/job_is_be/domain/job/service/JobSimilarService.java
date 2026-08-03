@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.leets7th.job_is_be.domain.job.dto.CriteriaMatrixDto;
 import com.leets7th.job_is_be.domain.job.dto.SimilarJobItemDto;
 import com.leets7th.job_is_be.domain.job.dto.SimilarJobsResponseDto;
+import com.leets7th.job_is_be.domain.job.enums.FitCriteriaStatus;
 import com.leets7th.job_is_be.domain.personality.entity.PersonalityTest;
 import com.leets7th.job_is_be.domain.personality.repository.PersonalityTestRepository;
 import com.leets7th.job_is_be.global.exception.GeneralException;
@@ -185,17 +186,22 @@ public class JobSimilarService {
     }
 
     /**
-     * 확인 가능한 축만 판정하고, 파이썬 출력에 근거가 없는 축은 미확인(~)으로 둔다.
-     * 급여는 데이터가 없어 항상 "!"(화면설계서 §2.3).
+     * 확인 가능한 축만 판정하고, 파이썬 출력에 근거가 없는 축은 ESTIMATED 로 둔다.
+     * 급여는 데이터가 없어 항상 CAUTION(화면설계서 §2.3).
      */
     private CriteriaMatrixDto buildCriteriaMatrix(JsonNode candidate, JsonNode persona) {
-        String skills = matchedSkills(candidate, persona).isEmpty() ? "~" : "✓";
-        String location = isLocationMatched(candidate, persona) ? "✓" : "~";
-        String preference = isCompanySizeMatched(candidate, persona) ? "✓" : "~";
-        String jobType = candidate.path("score_cosine").asDouble() >= 0.6 ? "✓" : "~";
+        FitCriteriaStatus skills = matchedSkills(candidate, persona).isEmpty()
+                ? FitCriteriaStatus.ESTIMATED : FitCriteriaStatus.MATCH;
+        FitCriteriaStatus location = isLocationMatched(candidate, persona)
+                ? FitCriteriaStatus.MATCH : FitCriteriaStatus.ESTIMATED;
+        FitCriteriaStatus preference = isCompanySizeMatched(candidate, persona)
+                ? FitCriteriaStatus.MATCH : FitCriteriaStatus.ESTIMATED;
+        FitCriteriaStatus jobType = candidate.path("score_cosine").asDouble() >= 0.6
+                ? FitCriteriaStatus.MATCH : FitCriteriaStatus.ESTIMATED;
 
         // 경력은 파이썬 응답에 담기지 않아 판정 불가
-        return new CriteriaMatrixDto(jobType, "~", location, skills, preference, "!");
+        return new CriteriaMatrixDto(
+                jobType, FitCriteriaStatus.UNKNOWN, location, skills, preference, FitCriteriaStatus.CAUTION);
     }
 
     private List<String> matchedSkills(JsonNode candidate, JsonNode persona) {

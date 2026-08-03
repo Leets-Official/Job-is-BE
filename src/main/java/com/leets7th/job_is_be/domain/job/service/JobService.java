@@ -42,6 +42,7 @@ public class JobService {
     private final SavedJobRepository savedJobRepository;
     private final UserRepository userRepository;
     private final UserActionRepository userActionRepository;
+    private final JobMatchingService jobMatchingService;
 
     @Transactional
     public void saveJob(Long userId, Long jobId) {
@@ -161,11 +162,13 @@ public class JobService {
      * - 존재하지 않을 경우 JOB_NOT_FOUND 예외 발생
      */
     @Transactional(readOnly = true)
-    public JobDetailResponse getJobDetail(Long jobId) {
+    /**
+     * @param userId 비로그인이면 null — 이 경우 매칭 정보 없이 공고 정보만 내려간다.
+     */
+    public JobDetailResponse getJobDetail(Long jobId, Long userId) {
         Job job = jobRepository.findById(jobId)
                 .orElseThrow(() -> new GeneralException(ErrorStatus.JOB_NOT_FOUND));
 
-        return JobDetailResponse.from(job);
-
+        return JobDetailResponse.from(job, jobMatchingService.resolve(userId, job));
     }
 }
