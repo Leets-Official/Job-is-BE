@@ -255,8 +255,11 @@ public class ProfileService {
     }
 
     /**
-     * 희망 지역은 단일 선택. null 은 "선택 해제"로 허용하고,
-     * 필수 검증은 온보딩 완료·프로필 수정 시점에서 따로 한다.
+     * 희망 지역은 단일 선택이며 온보딩 완료·프로필 수정에 필요한 필수값이다.
+     *
+     * <p>요청에 regionId 가 없으면 "변경 없음"으로 보고 기존 선택을 유지한다.
+     * JSON 은 필드 누락과 명시적 null 을 구분할 수 없어, null 을 해제로 처리하면
+     * 다른 항목만 바꾸는 부분 수정 요청에도 지역이 지워진다. 그래서 해제는 지원하지 않는다.
      */
     private Region resolveRegion(Long requestedId) {
         if (requestedId == null) {
