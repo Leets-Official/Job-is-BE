@@ -44,13 +44,9 @@ public class JobMatchingService {
     private final UserTechStackService userTechStackService;
 
     /**
-     * @param userId 비로그인이면 null
-     * @return 매칭 정보. 비로그인이거나 성향 퀴즈 미완료면 null
+     * @return 매칭 정보. 성향 퀴즈를 완료하지 않은 사용자면 null
      */
     public JobMatchingResponse resolve(Long userId, Job job) {
-        if (userId == null || job == null) {
-            return null;
-        }
         UserProfile profile = userProfileRepository.findByUserId(userId).orElse(null);
         if (profile == null || !profile.isJobTestCompleted()) {
             return null;
@@ -113,7 +109,10 @@ public class JobMatchingService {
         return titleMatch ? FitCriteriaStatus.ESTIMATED : FitCriteriaStatus.CAUTION;
     }
 
-    /** 신입이 경력 하한을 넘는 공고를 보면 주의. 공고에 경력 정보가 없으면 판정 불가. */
+    /**
+     * 사용자 경력 단계를 연차 구간으로 환산해 공고 요구 구간과 겹치는지 본다.
+     * 겹치면 충족, 겹치지 않으면(요건 초과·미달 모두) 주의, 공고에 경력 정보가 없으면 판정 불가.
+     */
     private FitCriteriaStatus judgeCareer(UserProfile profile, Job job) {
         CareerLevel careerLevel = profile.getCareerLevel();
         if (careerLevel == null) {
@@ -132,9 +131,34 @@ public class JobMatchingService {
         }
 
         if (job.getCareerMin() == null && job.getCareerMax() == null) {
+            // 경력무관이거나 원문에 연차 표기가 없는 공고 — 근거 없이 충족이라고 하지 않는다
             return FitCriteriaStatus.UNKNOWN;
         }
-        return FitCriteriaStatus.MATCH;
+
+        int jobMin = job.getCareerMin() != null ? job.getCareerMin() : 0;
+        int jobMax = job.getCareerMax() != null ? job.getCareerMax() : Integer.MAX_VALUE;
+        int userMin = minYears(careerLevel);
+        int userMax = maxYears(careerLevel);
+
+        boolean overlapped = userMax >= jobMin && userMin <= jobMax;
+        return overlapped ? FitCriteriaStatus.MATCH : FitCriteriaStatus.CAUTION;
+    }
+
+    /** 프로필에는 연차가 없고 단계만 있어 구간으로 환산한다(설계서 신입 / 1~3년 / 3년+ 기준). */
+    private int minYears(CareerLevel careerLevel) {
+        return switch (careerLevel) {
+            case ENTRY -> 0;
+            case JUNIOR -> 1;
+            case EXPERIENCED -> 4;
+        };
+    }
+
+    private int maxYears(CareerLevel careerLevel) {
+        return switch (careerLevel) {
+            case ENTRY -> 0;
+            case JUNIOR -> 3;
+            case EXPERIENCED -> Integer.MAX_VALUE;
+        };
     }
 
     /** 원격 가능이거나 희망 지역이 공고 지역에 포함되면 충족. */

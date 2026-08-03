@@ -58,14 +58,14 @@ public class JobController implements JobControllerDocs {
         return ApiResponse.success(SuccessStatus.JOB_SEARCH_SUCCESS, PageResponse.from(response));
     }
 
-    // 공고 상세 조회 — 로그인 사용자면 매칭 정보(matching)를 함께 내려준다.
+    // 공고 상세 조회 — 매칭 정보(matching)를 함께 내려준다.
+    // SecurityConfig 상 인증이 필요한 경로이므로 비로그인은 컨트롤러에 도달하지 않는다(설계서 DET-01 +Auth).
     @GetMapping("/{jobId}")
     public ResponseEntity<ApiResponse<JobDetailResponse>> getJobDetail(
             @PathVariable Long jobId,
             @AuthenticationPrincipal Jwt jwt
     ) {
-        Long userId = jwt != null ? Long.valueOf(jwt.getSubject()) : null;
-        JobDetailResponse response = jobService.getJobDetail(jobId, userId);
+        JobDetailResponse response = jobService.getJobDetail(jobId, Long.valueOf(jwt.getSubject()));
         return ApiResponse.success(SuccessStatus.JOB_DETAIL_SUCCESS, response);
     }
 

@@ -163,7 +163,8 @@ public class JobService {
      */
     @Transactional(readOnly = true)
     /**
-     * @param userId 비로그인이면 null — 이 경우 매칭 정보 없이 공고 정보만 내려간다.
+     * 공고 상세 조회. 인증이 필요한 경로이므로 userId 는 항상 존재한다.
+     * 성향 퀴즈 미완료 사용자는 매칭 정보만 null 로 내려간다.
      */
     public JobDetailResponse getJobDetail(Long jobId, Long userId) {
         Job job = jobRepository.findById(jobId)
