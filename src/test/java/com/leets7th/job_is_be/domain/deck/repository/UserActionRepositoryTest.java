@@ -20,12 +20,16 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+// 프로필을 지정하지 않으면 기본값(dev)으로 로컬 Postgres 에 붙어 ddl-auto=validate 로 실패한다.
+// 다른 테스트와 동일하게 test 프로필(H2, create-drop)을 쓴다.
 @DataJpaTest
+@ActiveProfiles("test")
 @Import({JpaConfig.class, UserActionRepositoryTest.QueryDslConfig.class})
 class UserActionRepositoryTest {
 

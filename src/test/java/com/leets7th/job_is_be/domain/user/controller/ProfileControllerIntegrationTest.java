@@ -212,6 +212,7 @@ class ProfileControllerIntegrationTest {
 
     @Test
     void rejectsUnknownRegion() throws Exception {
+        // 존재하지 않는 지역은 없는 자원이므로 404(PROFILE_404_3)로 응답한다.
         mockMvc.perform(put("/api/profile/draft")
                         .with(userJwt())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -221,7 +222,8 @@ class ProfileControllerIntegrationTest {
                                   "regionId": 999999
                                 }
                                 """))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("PROFILE_404_3"));
     }
 
     @Test
