@@ -66,23 +66,59 @@ public class SecurityConfig {
 
         http
                 .cors(Customizer.withDefaults())
-                // 테스트를 위해 CSRF 비활성화
-                .csrf(csrf -> csrf.disable())
+
+                // Refresh Token을 사용하는 API만 CSRF 검증
+                .csrf(csrf -> csrf
+                        .csrfTokenRepository(csrfTokenRepository)
+                        .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
+                        .requireCsrfProtectionMatcher(REFRESH_COOKIE_CSRF_MATCHER))
+
+                // JWT 기반 인증이므로 Session을 생성하지 않는다.
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable())
-                // 모든 요청에 대해 인증 없이 접근 허용
+
                 .authorizeHttpRequests(auth -> auth
-                        .anyRequest().permitAll()
+                        .requestMatchers(
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/v3/api-docs/**",
+                                "/health",
+                                "/api/auth/csrf",
+                                "/api/auth/restore",
+                                "/api/auth/dev/**",
+                                "/api/auth/oauth/**",
+                                "/api/unsubscribe/**"
+                        ).permitAll()
+
+                        // Refresh Token API는 Access Token 없이 접근 가능
+                        // 대신 CSRF 검증을 반드시 통과해야 한다.
+                        .requestMatchers(REFRESH_COOKIE_CSRF_MATCHER).permitAll()
+
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+
+                        // 나머지 API는 Access Token 인증 필요
+                        .anyRequest().authenticated()
                 )
-                // oauth2ResourceServer 설정은 그대로 두거나 주석 처리해도 무방합니다.
+
+                // JWT(Resource Server) 인증 설정
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt.decoder(accessTokenDecoder))
+
+                        // 인증 실패(401)
                         .authenticationEntryPoint((request, response, exception) ->
-                                writeErrorResponse(response, objectMapper, ErrorStatus.UNAUTHORIZED))
+                                writeErrorResponse(
+                                        response,
+                                        objectMapper,
+                                        ErrorStatus.UNAUTHORIZED))
+
+                        // 권한 부족(403)
                         .accessDeniedHandler((request, response, exception) ->
-                                writeErrorResponse(response, objectMapper, ErrorStatus.FORBIDDEN))
+                                writeErrorResponse(
+                                        response,
+                                        objectMapper,
+                                        ErrorStatus.FORBIDDEN))
                 );
 
         return http.build();
