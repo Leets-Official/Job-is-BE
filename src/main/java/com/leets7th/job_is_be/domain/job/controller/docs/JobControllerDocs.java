@@ -62,13 +62,18 @@ public interface JobControllerDocs {
 
     @Operation(
             summary = "공고 상세 조회",
-            description = "공고 ID를 통해 특정 공고의 상세 정보를 조회합니다."
+            description = """
+                    공고 ID로 상세 정보를 조회합니다.
+                    로그인 사용자면 matching(적합도 점수·근거·체크리스트)이 함께 내려갑니다.
+                    비로그인이거나 성향 퀴즈를 완료하지 않은 사용자는 matching 이 null 입니다.
+                    """
     )
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "상세 조회 성공"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 필요")
     })
     ResponseEntity<ApiResponse<JobDetailResponse>> getJobDetail(
-            @Parameter(description = "공고 ID") Long jobId
+            @Parameter(description = "공고 ID") Long jobId,
+            org.springframework.security.oauth2.jwt.Jwt jwt
     );
 }
