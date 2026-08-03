@@ -20,10 +20,11 @@ public record JobSearchRequest(
         @Schema(description = "세부직군 목록 (다중, OR)")
         List<String> categoryChildren,
 
-        @Schema(description = "지역 시/도 목록 (다중, OR)", example = "[\"서울\", \"경기\"]")
-        List<String> cities,
+        @Schema(description = "지역 시·도 목록 (다중, OR). 선택 가능한 값은 /api/jobs/filters/regions 로 조회한다.",
+                example = "[\"서울\", \"경기\"]")
+        List<String> regions,
 
-        @Schema(description = "지역 구/군 목록 (다중, OR). 시/도를 선택했을 때만 의미가 있다.")
+        @Schema(description = "지역 구/군 목록 (다중, OR). 시·도를 선택했을 때만 의미가 있다.")
         List<String> districts,
 
         @Schema(description = "경력 구간 목록 (다중, OR)")
@@ -40,10 +41,7 @@ public record JobSearchRequest(
 
         @Schema(description = "정렬 — FIT(추천순, 기본) / RECENT(최신순) / DEADLINE(마감임박순)",
                 defaultValue = "FIT")
-        JobSortType sort,
-
-        @Schema(description = "지역 목록 (시·도 이름, 예: 서울, 경기, 인천 등. /api/jobs/filters/regions 조회로 전체 목록 확인)")
-        List<String> regions
+        JobSortType sort
 ) {
     public boolean remoteOnlyOrFalse() {
         return Boolean.TRUE.equals(remoteOnly);
