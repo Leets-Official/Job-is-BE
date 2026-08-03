@@ -203,12 +203,17 @@ public class JobMatchingService {
                 : FitCriteriaStatus.MATCH;
     }
 
-    /** 정규직·원격 같은 구조화 필드로만 판정하고, 자유 선호 텍스트는 근거로 삼지 않는다. */
+    /**
+     * 구조화된 선호 조건으로만 판정한다.
+     *
+     * <p>프로필의 선호 조건이 자유 텍스트({@code preferenceNote})라 대조할 기준이 없으므로,
+     * 원격 가능 여부 외에는 판정하지 않는다. 공고에 고용형태가 적혀 있다는 사실만으로는
+     * 사용자 선호와 비교한 것이 아니므로 ESTIMATED 를 주지 않는다.
+     */
     private FitCriteriaStatus judgePreference(Job job) {
-        if (Boolean.TRUE.equals(job.getRemoteAvailable())) {
-            return FitCriteriaStatus.MATCH;
-        }
-        return isBlank(job.getEmploymentType()) ? FitCriteriaStatus.UNKNOWN : FitCriteriaStatus.ESTIMATED;
+        return Boolean.TRUE.equals(job.getRemoteAvailable())
+                ? FitCriteriaStatus.MATCH
+                : FitCriteriaStatus.UNKNOWN;
     }
 
     /** 덱 확정 점수가 없을 때 쓰는 조회 시점 산출값. 급여 축은 제외한 5축 평균. */
