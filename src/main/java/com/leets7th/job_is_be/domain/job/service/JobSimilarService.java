@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.leets7th.job_is_be.domain.job.dto.CriteriaMatrixDto;
 import com.leets7th.job_is_be.domain.job.dto.SimilarJobItemDto;
 import com.leets7th.job_is_be.domain.job.dto.SimilarJobsResponseDto;
+import com.leets7th.job_is_be.domain.job.enums.FitCriteriaStatus;
 import com.leets7th.job_is_be.domain.personality.entity.PersonalityTest;
 import com.leets7th.job_is_be.domain.personality.repository.PersonalityTestRepository;
 import com.leets7th.job_is_be.global.exception.GeneralException;
@@ -26,6 +27,9 @@ public class JobSimilarService {
 
     // 임베딩 모델 최초 로딩 + 신규 공고 벡터 계산까지 감안한 여유값
     private static final long PYTHON_TIMEOUT_SECONDS = 120;
+
+    // 본문 임베딩 유사도가 이 값 이상이면 관심 직무와 유사하다고 본다
+    private static final double COSINE_SIMILAR_THRESHOLD = 0.6;
 
     private final PersonalityTestRepository personalityTestRepository;
 
@@ -173,7 +177,7 @@ public class JobSimilarService {
         }
 
         double cosine = candidate.path("score_cosine").asDouble();
-        if (cosine >= 0.6) {
+        if (cosine >= COSINE_SIMILAR_THRESHOLD) {
             points.add("공고 내용이 관심 직무와 유사합니다");
         }
         return points;
@@ -185,17 +189,48 @@ public class JobSimilarService {
     }
 
     /**
-     * 확인 가능한 축만 판정하고, 파이썬 출력에 근거가 없는 축은 미확인(~)으로 둔다.
-     * 급여는 데이터가 없어 항상 "!"(화면설계서 §2.3).
+     * 확인 가능한 축만 판정한다.
+     *
+     * <p>판정값의 의미는 {@link FitCriteriaStatus} 정의를 따른다. 비교할 데이터 자체가 없으면
+     * {@code UNKNOWN}, 비교했는데 어긋나면 {@code CAUTION} 이며, 근거가 없다는 이유로
+     * {@code ESTIMATED} 를 쓰지 않는다(공고 상세 매칭과 같은 값이 같은 의미를 갖도록).
+     *
+     * <p>급여는 데이터가 없어 항상 {@code CAUTION}(화면설계서 §2.3).
      */
     private CriteriaMatrixDto buildCriteriaMatrix(JsonNode candidate, JsonNode persona) {
-        String skills = matchedSkills(candidate, persona).isEmpty() ? "~" : "✓";
-        String location = isLocationMatched(candidate, persona) ? "✓" : "~";
-        String preference = isCompanySizeMatched(candidate, persona) ? "✓" : "~";
-        String jobType = candidate.path("score_cosine").asDouble() >= 0.6 ? "✓" : "~";
+        FitCriteriaStatus skills = judge(
+                textList(persona, "skills").isEmpty() || textList(candidate, "skill_tags").isEmpty(),
+                !matchedSkills(candidate, persona).isEmpty());
+
+        FitCriteriaStatus location = judge(
+                textList(persona, "locations").isEmpty() || text(candidate, "location_full").isBlank(),
+                isLocationMatched(candidate, persona));
+
+        FitCriteriaStatus preference = judge(
+                textList(persona, "company_size_pref").isEmpty() || text(candidate, "company_type").isBlank(),
+                isCompanySizeMatched(candidate, persona));
+
+        // 직무는 세부직군 교집합이 아니라 본문 임베딩 유사도로만 추정한다 — 하드 매칭으로 주장하지 않는다.
+        FitCriteriaStatus jobType;
+        if (!candidate.hasNonNull("score_cosine")) {
+            jobType = FitCriteriaStatus.UNKNOWN;
+        } else {
+            jobType = candidate.path("score_cosine").asDouble() >= COSINE_SIMILAR_THRESHOLD
+                    ? FitCriteriaStatus.ESTIMATED
+                    : FitCriteriaStatus.CAUTION;
+        }
 
         // 경력은 파이썬 응답에 담기지 않아 판정 불가
-        return new CriteriaMatrixDto(jobType, "~", location, skills, preference, "!");
+        return new CriteriaMatrixDto(
+                jobType, FitCriteriaStatus.UNKNOWN, location, skills, preference, FitCriteriaStatus.CAUTION);
+    }
+
+    /** 비교 대상이 없으면 UNKNOWN, 비교해서 맞으면 MATCH, 어긋나면 CAUTION. */
+    private FitCriteriaStatus judge(boolean noEvidence, boolean matched) {
+        if (noEvidence) {
+            return FitCriteriaStatus.UNKNOWN;
+        }
+        return matched ? FitCriteriaStatus.MATCH : FitCriteriaStatus.CAUTION;
     }
 
     private List<String> matchedSkills(JsonNode candidate, JsonNode persona) {

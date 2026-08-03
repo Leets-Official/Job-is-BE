@@ -28,13 +28,20 @@ public record JobDetailResponse (
         String stockStatus,
 
         List<String> skillTags,
-        String locationFull
+        String locationFull,
+
+        JobMatchingResponse matching
 ) {
     public static JobDetailResponse from(Job job) {
+        return from(job, null);
+    }
+
+    public static JobDetailResponse from(Job job, JobMatchingResponse matching) {
 
         var company = job.getCompany();
 
         return JobDetailResponse.builder()
+                .matching(matching)
                 .id(job.getId())
                 .companyName(company != null ? company.getName() : null)
                 .position(job.getTitle())
