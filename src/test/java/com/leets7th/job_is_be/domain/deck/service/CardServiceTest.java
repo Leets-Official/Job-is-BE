@@ -3,6 +3,7 @@ package com.leets7th.job_is_be.domain.deck.service;
 import com.leets7th.job_is_be.domain.deck.dto.CardResponse;
 import com.leets7th.job_is_be.domain.deck.dto.DismissReasonRequest;
 import com.leets7th.job_is_be.domain.deck.entity.Card;
+import com.leets7th.job_is_be.domain.deck.enums.DismissReason;
 import com.leets7th.job_is_be.domain.deck.entity.Deck;
 import com.leets7th.job_is_be.domain.deck.repository.CardRepository;
 import com.leets7th.job_is_be.domain.deck.repository.DeckRepository;
@@ -137,7 +138,7 @@ class CardServiceTest {
         card.markReasonSubmitted();
         when(cardRepository.findById(1L)).thenReturn(Optional.of(card));
 
-        assertThatThrownBy(() -> cardService.submitDismissReason(1L, 1L, 1L, new DismissReasonRequest("직무불일치", null)))
+        assertThatThrownBy(() -> cardService.submitDismissReason(1L, 1L, 1L, new DismissReasonRequest(DismissReason.JOB_MISMATCH, null)))
                 .isInstanceOf(GeneralException.class);
     }
 }
