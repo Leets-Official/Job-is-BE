@@ -98,7 +98,8 @@ public class ProfileService {
                         : profile.getExcludeKeywords(),
                 techStackNames != null
                         ? valueCodec.encode(techStackNames)
-                        : profile.getTechStack()
+                        : profile.getTechStack(),
+                request.remoteOk() != null ? request.remoteOk() : profile.isRemoteOk()
         );
         userProfileRepository.save(profile);
 
@@ -179,7 +180,6 @@ public class ProfileService {
                 .orElseThrow(() -> new GeneralException(ErrorStatus.USER_NOT_FOUND));
         UserProfile profile = findCompletedProfile(userId);
         List<UserJobCategory> currentSelections = findJobCategories(userId);
-        UserRegion currentRegion = findRegion(userId);
         List<String> techStackNames = request.techStacks() != null
                 ? userTechStackService.replace(user, request.techStacks())
                 : null;
@@ -218,7 +218,8 @@ public class ProfileService {
                         : profile.getExcludeKeywords(),
                 techStackNames != null
                         ? valueCodec.encode(techStackNames)
-                        : profile.getTechStack()
+                        : profile.getTechStack(),
+                request.remoteOk() != null ? request.remoteOk() : profile.isRemoteOk()
         );
 
         List<UserJobCategory> updatedSelections = findJobCategories(userId);
@@ -253,11 +254,18 @@ public class ProfileService {
         return uniqueIds.stream().map(categories::get).toList();
     }
 
-    private Region resolveRegion(Long regionId) {
-        if (regionId == null) {
+    /**
+     * 희망 지역은 단일 선택이며 온보딩 완료·프로필 수정에 필요한 필수값이다.
+     *
+     * <p>요청에 regionId 가 없으면 "변경 없음"으로 보고 기존 선택을 유지한다.
+     * JSON 은 필드 누락과 명시적 null 을 구분할 수 없어, null 을 해제로 처리하면
+     * 다른 항목만 바꾸는 부분 수정 요청에도 지역이 지워진다. 그래서 해제는 지원하지 않는다.
+     */
+    private Region resolveRegion(Long requestedId) {
+        if (requestedId == null) {
             return null;
         }
-        return regionRepository.findById(regionId)
+        return regionRepository.findById(requestedId)
                 .orElseThrow(() -> new GeneralException(ErrorStatus.PROFILE_REGION_NOT_FOUND));
     }
 
@@ -277,12 +285,13 @@ public class ProfileService {
     private void replaceRegion(User user, Region region) {
         userRegionRepository.deleteAllByUserId(user.getId());
         userRegionRepository.flush();
-        if (region != null) {
-            userRegionRepository.save(UserRegion.builder()
-                    .user(user)
-                    .region(region)
-                    .build());
+        if (region == null) {
+            return;
         }
+        userRegionRepository.save(UserRegion.builder()
+                .user(user)
+                .region(region)
+                .build());
     }
 
     private List<UserJobCategory> findJobCategories(Long userId) {
@@ -290,7 +299,15 @@ public class ProfileService {
     }
 
     private UserRegion findRegion(Long userId) {
-        return userRegionRepository.findByUserId(userId).orElse(null);
+        return userRegionRepository.findFirstByUserIdOrderByIdDesc(userId).orElse(null);
+    }
+
+    private ProfileRegionResponse toRegionResponse(UserRegion userRegion) {
+        if (userRegion == null || userRegion.getRegion() == null) {
+            return null;
+        }
+        Region region = userRegion.getRegion();
+        return new ProfileRegionResponse(region.getId(), region.getName());
     }
 
     private ProfileDraftResponse toDraftResponse(
@@ -313,17 +330,11 @@ public class ProfileService {
                         selection.isPrimary()
                 ))
                 .toList();
-        ProfileRegionResponse region = userRegion == null
-                ? null
-                : new ProfileRegionResponse(
-                        userRegion.getRegion().getId(),
-                        userRegion.getRegion().getName()
-                );
-
         return new ProfileDraftResponse(
                 profile.getOnboardingStep(),
                 jobCategories,
-                region,
+                toRegionResponse(userRegion),
+                profile.isRemoteOk(),
                 profile.getCareerLevel(),
                 valueCodec.decode(profile.getPreferenceNote()),
                 valueCodec.decode(profile.getExcludeKeywords()),
@@ -360,14 +371,11 @@ public class ProfileService {
                         selection.isPrimary()
                 ))
                 .toList();
-        ProfileRegionResponse region = new ProfileRegionResponse(
-                userRegion.getRegion().getId(),
-                userRegion.getRegion().getName()
-        );
         return new ProfileResponse(
                 profile.getUser().getId(),
                 jobCategories,
-                region,
+                toRegionResponse(userRegion),
+                profile.isRemoteOk(),
                 profile.getCareerLevel(),
                 valueCodec.decode(profile.getPreferenceNote()),
                 valueCodec.decode(profile.getExcludeKeywords()),

@@ -166,7 +166,7 @@ public class JobMatchingService {
         if (Boolean.TRUE.equals(job.getRemoteAvailable())) {
             return FitCriteriaStatus.MATCH;
         }
-        UserRegion userRegion = userRegionRepository.findByUserId(userId).orElse(null);
+        UserRegion userRegion = userRegionRepository.findFirstByUserIdOrderByIdDesc(userId).orElse(null);
         if (userRegion == null || userRegion.getRegion() == null) {
             return FitCriteriaStatus.UNKNOWN;
         }

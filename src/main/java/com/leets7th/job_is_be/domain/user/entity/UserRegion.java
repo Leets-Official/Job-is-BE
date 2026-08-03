@@ -16,8 +16,8 @@ import lombok.NoArgsConstructor;
 @Table(
         name = "user_regions",
         uniqueConstraints = @UniqueConstraint(
-                name = "uk_user_regions_user",
-                columnNames = "user_id"
+                name = "uk_user_regions_user_region",
+                columnNames = {"user_id", "region_id"}
         )
 )
 @Getter
