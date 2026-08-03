@@ -70,6 +70,23 @@ class MetadataQueryServiceTest {
     }
 
     @Test
+    void keepsAliasSearchWhenDatabaseCategorySuffixChanges() {
+        when(jobCategoryRepository.findAll()).thenReturn(List.of(
+                category("백엔드 엔지니어", "백엔드", 1),
+                category("데이터 엔지니어", "데이터", 2)
+        ));
+
+        assertEquals(
+                List.of("백엔드 엔지니어"),
+                names(metadataQueryService.getJobCategories("backend"))
+        );
+        assertEquals(
+                List.of("데이터 엔지니어"),
+                names(metadataQueryService.getJobCategories("data engineer"))
+        );
+    }
+
+    @Test
     void returnsEmptyListWhenNoCategoryMatches() {
         List<JobCategoryResponse> response = metadataQueryService.getJobCategories("회계사");
 

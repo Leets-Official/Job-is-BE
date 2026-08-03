@@ -29,19 +29,19 @@ import java.util.stream.Collectors;
 public class MetadataQueryService {
 
     private static final Map<String, List<String>> JOB_CATEGORY_ALIASES = Map.ofEntries(
-            Map.entry("백엔드 개발자", List.of("백엔드", "백앤드", "backend", "be", "서버", "서버개발", "api")),
-            Map.entry("프론트엔드 개발자", List.of("프론트엔드", "프론트", "프런트", "frontend", "front", "fe", "웹프론트", "react", "vue")),
-            Map.entry("풀스택 개발자", List.of("풀스택", "풀스텍", "fullstack", "full stack")),
-            Map.entry("iOS 개발자", List.of("ios", "아이폰", "스위프트", "swift", "모바일", "앱")),
-            Map.entry("Android 개발자", List.of("android", "안드로이드", "코틀린", "kotlin", "모바일", "앱")),
-            Map.entry("데이터 엔지니어(DE)", List.of("데이터", "데이터엔지니어", "data engineer", "de", "빅데이터", "etl", "파이프라인")),
-            Map.entry("데이터 분석가(DA)", List.of("데이터", "데이터분석", "분석", "data analyst", "analyst", "da")),
-            Map.entry("머신러닝 엔지니어(ML)", List.of("머신러닝", "machine learning", "ml", "ai", "인공지능", "딥러닝", "llm", "mlops")),
-            Map.entry("DevOps 엔지니어", List.of("devops", "데브옵스", "sre", "ci", "cd")),
-            Map.entry("인프라 엔지니어", List.of("인프라", "infra", "클라우드", "cloud", "kubernetes", "쿠버네티스", "k8s", "aws")),
-            Map.entry("QA 엔지니어", List.of("qa", "테스트", "테스터", "품질", "검증", "sdet")),
-            Map.entry("보안 엔지니어", List.of("보안", "security", "정보보호", "시큐리티")),
-            Map.entry("임베디드 SW 개발자", List.of("임베디드", "embedded", "펌웨어", "firmware", "rtos", "mcu"))
+            Map.entry("백엔드", List.of("백엔드", "백앤드", "backend", "be", "서버", "서버개발", "api")),
+            Map.entry("프론트엔드", List.of("프론트엔드", "프론트", "프런트", "frontend", "front", "fe", "웹프론트", "react", "vue")),
+            Map.entry("풀스택", List.of("풀스택", "풀스텍", "fullstack", "full stack")),
+            Map.entry("ios", List.of("ios", "아이폰", "스위프트", "swift", "모바일", "앱")),
+            Map.entry("android", List.of("android", "안드로이드", "코틀린", "kotlin", "모바일", "앱")),
+            Map.entry("데이터엔지니어", List.of("데이터", "데이터엔지니어", "data engineer", "de", "빅데이터", "etl", "파이프라인")),
+            Map.entry("데이터분석", List.of("데이터", "데이터분석", "분석", "data analyst", "analyst", "da")),
+            Map.entry("머신러닝", List.of("머신러닝", "machine learning", "ml", "ai", "인공지능", "딥러닝", "llm", "mlops")),
+            Map.entry("devops", List.of("devops", "데브옵스", "sre", "ci", "cd")),
+            Map.entry("인프라", List.of("인프라", "infra", "클라우드", "cloud", "kubernetes", "쿠버네티스", "k8s", "aws")),
+            Map.entry("qa", List.of("qa", "테스트", "테스터", "품질", "검증", "sdet")),
+            Map.entry("보안", List.of("보안", "security", "정보보호", "시큐리티")),
+            Map.entry("임베디드", List.of("임베디드", "embedded", "펌웨어", "firmware", "rtos", "mcu"))
     );
 
     private final RegionRepository regionRepository;
@@ -73,7 +73,10 @@ public class MetadataQueryService {
         if (normalize(categoryName).contains(normalizedQuery)) {
             return true;
         }
-        return JOB_CATEGORY_ALIASES.getOrDefault(categoryName, List.of()).stream()
+        String normalizedCategoryName = normalize(categoryName);
+        return JOB_CATEGORY_ALIASES.entrySet().stream()
+                .filter(entry -> normalizedCategoryName.contains(normalize(entry.getKey())))
+                .flatMap(entry -> entry.getValue().stream())
                 .map(this::normalize)
                 .anyMatch(alias -> alias.startsWith(normalizedQuery));
     }
