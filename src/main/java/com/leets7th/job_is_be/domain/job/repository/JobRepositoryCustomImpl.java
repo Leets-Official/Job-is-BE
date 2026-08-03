@@ -130,11 +130,27 @@ public class JobRepositoryCustomImpl implements JobRepositoryCustom {
 
     /** 지역 시·도 필터 — 공고의 locationCity 와 대조한다(§4.2). */
     private BooleanExpression regionsIn(List<String> regions) {
-        return CollectionUtils.isEmpty(regions) ? null : job.locationCity.in(regions);
+        List<String> values = nonBlank(regions);
+        return values.isEmpty() ? null : job.locationCity.in(values);
     }
 
     private BooleanExpression districtsIn(List<String> districts) {
-        return CollectionUtils.isEmpty(districts) ? null : job.locationDistrict.in(districts);
+        List<String> values = nonBlank(districts);
+        return values.isEmpty() ? null : job.locationDistrict.in(values);
+    }
+
+    /**
+     * 빈 문자열 항목을 걸러낸다.
+     *
+     * <p>{@code ?regions=} 처럼 값 없이 넘어온 항목을 그대로 두면 {@code IN ('')} 이 만들어져
+     * 일치하는 공고가 없어지고, 필터를 안 건 것처럼 보이는 대신 결과가 0건이 된다.
+     * 빈 항목만 들어온 경우는 필터를 걸지 않은 것으로 본다(categoryChildrenIn 과 동일한 정책).
+     */
+    private List<String> nonBlank(List<String> values) {
+        if (CollectionUtils.isEmpty(values)) {
+            return List.of();
+        }
+        return values.stream().filter(StringUtils::hasText).toList();
     }
 
     /**
@@ -159,7 +175,8 @@ public class JobRepositoryCustomImpl implements JobRepositoryCustom {
     }
 
     private BooleanExpression employmentTypesIn(List<String> employmentTypes) {
-        return CollectionUtils.isEmpty(employmentTypes) ? null : job.employmentType.in(employmentTypes);
+        List<String> values = nonBlank(employmentTypes);
+        return values.isEmpty() ? null : job.employmentType.in(values);
     }
 
     private BooleanExpression remoteOnly(JobSearchRequest request) {
