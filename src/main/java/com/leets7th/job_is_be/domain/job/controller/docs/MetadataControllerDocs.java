@@ -6,6 +6,7 @@ import com.leets7th.job_is_be.domain.job.dto.RegionResponse;
 import com.leets7th.job_is_be.domain.job.dto.TechStackResponse;
 import com.leets7th.job_is_be.global.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -24,12 +25,18 @@ public interface MetadataControllerDocs {
     })
     ResponseEntity<ApiResponse<List<RegionResponse>>> getAllRegions();
 
-    @Operation(summary = "직무 카테고리 목록 조회", description = "DB에 등록된 직무 카테고리 메타데이터 목록을 조회합니다.")
+    @Operation(
+            summary = "직무 카테고리 목록 및 자동완성 조회",
+            description = "query를 생략하면 전체 직무 목록을 반환하고, 입력하면 직무명과 연관 키워드로 자동완성 후보를 조회합니다."
+    )
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 필요")
     })
-    ResponseEntity<ApiResponse<List<JobCategoryResponse>>> getAllJobCategories();
+    ResponseEntity<ApiResponse<List<JobCategoryResponse>>> getJobCategories(
+            @Parameter(description = "직무명 또는 연관 검색어", example = "백앤드")
+            String query
+    );
 
     @Operation(summary = "경력 수준 목록 조회", description = "시스템에 정의된 경력 수준 메타데이터를 조회합니다.")
     @ApiResponses({
