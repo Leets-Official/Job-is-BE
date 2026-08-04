@@ -87,10 +87,10 @@ springdoc:
     enabled: true
 
 crawler:
-  python-path: "C:\\Python314\\python.exe"
-  script-path: "C:/LeetsJobis/database/scripts/run_pipeline.py"
-  company-output-path: "C:/LeetsJobis/database/out/companies.jsonl"
-  job-output-path: "C:/LeetsJobis/database/out/job_postings.jsonl"
+  python-path: ${CRAWLER_PYTHON_PATH:python}
+  script-path: ${CRAWLER_SCRIPT_PATH:database/scripts/run_pipeline.py}
+  company-output-path: ${CRAWLER_COMPANY_OUTPUT_PATH:database/data/companies.jsonl}
+  job-output-path: ${CRAWLER_JOB_OUTPUT_PATH:database/data/jobs.jsonl}
 
 matching:
   database-url: ${MATCHING_DATABASE_URL:}

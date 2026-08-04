@@ -5,6 +5,8 @@ import com.leets7th.job_is_be.domain.job.entity.Job;
 import com.leets7th.job_is_be.domain.job.repository.JobRepository;
 import com.leets7th.job_is_be.domain.job.enums.JobStatus;
 import com.leets7th.job_is_be.global.config.CrawlerProperties;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,6 +38,23 @@ class JobParserServiceIntegrationTest {
 
     @TempDir
     Path tempDir;
+
+    // CrawlerProperties는 Spring 컨텍스트에서 공유되는 싱글턴이라, 테스트가 바꾼 경로가
+    // 컨텍스트를 재사용하는 다른 테스트로 새어나가지 않도록 원래 값을 저장/복원한다.
+    private String originalCompanyOutputPath;
+    private String originalJobOutputPath;
+
+    @BeforeEach
+    void saveOriginalCrawlerProperties() {
+        originalCompanyOutputPath = crawlerProperties.getCompanyOutputPath();
+        originalJobOutputPath = crawlerProperties.getJobOutputPath();
+    }
+
+    @AfterEach
+    void restoreOriginalCrawlerProperties() {
+        crawlerProperties.setCompanyOutputPath(originalCompanyOutputPath);
+        crawlerProperties.setJobOutputPath(originalJobOutputPath);
+    }
 
     @Test
     void 크롤링_결과가_저장되고_상세_API_응답까지_정상적으로_이어진다() throws IOException {

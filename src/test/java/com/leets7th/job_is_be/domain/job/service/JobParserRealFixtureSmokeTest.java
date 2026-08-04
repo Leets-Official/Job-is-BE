@@ -4,6 +4,8 @@ import com.leets7th.job_is_be.domain.job.dto.JobDetailResponse;
 import com.leets7th.job_is_be.domain.job.entity.Job;
 import com.leets7th.job_is_be.domain.job.repository.JobRepository;
 import com.leets7th.job_is_be.global.config.CrawlerProperties;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,8 +37,25 @@ class JobParserRealFixtureSmokeTest {
     @Autowired
     private CrawlerProperties crawlerProperties;
 
+    // CrawlerProperties는 Spring 컨텍스트에서 공유되는 싱글턴이라, 테스트가 바꾼 경로가
+    // 컨텍스트를 재사용하는 다른 테스트로 새어나가지 않도록 원래 값을 저장/복원한다.
+    private String originalCompanyOutputPath;
+    private String originalJobOutputPath;
+
     static boolean realFixtureExists() {
         return new File(REAL_JOB_FILE).exists() && new File(REAL_COMPANY_FILE).exists();
+    }
+
+    @BeforeEach
+    void saveOriginalCrawlerProperties() {
+        originalCompanyOutputPath = crawlerProperties.getCompanyOutputPath();
+        originalJobOutputPath = crawlerProperties.getJobOutputPath();
+    }
+
+    @AfterEach
+    void restoreOriginalCrawlerProperties() {
+        crawlerProperties.setCompanyOutputPath(originalCompanyOutputPath);
+        crawlerProperties.setJobOutputPath(originalJobOutputPath);
     }
 
     @Test
