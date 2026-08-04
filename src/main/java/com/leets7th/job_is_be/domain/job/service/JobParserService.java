@@ -21,11 +21,18 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 
 @Slf4j
 @Service
 @Transactional
 public class JobParserService {
+
+    // 크롤러 원문(원티드)이 내려주는 confirm_time/due_time은 오프셋이 없어 KST로 고정 해석한다.
+    private static final ZoneOffset KST = ZoneOffset.ofHours(9);
 
     private final CrawlerProperties crawlerProperties;
     private final CompanyService companyService;
@@ -65,6 +72,8 @@ public class JobParserService {
             Company company = companyService.getOrCreateCompany(jobDto.company());
             JobCategory jobCategory = jobCategoryRepository.findByName(jobDto.categoryName()).orElse(null);
             Region region = regionRepository.findByName(jobDto.regionName()).orElse(null);
+            OffsetDateTime postedAt = toOffsetDateTime(jobDto.postedAt());
+            OffsetDateTime deadlineAt = toOffsetDateTime(jobDto.deadlineAt());
 
             java.util.Optional<Job> existingJob = jobRepository.findBySourceAndExternalId(jobDto.source(), jobDto.externalId());
 
@@ -78,17 +87,21 @@ public class JobParserService {
                         jobDto.employmentType(),
                         jobDto.remoteAvailable(),
                         jobDto.detailUrl(),
-                        jobDto.postedAt(),
-                        jobDto.deadlineAt(),
+                        postedAt,
+                        deadlineAt,
                         JobStatus.ACTIVE,
-                        null,
+                        jobDto.locationFull(),
                         jobDto.mainTasks(),
                         jobDto.requirements(),
                         jobDto.preferredPoints(),
                         jobDto.skills(),
                         null,
                         null,  // embedding은 별도 배치로 계산
-                        jobDto.categories()
+                        jobDto.categoryChild(),
+                        jobDto.locationCity(),
+                        jobDto.locationDistrict(),
+                        jobDto.isNewbie(),
+                        jobDto.thumbnailUrl()
                 );
             } else {
                 job = Job.builder()
@@ -97,8 +110,8 @@ public class JobParserService {
                         .employmentType(jobDto.employmentType())
                         .remoteAvailable(jobDto.remoteAvailable())
                         .sourceUrl(jobDto.detailUrl())
-                        .postedAt(jobDto.postedAt())
-                        .deadlineAt(jobDto.deadlineAt())
+                        .postedAt(postedAt)
+                        .deadlineAt(deadlineAt)
                         .rewardTotal(jobDto.reward())
                         .company(company)
                         .intro(jobDto.intro())
@@ -113,8 +126,13 @@ public class JobParserService {
                         .source(jobDto.source())
                         .externalId(jobDto.externalId())
                         .skillTags(jobDto.skills())
-                        .categories(jobDto.categories() != null ? String.join(",", jobDto.categories()) : null)
-                        .categoryChild(jobDto.categories())
+                        .categories(jobDto.categoryChild() != null ? String.join(",", jobDto.categoryChild()) : null)
+                        .categoryChild(jobDto.categoryChild())
+                        .locationCity(jobDto.locationCity())
+                        .locationDistrict(jobDto.locationDistrict())
+                        .locationFull(jobDto.locationFull())
+                        .isNewbie(jobDto.isNewbie())
+                        .thumbnailUrl(jobDto.thumbnailUrl())
                         .build();
             }
 
@@ -122,6 +140,14 @@ public class JobParserService {
         });
 
         log.info("모든 파이프라인 데이터 적재 완료");
+    }
+
+    private OffsetDateTime toOffsetDateTime(LocalDate date) {
+        return date != null ? date.atStartOfDay().atOffset(KST) : null;
+    }
+
+    private OffsetDateTime toOffsetDateTime(LocalDateTime dateTime) {
+        return dateTime != null ? dateTime.atOffset(KST) : null;
     }
 
     private void processFile(String path, String type, CheckedConsumer processor) {

@@ -45,11 +45,12 @@ class JobParserServiceIntegrationTest {
         Path jobFile = tempDir.resolve("jobs.jsonl");
         String jsonLine = "{\"position\":\"백엔드 엔지니어\",\"source_url\":\"https://example.com/job/999\","
                 + "\"company\":{\"name\":\"통합테스트 회사\"},"
-                + "\"skill_tags\":[\"Java\",\"Spring\"],\"careerLevel\":\"신입\",\"employmentType\":\"정규직\","
-                + "\"remoteAvailable\":true,\"postedAt\":\"2026-08-01T00:00:00+09:00\","
-                + "\"deadlineAt\":\"2026-09-01T00:00:00+09:00\",\"careerMin\":0,\"careerMax\":1,"
-                + "\"categories\":[\"백엔드 개발자\"],\"intro\":\"회사 소개\","
-                + "\"source\":\"wanted\",\"externalId\":999}";
+                + "\"skill_tags\":[\"Java\",\"Spring\"],\"career_min\":3,\"career_max\":10,\"is_newbie\":false,"
+                + "\"employment_type\":\"regular\",\"is_remote\":true,"
+                + "\"confirm_time\":\"2026-08-01\",\"due_time\":\"2026-09-01T00:00:00\","
+                + "\"category_child\":[\"백엔드 개발자\"],\"intro\":\"회사 소개\","
+                + "\"location_city\":\"서울\",\"location_district\":\"강남구\","
+                + "\"source\":\"wanted\",\"external_id\":999}";
         Files.writeString(jobFile, jsonLine + System.lineSeparator());
 
         crawlerProperties.setCompanyOutputPath(companyFile.toString());
@@ -61,19 +62,21 @@ class JobParserServiceIntegrationTest {
         JobDetailResponse response = JobDetailResponse.from(saved);
 
         assertThat(response.companyName()).isEqualTo("통합테스트 회사");
-        assertThat(response.careerLevel()).isEqualTo("신입");
-        assertThat(response.employmentType()).isEqualTo("정규직");
+        assertThat(response.careerLevel()).isEqualTo("3~10년");
+        assertThat(response.employmentType()).isEqualTo("regular");
         assertThat(response.remoteAvailable()).isTrue();
         assertThat(response.postedAt()).isNotNull();
         assertThat(response.dueTime()).isNotNull();
         assertThat(response.status()).isEqualTo(JobStatus.ACTIVE);
         assertThat(response.skillTags()).containsExactly("Java", "Spring");
         assertThat(saved.getCategoryChild()).containsExactly("백엔드 개발자");
+        assertThat(saved.getLocationCity()).isEqualTo("서울");
+        assertThat(saved.getLocationDistrict()).isEqualTo("강남구");
 
         // 재크롤링(같은 source+externalId) 시에도 필드가 유지/갱신되는지 확인
         jobParserService.parseAndSave();
         Job resynced = jobRepository.findBySourceAndExternalId("wanted", 999L).orElseThrow();
         assertThat(resynced.getId()).isEqualTo(saved.getId());
-        assertThat(resynced.getCareerLevel()).isEqualTo("신입");
+        assertThat(resynced.getCareerLevel()).isEqualTo("3~10년");
     }
 }
