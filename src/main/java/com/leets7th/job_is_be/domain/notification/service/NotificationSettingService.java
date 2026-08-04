@@ -22,8 +22,8 @@ import java.util.Set;
 @Transactional(readOnly = true)
 public class NotificationSettingService {
 
-    private static final String DEFAULT_SEND_SLOT = "07:30";
-    private static final Set<String> ALLOWED_SEND_SLOTS = Set.of("07:30", "12:30", "18:30");
+    public static final String DEFAULT_SEND_SLOT = "18:30";
+    private static final Set<String> ALLOWED_SEND_SLOTS = Set.of(DEFAULT_SEND_SLOT);
 
     private final NotificationSettingRepository notificationSettingRepository;
     private final UserRepository userRepository;
@@ -70,6 +70,11 @@ public class NotificationSettingService {
         getOrCreateSetting(userId).clearSnooze();
     }
 
+    @Transactional
+    public NotificationSetting getOrCreateForDelivery(Long userId) {
+        return getOrCreateSetting(userId);
+    }
+
     private void validateSendSlot(String sendSlot) {
         if (!ALLOWED_SEND_SLOTS.contains(sendSlot)) {
             throw new GeneralException(ErrorStatus.NOTIFICATION_INVALID_SEND_SLOT);
@@ -79,8 +84,12 @@ public class NotificationSettingService {
     private NotificationSetting getOrCreateSetting(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new GeneralException(ErrorStatus.USER_NOT_FOUND));
-        return notificationSettingRepository.findByUser(user)
+        NotificationSetting setting = notificationSettingRepository.findByUser(user)
                 .orElseGet(() -> createDefaultSetting(user));
+        if (!DEFAULT_SEND_SLOT.equals(setting.getSendSlot())) {
+            setting.changeSlot(DEFAULT_SEND_SLOT);
+        }
+        return setting;
     }
 
     // 최초 조회가 동시에 들어오면 findByUser가 둘 다 비어있는 것으로 보고 저장을 시도할 수 있어
