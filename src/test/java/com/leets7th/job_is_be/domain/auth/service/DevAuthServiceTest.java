@@ -1,6 +1,8 @@
 package com.leets7th.job_is_be.domain.auth.service;
 
 import com.leets7th.job_is_be.domain.auth.dto.DevLoginResponse;
+import com.leets7th.job_is_be.domain.user.entity.User;
+import com.leets7th.job_is_be.domain.user.enums.SocialType;
 import com.leets7th.job_is_be.domain.user.repository.UserRepository;
 import com.leets7th.job_is_be.global.exception.GeneralException;
 import com.leets7th.job_is_be.global.jwt.JwtTokenProvider;
@@ -10,8 +12,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.Duration;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -45,8 +49,8 @@ class DevAuthServiceTest {
                 900,
                 Duration.ofDays(14)
         );
-        when(userRepository.existsById(1L)).thenReturn(true);
-        when(tokenProvider.issueTokenPair(1L)).thenReturn(tokenPair);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user(1L)));
+        when(tokenProvider.issueTokenPair(1L, "USER")).thenReturn(tokenPair);
 
         DevLoginResponse response = devAuthService.login(1L);
 
@@ -71,12 +75,15 @@ class DevAuthServiceTest {
         );
 
         assertEquals(ErrorStatus.DEV_LOGIN_USER_ID_REQUIRED, exception.getErrorStatus());
-        verify(tokenProvider, never()).issueTokenPair(org.mockito.ArgumentMatchers.anyLong());
+        verify(tokenProvider, never()).issueTokenPair(
+                org.mockito.ArgumentMatchers.anyLong(),
+                org.mockito.ArgumentMatchers.anyString()
+        );
     }
 
     @Test
     void rejectsUnknownUser() {
-        when(userRepository.existsById(99L)).thenReturn(false);
+        when(userRepository.findById(99L)).thenReturn(Optional.empty());
 
         GeneralException exception = assertThrows(
                 GeneralException.class,
@@ -84,6 +91,19 @@ class DevAuthServiceTest {
         );
 
         assertEquals(ErrorStatus.USER_NOT_FOUND, exception.getErrorStatus());
-        verify(tokenProvider, never()).issueTokenPair(org.mockito.ArgumentMatchers.anyLong());
+        verify(tokenProvider, never()).issueTokenPair(
+                org.mockito.ArgumentMatchers.anyLong(),
+                org.mockito.ArgumentMatchers.anyString()
+        );
+    }
+
+    private User user(Long id) {
+        User user = User.builder()
+                .socialId("social-id")
+                .socialType(SocialType.KAKAO)
+                .email("user@example.com")
+                .build();
+        ReflectionTestUtils.setField(user, "id", id);
+        return user;
     }
 }

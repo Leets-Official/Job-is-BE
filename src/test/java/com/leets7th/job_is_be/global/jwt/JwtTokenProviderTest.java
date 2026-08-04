@@ -47,7 +47,7 @@ class JwtTokenProviderTest {
 
     @Test
     void issuesAccessAndRefreshTokensWithDifferentTypes() {
-        JwtTokenProvider.TokenPair pair = tokenProvider.issueTokenPair(1L);
+        JwtTokenProvider.TokenPair pair = tokenProvider.issueTokenPair(1L, "ADMIN");
 
         Jwt accessToken = accessTokenDecoder.decode(pair.accessToken());
         JwtTokenProvider.RefreshTokenClaims refreshClaims =
@@ -55,6 +55,7 @@ class JwtTokenProviderTest {
 
         assertEquals("1", accessToken.getSubject());
         assertEquals("ACCESS", accessToken.getClaimAsString("tokenType"));
+        assertEquals("ADMIN", accessToken.getClaimAsString("role"));
         assertEquals(1L, refreshClaims.userId());
         assertEquals(pair.refreshSessionId(), refreshClaims.sessionId());
         assertEquals(900, pair.accessTokenExpiresIn());
@@ -63,7 +64,7 @@ class JwtTokenProviderTest {
 
     @Test
     void rejectsRefreshTokenAsAccessToken() {
-        JwtTokenProvider.TokenPair pair = tokenProvider.issueTokenPair(1L);
+        JwtTokenProvider.TokenPair pair = tokenProvider.issueTokenPair(1L, "USER");
 
         assertThrows(JwtException.class, () -> accessTokenDecoder.decode(pair.refreshToken()));
     }
