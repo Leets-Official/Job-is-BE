@@ -25,6 +25,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -60,6 +63,9 @@ public class JobParserService {
             companyService.getOrCreateCompany(companyDto);
         });
 
+        Map<String, JobCategory> categoryByName = jobCategoryRepository.findAll().stream()
+                .collect(Collectors.toMap(JobCategory::getName, category -> category));
+
         processFile(crawlerProperties.getJobOutputPath(), "공고", (line) -> {
             CrawledJobDto jobDto = objectMapper.readValue(line, CrawledJobDto.class);
 
@@ -70,7 +76,7 @@ public class JobParserService {
             }
 
             Company company = companyService.getOrCreateCompany(jobDto.company());
-            JobCategory jobCategory = jobCategoryRepository.findByName(jobDto.categoryName()).orElse(null);
+            JobCategory jobCategory = findMatchingCategory(categoryByName, jobDto.categoryChild());
             Region region = regionRepository.findByName(jobDto.regionName()).orElse(null);
             OffsetDateTime postedAt = toOffsetDateTime(jobDto.postedAt());
             OffsetDateTime deadlineAt = toOffsetDateTime(jobDto.deadlineAt());
@@ -141,6 +147,17 @@ public class JobParserService {
         });
 
         log.info("모든 파이프라인 데이터 적재 완료");
+    }
+
+    private JobCategory findMatchingCategory(Map<String, JobCategory> categoryByName, List<String> categoryChild) {
+        if (categoryChild == null) {
+            return null;
+        }
+        return categoryChild.stream()
+                .map(categoryByName::get)
+                .filter(category -> category != null)
+                .findFirst()
+                .orElse(null);
     }
 
     private OffsetDateTime toOffsetDateTime(LocalDate date) {
