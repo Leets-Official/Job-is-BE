@@ -55,9 +55,10 @@ app:
     from-address: ${MAIL_FROM_ADDRESS:}
     from-name: ${MAIL_FROM_NAME:Job.is}
     frontend-base-url: ${MAIL_FRONTEND_BASE_URL:http://localhost:5173}
-    briefing-path: ${MAIL_BRIEFING_PATH:/briefings/today}
+    welcome-path: ${MAIL_WELCOME_PATH:/recommendations}
+    briefing-path: ${MAIL_BRIEFING_PATH:/recommendations/deck}
     profile-path: ${MAIL_PROFILE_PATH:/profile}
-    notification-settings-path: ${MAIL_NOTIFICATION_SETTINGS_PATH:/settings/notification}
+    notification-settings-path: ${MAIL_NOTIFICATION_SETTINGS_PATH:/settings/notifications}
     unsubscribe-path: ${MAIL_UNSUBSCRIBE_PATH:/unsubscribe}
   aws:
     s3:

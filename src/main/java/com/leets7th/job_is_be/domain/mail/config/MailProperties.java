@@ -15,8 +15,9 @@ public class MailProperties {
     private String fromAddress;
     private String fromName = "Job.is";
     private String frontendBaseUrl = "http://localhost:5173";
-    private String briefingPath = "/briefings/today";
+    private String welcomePath = "/recommendations";
+    private String briefingPath = "/recommendations/deck";
     private String profilePath = "/profile";
-    private String notificationSettingsPath = "/settings/notification";
+    private String notificationSettingsPath = "/settings/notifications";
     private String unsubscribePath = "/unsubscribe";
 }

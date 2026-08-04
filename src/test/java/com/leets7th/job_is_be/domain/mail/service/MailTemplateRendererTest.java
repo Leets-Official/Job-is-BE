@@ -20,8 +20,15 @@ class MailTemplateRendererTest {
                 new MailTemplateRenderer.BriefingItem("백엔드 개발자", "Job.is", 92, "관심 직무와 맞아요")
         ), "unsubscribe-token");
 
-        assertThat(welcome).contains("Job.is에 오신 걸 환영해요", "https://jobis-app.com/briefings/today");
-        assertThat(daily).contains("백엔드 개발자", "적합도 92%", "token=unsubscribe-token");
+        assertThat(welcome).contains("Job.is에 오신 걸 환영해요", "https://jobis-app.com/recommendations");
+        assertThat(daily).contains(
+                "백엔드 개발자",
+                "적합도 92%",
+                "https://jobis-app.com/recommendations/deck",
+                "https://jobis-app.com/profile",
+                "https://jobis-app.com/settings/notifications",
+                "https://jobis-app.com/unsubscribe?token=unsubscribe-token"
+        );
     }
 
     @Test

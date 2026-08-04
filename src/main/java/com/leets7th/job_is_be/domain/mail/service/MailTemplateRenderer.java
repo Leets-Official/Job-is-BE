@@ -24,7 +24,7 @@ public class MailTemplateRenderer {
                           <li>스킵과 저장이 다음 추천을 더 정확하게</li>
                         </ul>
                         """,
-                button("지금 첫 레터 보기", url(properties.getBriefingPath())),
+                button("지금 첫 레터 보기", url(properties.getWelcomePath())),
                 footer(null));
     }
 
