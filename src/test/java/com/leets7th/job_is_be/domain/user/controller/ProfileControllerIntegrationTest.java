@@ -221,7 +221,8 @@ class ProfileControllerIntegrationTest {
                                   "regionId": 999999
                                 }
                                 """))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("PROFILE_404_3"));
     }
 
     @Test
