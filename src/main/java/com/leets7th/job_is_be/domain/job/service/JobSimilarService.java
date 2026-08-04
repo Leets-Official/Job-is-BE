@@ -56,7 +56,7 @@ public class JobSimilarService {
         // 파이썬 리트리브 스크립트 실행 및 결과 파싱
         List<SimilarJobItemDto> items = executePythonRetrieve(persona);
 
-        return SimilarJobsResponseDto.of(String.valueOf(userId), items);
+        return SimilarJobsResponseDto.of(items);
     }
 
     private List<SimilarJobItemDto> executePythonRetrieve(String persona) {
