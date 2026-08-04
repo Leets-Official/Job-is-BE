@@ -1,0 +1,79 @@
+package com.leets7th.job_is_be.domain.job.service;
+
+import com.leets7th.job_is_be.domain.job.dto.JobDetailResponse;
+import com.leets7th.job_is_be.domain.job.entity.Job;
+import com.leets7th.job_is_be.domain.job.repository.JobRepository;
+import com.leets7th.job_is_be.domain.job.enums.JobStatus;
+import com.leets7th.job_is_be.global.config.CrawlerProperties;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+/**
+ * 크롤링 결과 파일 파싱 -> 실제 DB 저장 -> API 응답 변환까지 전체 파이프라인을
+ * 진짜 H2 DB로 검증한다(단위 테스트의 mock repository와 달리 실제 영속성 왕복 확인).
+ */
+@SpringBootTest
+@ActiveProfiles("test")
+@Transactional
+class JobParserServiceIntegrationTest {
+
+    @Autowired
+    private JobParserService jobParserService;
+    @Autowired
+    private JobRepository jobRepository;
+    @Autowired
+    private CrawlerProperties crawlerProperties;
+
+    @TempDir
+    Path tempDir;
+
+    @Test
+    void 크롤링_결과가_저장되고_상세_API_응답까지_정상적으로_이어진다() throws IOException {
+        Path companyFile = tempDir.resolve("companies.jsonl");
+        Files.writeString(companyFile, "");
+
+        Path jobFile = tempDir.resolve("jobs.jsonl");
+        String jsonLine = "{\"position\":\"백엔드 엔지니어\",\"source_url\":\"https://example.com/job/999\","
+                + "\"company\":{\"name\":\"통합테스트 회사\"},"
+                + "\"skill_tags\":[\"Java\",\"Spring\"],\"careerLevel\":\"신입\",\"employmentType\":\"정규직\","
+                + "\"remoteAvailable\":true,\"postedAt\":\"2026-08-01T00:00:00+09:00\","
+                + "\"deadlineAt\":\"2026-09-01T00:00:00+09:00\",\"careerMin\":0,\"careerMax\":1,"
+                + "\"categories\":[\"백엔드 개발자\"],\"intro\":\"회사 소개\","
+                + "\"source\":\"wanted\",\"externalId\":999}";
+        Files.writeString(jobFile, jsonLine + System.lineSeparator());
+
+        crawlerProperties.setCompanyOutputPath(companyFile.toString());
+        crawlerProperties.setJobOutputPath(jobFile.toString());
+
+        jobParserService.parseAndSave();
+
+        Job saved = jobRepository.findBySourceAndExternalId("wanted", 999L).orElseThrow();
+        JobDetailResponse response = JobDetailResponse.from(saved);
+
+        assertThat(response.companyName()).isEqualTo("통합테스트 회사");
+        assertThat(response.careerLevel()).isEqualTo("신입");
+        assertThat(response.employmentType()).isEqualTo("정규직");
+        assertThat(response.remoteAvailable()).isTrue();
+        assertThat(response.postedAt()).isNotNull();
+        assertThat(response.dueTime()).isNotNull();
+        assertThat(response.status()).isEqualTo(JobStatus.ACTIVE);
+        assertThat(response.skillTags()).containsExactly("Java", "Spring");
+        assertThat(saved.getCategoryChild()).containsExactly("백엔드 개발자");
+
+        // 재크롤링(같은 source+externalId) 시에도 필드가 유지/갱신되는지 확인
+        jobParserService.parseAndSave();
+        Job resynced = jobRepository.findBySourceAndExternalId("wanted", 999L).orElseThrow();
+        assertThat(resynced.getId()).isEqualTo(saved.getId());
+        assertThat(resynced.getCareerLevel()).isEqualTo("신입");
+    }
+}

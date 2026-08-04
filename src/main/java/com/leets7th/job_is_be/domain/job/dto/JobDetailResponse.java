@@ -1,6 +1,7 @@
 package com.leets7th.job_is_be.domain.job.dto;
 
 import com.leets7th.job_is_be.domain.job.entity.Job;
+import com.leets7th.job_is_be.domain.job.enums.JobStatus;
 import lombok.Builder;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -14,7 +15,10 @@ public record JobDetailResponse (
         String employmentType,
         Boolean remoteAvailable,
         String sourceUrl,
+        OffsetDateTime postedAt,
         OffsetDateTime dueTime,
+        JobStatus status,
+        String editorNote,
 
         String intro,
         String mainTasks,
@@ -49,7 +53,10 @@ public record JobDetailResponse (
                 .employmentType(job.getEmploymentType())
                 .remoteAvailable(job.getRemoteAvailable())
                 .sourceUrl(job.getSourceUrl())
+                .postedAt(job.getPostedAt())
                 .dueTime(job.getDeadlineAt())
+                .status(job.getStatus())
+                .editorNote(job.getEditorNote())
                 .intro(job.getIntro())
                 .mainTasks(job.getMainTasks())
                 .requirements(job.getRequirements())
