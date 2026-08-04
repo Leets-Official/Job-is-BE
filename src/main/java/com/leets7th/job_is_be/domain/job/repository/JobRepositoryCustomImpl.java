@@ -44,7 +44,7 @@ public class JobRepositoryCustomImpl implements JobRepositoryCustom {
                 alwaysOpenIncluded(request),
                 keywordContains(company, request.keyword()),
                 categoryChildrenIn(request.categoryChildren()),
-                regionsIn(request.regions()),
+                citiesIn(request.cities()),
                 districtsIn(request.districts()),
                 careerRangesIn(request.careerRanges()),
                 employmentTypesIn(request.employmentTypes()),
@@ -129,8 +129,8 @@ public class JobRepositoryCustomImpl implements JobRepositoryCustom {
     }
 
     /** 지역 시·도 필터 — 공고의 locationCity 와 대조한다(§4.2). */
-    private BooleanExpression regionsIn(List<String> regions) {
-        List<String> values = nonBlank(regions);
+    private BooleanExpression citiesIn(List<String> cities) {
+        List<String> values = nonBlank(cities);
         return values.isEmpty() ? null : job.locationCity.in(values);
     }
 

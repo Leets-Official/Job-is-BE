@@ -22,7 +22,7 @@ public record JobSearchRequest(
 
         @Schema(description = "지역 시·도 목록 (다중, OR). 선택 가능한 값은 /api/jobs/filters/regions 로 조회한다.",
                 example = "[\"서울\", \"경기\"]")
-        List<String> regions,
+        List<String> cities,
 
         @Schema(description = "지역 구/군 목록 (다중, OR). 시·도를 선택했을 때만 의미가 있다.")
         List<String> districts,
