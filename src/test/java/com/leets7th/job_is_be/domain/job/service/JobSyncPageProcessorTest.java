@@ -77,7 +77,7 @@ class JobSyncPageProcessorTest {
 
         verify(jobRepository, never()).save(any());
         assertThat(existing.getTitle()).isEqualTo("new title");
-        assertThat(existing.isRemoteAvailable()).isTrue();
+        assertThat(existing.getRemoteAvailable()).isTrue();
     }
 
     @Test

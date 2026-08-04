@@ -46,8 +46,10 @@ public interface JobControllerDocs {
 
     @Operation(
             summary = "공고 탐색 및 검색",
-            description = "필터 조건(직군, 지역, 경력 등)과 키워드를 기반으로 공고 목록을 페이징 조회합니다. "
-                    + "기본 페이지 조건은 page=0, size=24, sort=createdAt,id desc 입니다."
+            description = "GET /api/jobs/search — 필터 6종(세부직군·지역 시/구·경력·고용형태·원격·상시채용 포함)과 "
+                    + "키워드로 공고 목록을 페이징 조회합니다. "
+                    + "후보는 진행 중(ACTIVE·미마감 또는 상시채용)인 공고로 한정됩니다. "
+                    + "페이지 크기는 24 고정이며, 정렬은 sort 파라미터(FIT 기본 / RECENT / DEADLINE)로 지정합니다."
     )
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
@@ -60,13 +62,18 @@ public interface JobControllerDocs {
 
     @Operation(
             summary = "공고 상세 조회",
-            description = "공고 ID를 통해 특정 공고의 상세 정보를 조회합니다."
+            description = """
+                    공고 ID로 상세 정보를 조회합니다.
+                    로그인 사용자면 matching(적합도 점수·근거·체크리스트)이 함께 내려갑니다.
+                    비로그인이거나 성향 퀴즈를 완료하지 않은 사용자는 matching 이 null 입니다.
+                    """
     )
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "상세 조회 성공"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 필요")
     })
     ResponseEntity<ApiResponse<JobDetailResponse>> getJobDetail(
-            @Parameter(description = "공고 ID") Long jobId
+            @Parameter(description = "공고 ID") Long jobId,
+            org.springframework.security.oauth2.jwt.Jwt jwt
     );
 }

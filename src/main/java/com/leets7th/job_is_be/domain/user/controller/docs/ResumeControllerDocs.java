@@ -3,6 +3,7 @@ package com.leets7th.job_is_be.domain.user.controller.docs;
 import com.leets7th.job_is_be.domain.user.dto.PresignedUrlRequest;
 import com.leets7th.job_is_be.domain.user.dto.PresignedUrlResponse;
 import com.leets7th.job_is_be.domain.user.dto.ResumeConfirmRequest;
+import com.leets7th.job_is_be.domain.user.dto.ResumeDownloadUrlResponse;
 import com.leets7th.job_is_be.domain.user.dto.ResumeResponse;
 import com.leets7th.job_is_be.domain.user.dto.ResumeUploadResponse;
 import com.leets7th.job_is_be.global.response.ApiResponse;
@@ -67,6 +68,20 @@ public interface ResumeControllerDocs {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "본인 파일이 아님")
     })
     ResponseEntity<ApiResponse<Void>> deleteFile(
+            @Parameter(hidden = true) Jwt jwt,
+            @Parameter(description = "파일 ID") Long fileId
+    );
+
+    @Operation(
+            summary = "이력서 파일 다운로드용 Presigned URL 발급",
+            description = "지정한 이력서 파일을 다운로드할 수 있는 Presigned URL을 발급합니다. 본인 파일만 발급받을 수 있습니다."
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "발급 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 필요"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "파일을 찾을 수 없음")
+    })
+    ResponseEntity<ApiResponse<ResumeDownloadUrlResponse>> issueDownloadUrl(
             @Parameter(hidden = true) Jwt jwt,
             @Parameter(description = "파일 ID") Long fileId
     );

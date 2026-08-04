@@ -77,7 +77,7 @@ class OAuthLoginServiceTest {
                 .thenReturn(Optional.empty());
         when(userRepository.findByEmailIgnoreCase("user@example.com")).thenReturn(Optional.empty());
         when(userRepository.save(any(User.class))).thenReturn(savedUser);
-        when(tokenProvider.issueTokenPair(1L)).thenReturn(tokenPair());
+        when(tokenProvider.issueTokenPair(1L, "USER")).thenReturn(tokenPair());
         when(loginCodeStore.create(any(OAuthLoginCodeStore.LoginPayload.class)))
                 .thenReturn("login-code");
 
@@ -135,7 +135,7 @@ class OAuthLoginServiceTest {
         assertTrue(result.restorationRequired());
         assertEquals(UserStatus.WITHDRAWN, user.getStatus());
         assertEquals(WithdrawalStatus.PENDING, withdrawal.getStatus());
-        verify(tokenProvider, never()).issueTokenPair(any());
+        verify(tokenProvider, never()).issueTokenPair(any(), any());
         verify(loginCodeStore, never()).create(any());
     }
 

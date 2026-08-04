@@ -48,6 +48,14 @@ public class UserProfile extends BaseEntity {
     @Column(name = "tech_stack", length = 500)
     private String techStack; // 보유/선호 기술 스택, comma-separated
 
+    /**
+     * 원격 포함 희망 여부(PRO-01 희망 지역 필드의 별도 토글).
+     * 매칭 하드필터에서 "도시 일치 OR 원격"으로 쓰인다(03-matching-contract §4.1).
+     * 기존 행 때문에 DB 기본값을 명시한다.
+     */
+    @Column(name = "remote_ok", nullable = false, columnDefinition = "boolean not null default false")
+    private boolean remoteOk;
+
     @Column(name = "personality_tags", length = 500)
     private String personalityTags;
 
@@ -88,25 +96,29 @@ public class UserProfile extends BaseEntity {
             OnboardingStep onboardingStep,
             String preferenceNote,
             String excludeKeywords,
-            String techStack
+            String techStack,
+            boolean remoteOk
     ) {
         this.careerLevel = careerLevel;
         this.onboardingStep = onboardingStep;
         this.preferenceNote = preferenceNote;
         this.excludeKeywords = excludeKeywords;
         this.techStack = techStack;
+        this.remoteOk = remoteOk;
     }
 
     public void updateProfile(
             CareerLevel careerLevel,
             String preferenceNote,
             String excludeKeywords,
-            String techStack
+            String techStack,
+            boolean remoteOk
     ) {
         this.careerLevel = careerLevel;
         this.preferenceNote = preferenceNote;
         this.excludeKeywords = excludeKeywords;
         this.techStack = techStack;
+        this.remoteOk = remoteOk;
     }
 
     public void moveOnboardingStep(OnboardingStep onboardingStep) {

@@ -74,7 +74,7 @@ public class AccountRecoveryService {
 
         user.restore();
         withdrawal.restore(now);
-        JwtTokenProvider.TokenPair tokenPair = tokenProvider.issueTokenPair(user.getId());
+        JwtTokenProvider.TokenPair tokenPair = tokenProvider.issueTokenPair(user.getId(), user.getRole().name());
         refreshTokenSessionStore.revokeAll(user.getId());
         refreshTokenSessionStore.save(
                 tokenPair.refreshSessionId(),

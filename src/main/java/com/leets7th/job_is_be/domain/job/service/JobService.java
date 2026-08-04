@@ -42,6 +42,7 @@ public class JobService {
     private final SavedJobRepository savedJobRepository;
     private final UserRepository userRepository;
     private final UserActionRepository userActionRepository;
+    private final JobMatchingService jobMatchingService;
 
     @Transactional
     public void saveJob(Long userId, Long jobId) {
@@ -151,7 +152,8 @@ public class JobService {
      */
     @Transactional(readOnly = true)
     public Page<JobSummaryResponse> searchJobs(JobSearchRequest condition, Pageable pageable) {
-        Pageable fixedPageable = PageRequest.of(pageable.getPageNumber(), 24, pageable.getSort());
+        // 정렬은 Pageable 이 아니라 condition.sort(추천순/최신순/마감임박순)로 결정한다(EXP §3.4)
+        Pageable fixedPageable = PageRequest.of(pageable.getPageNumber(), 24);
         return jobRepository.searchJobs(condition, fixedPageable);
     }
 
@@ -160,11 +162,14 @@ public class JobService {
      * - 존재하지 않을 경우 JOB_NOT_FOUND 예외 발생
      */
     @Transactional(readOnly = true)
-    public JobDetailResponse getJobDetail(Long jobId) {
+    /**
+     * 공고 상세 조회. 인증이 필요한 경로이므로 userId 는 항상 존재한다.
+     * 성향 퀴즈 미완료 사용자는 매칭 정보만 null 로 내려간다.
+     */
+    public JobDetailResponse getJobDetail(Long jobId, Long userId) {
         Job job = jobRepository.findById(jobId)
                 .orElseThrow(() -> new GeneralException(ErrorStatus.JOB_NOT_FOUND));
 
-        return JobDetailResponse.from(job);
-
+        return JobDetailResponse.from(job, jobMatchingService.resolve(userId, job));
     }
 }

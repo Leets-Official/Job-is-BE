@@ -9,6 +9,7 @@ public record ProfileResponse(
         Long userId,
         List<ProfileJobCategoryResponse> jobCategories,
         ProfileRegionResponse region,
+        boolean remoteOk,
         CareerLevel careerLevel,
         List<String> preferenceNotes,
         List<String> excludeKeywords,

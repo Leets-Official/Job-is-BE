@@ -12,7 +12,7 @@ public record JobDetailResponse (
         String position,
         String careerLevel,
         String employmentType,
-        boolean remoteAvailable,
+        Boolean remoteAvailable,
         String sourceUrl,
         OffsetDateTime dueTime,
 
@@ -29,19 +29,25 @@ public record JobDetailResponse (
 
         List<String> skillTags,
         String locationFull,
-        String editorNote
+        String editorNote,
+        JobMatchingResponse matching
 ) {
     public static JobDetailResponse from(Job job) {
+        return from(job, null);
+    }
+
+    public static JobDetailResponse from(Job job, JobMatchingResponse matching) {
 
         var company = job.getCompany();
 
         return JobDetailResponse.builder()
+                .matching(matching)
                 .id(job.getId())
                 .companyName(company != null ? company.getName() : null)
                 .position(job.getTitle())
                 .careerLevel(job.getCareerLevel())
                 .employmentType(job.getEmploymentType())
-                .remoteAvailable(job.isRemoteAvailable())
+                .remoteAvailable(job.getRemoteAvailable())
                 .sourceUrl(job.getSourceUrl())
                 .dueTime(job.getDeadlineAt())
                 .intro(job.getIntro())

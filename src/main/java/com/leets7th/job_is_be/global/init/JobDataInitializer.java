@@ -13,6 +13,7 @@ import com.leets7th.job_is_be.global.status.ErrorStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
 
@@ -20,8 +21,14 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 
+/**
+ * database/data 의 JSONL 시드 데이터를 기동 시 1회 적재한다.
+ * 시드 파일은 저장소에 포함되지 않아 배포 환경에는 없으므로, 기본적으로 비활성이며
+ * app.data-init.enabled=true 를 준 환경(주로 로컬)에서만 빈으로 등록된다.
+ */
 @Slf4j
-@Component
+//@Component
+@ConditionalOnProperty(name = "app.data-init.enabled", havingValue = "true")
 @RequiredArgsConstructor
 public class JobDataInitializer implements CommandLineRunner {
 

@@ -92,3 +92,6 @@ crawler:
 
   company-output-path: "YOUR_COMPANY_OUTPUT_PATH_HERE"
   job-output-path: "YOUR_JOB_OUTPUT_PATH_HERE"
+
+matching:
+  database-url: ${MATCHING_DATABASE_URL:}
