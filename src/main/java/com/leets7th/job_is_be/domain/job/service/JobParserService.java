@@ -87,7 +87,8 @@ public class JobParserService {
                         jobDto.preferredPoints(),
                         jobDto.skills(),
                         null,
-                        null  // embedding은 별도 배치로 계산
+                        null,  // embedding은 별도 배치로 계산
+                        jobDto.categories()
                 );
             } else {
                 job = Job.builder()
@@ -113,6 +114,7 @@ public class JobParserService {
                         .externalId(jobDto.externalId())
                         .skillTags(jobDto.skills())
                         .categories(jobDto.categories() != null ? String.join(",", jobDto.categories()) : null)
+                        .categoryChild(jobDto.categories())
                         .build();
             }
 

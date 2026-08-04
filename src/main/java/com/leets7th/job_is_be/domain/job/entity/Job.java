@@ -131,7 +131,7 @@ public class Job extends BaseEntity {
     @Column(name = "embedding", columnDefinition = "TEXT")
     private String embedding;  // pgvector 형식 (JSON 배열 문자열로 저장)
 
-    // 아래 4개는 크롤러 원문(JobPosting)이 채우는 컬럼을 탐색 필터/카드 표시용으로 읽기만 한다.
+    // 아래 3개는 크롤러 원문(JobPosting)이 채우는 컬럼을 탐색 필터/카드 표시용으로 읽기만 한다.
     // insertable/updatable=false 로 두어 Job 쪽 쓰기(동기화)가 원문 값을 덮어쓰지 않도록 한다.
     @Column(name = "location_city", length = 100, insertable = false, updatable = false)
     private String locationCity;
@@ -143,7 +143,7 @@ public class Job extends BaseEntity {
     private Boolean isNewbie;
 
     @JdbcTypeCode(SqlTypes.ARRAY)
-    @Column(name = "category_child", insertable = false, updatable = false)
+    @Column(name = "category_child")
     private List<String> categoryChild;
 
     @Builder
@@ -154,7 +154,8 @@ public class Job extends BaseEntity {
                String locationFull, String intro, String mainTasks, String requirements,
                String preferredPoints, String benefits, Integer careerMin, Integer careerMax,
                String rewardTotal, String thumbnailUrl, String skills, String categories,
-               List<String> skillTags, Boolean skillsInferred, String embedding) {
+               List<String> skillTags, Boolean skillsInferred, String embedding,
+               List<String> categoryChild) {
         this.company = company;
         this.jobCategory = jobCategory;
         this.region = region;
@@ -184,6 +185,7 @@ public class Job extends BaseEntity {
         this.skillTags = skillTags;
         this.skillsInferred = skillsInferred;
         this.embedding = embedding;
+        this.categoryChild = categoryChild;
         this.status = JobStatus.ACTIVE;
     }
 
@@ -204,7 +206,8 @@ public class Job extends BaseEntity {
                          Boolean remoteAvailable, String sourceUrl,
                          OffsetDateTime postedAt, OffsetDateTime deadlineAt, JobStatus status,
                          String locationFull, String mainTasks, String requirements,
-                         String preferredPoints, List<String> skillTags, Boolean skillsInferred, String embedding) {
+                         String preferredPoints, List<String> skillTags, Boolean skillsInferred, String embedding,
+                         List<String> categoryChild) {
         if (embedding != null) {
             this.embedding = embedding;  // ← null이 아닐 때만 업데이트
         }
@@ -223,5 +226,6 @@ public class Job extends BaseEntity {
         this.preferredPoints = preferredPoints;
         this.skillTags = skillTags;
         this.skillsInferred = skillsInferred;
+        this.categoryChild = categoryChild;
     }
 }

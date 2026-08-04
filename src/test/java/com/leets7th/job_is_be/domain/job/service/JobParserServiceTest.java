@@ -54,7 +54,7 @@ class JobParserServiceTest {
     }
 
     @Test
-    void 신규_공고_저장_시_경력_고용형태_재택여부_게시일_마감일_스킬태그가_채워진다() throws IOException {
+    void 신규_공고_저장_시_경력_고용형태_재택여부_게시일_마감일_스킬태그_세부직군이_채워진다() throws IOException {
         Path companyFile = tempDir.resolve("companies.jsonl");
         Files.writeString(companyFile, "");
 
@@ -63,7 +63,7 @@ class JobParserServiceTest {
                 + "\"skill_tags\":[\"Java\",\"Spring\"],\"careerLevel\":\"신입\",\"employmentType\":\"정규직\","
                 + "\"remoteAvailable\":true,\"postedAt\":\"2026-08-01T00:00:00+09:00\","
                 + "\"deadlineAt\":\"2026-09-01T00:00:00+09:00\",\"careerMin\":0,\"careerMax\":1,"
-                + "\"source\":\"wanted\",\"externalId\":123}";
+                + "\"categories\":[\"백엔드 개발자\"],\"source\":\"wanted\",\"externalId\":123}";
         Files.writeString(jobFile, jsonLine + System.lineSeparator());
 
         crawlerProperties.setCompanyOutputPath(companyFile.toString());
@@ -84,6 +84,7 @@ class JobParserServiceTest {
         assertThat(saved.getPostedAt()).isNotNull();
         assertThat(saved.getDeadlineAt()).isNotNull();
         assertThat(saved.getSkillTags()).containsExactly("Java", "Spring");
+        assertThat(saved.getCategoryChild()).containsExactly("백엔드 개발자");
     }
 
     private Company testCompany() {
