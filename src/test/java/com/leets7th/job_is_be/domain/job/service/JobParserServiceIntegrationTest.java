@@ -63,7 +63,7 @@ class JobParserServiceIntegrationTest {
 
         Path jobFile = tempDir.resolve("jobs.jsonl");
         String jsonLine = "{\"position\":\"백엔드 엔지니어\",\"source_url\":\"https://example.com/job/999\","
-                + "\"company\":{\"name\":\"통합테스트 회사\"},"
+                + "\"company\":{\"name\":\"통합테스트 회사\",\"normalized_name\":\"통합테스트회사\"},"
                 + "\"skill_tags\":[\"Java\",\"Spring\"],\"career_min\":3,\"career_max\":10,\"is_newbie\":false,"
                 + "\"employment_type\":\"regular\",\"is_remote\":true,"
                 + "\"confirm_time\":\"2026-08-01\",\"due_time\":\"2026-09-01T00:00:00\","

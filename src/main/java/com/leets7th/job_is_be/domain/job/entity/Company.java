@@ -129,7 +129,7 @@ public class Company extends BaseEntity {
     // 잡코리아 메타 보강 결과를 기존 회사 레코드에 반영한다(이전 크롤링에서 not_found/name_mismatch였던 회사가 이후 enriched로 갱신되는 경우 등).
     public void enrich(Long jobkoreaGnoRef, Integer employeeCount, String companyType, String industry,
                         String stockStatus, String hqAddress, String enrichmentStatus, Boolean nameMatch,
-                        String rejectedName, JsonNode rawJobkorea) {
+                        String rejectedName, JsonNode rawJobkorea, OffsetDateTime enrichedAt) {
         this.jobkoreaGnoRef = jobkoreaGnoRef;
         this.employeeCount = employeeCount;
         this.companyType = companyType;
@@ -140,5 +140,6 @@ public class Company extends BaseEntity {
         this.nameMatch = nameMatch;
         this.rejectedName = rejectedName;
         this.rawJobkorea = rawJobkorea;
+        this.enrichedAt = enrichedAt;
     }
 }
