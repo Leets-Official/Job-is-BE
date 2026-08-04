@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Arrays;
@@ -32,8 +33,10 @@ public class MetadataController implements MetadataControllerDocs {
     }
 
     @GetMapping("/job-categories")
-    public ResponseEntity<ApiResponse<List<JobCategoryResponse>>> getAllJobCategories() {
-        List<JobCategoryResponse> response = metadataQueryService.getAllJobCategories();
+    public ResponseEntity<ApiResponse<List<JobCategoryResponse>>> getJobCategories(
+            @RequestParam(required = false) String query
+    ) {
+        List<JobCategoryResponse> response = metadataQueryService.getJobCategories(query);
         return ApiResponse.success(SuccessStatus.JOB_CATEGORY_GET_SUCCESS, response);
     }
 
