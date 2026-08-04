@@ -75,6 +75,6 @@ class JobParserRealFixtureSmokeTest {
         assertThat(sample.getEmploymentType()).isNotNull();
         assertThat(sample.getCareerLevel()).isNotNull();
         assertThat(sample.getExternalId()).isNotNull();
-        assertThat(response.industry()).isNull(); // 기업 보강 전이라도 예외 없이 응답 변환은 되어야 함
+        assertThat(response).isNotNull(); // 기업 보강 여부와 무관하게 예외 없이 응답 변환은 되어야 함
     }
 }

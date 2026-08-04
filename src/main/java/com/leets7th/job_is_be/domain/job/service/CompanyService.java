@@ -16,11 +16,32 @@ import org.springframework.transaction.annotation.Transactional;
 public class CompanyService {
     private final CompanyRepository companyRepository;
 
+    private static final String ENRICHED = "enriched";
+
     @Transactional
     public Company getOrCreateCompany(CrawledCompanyDto companyDto) {
         if (companyDto == null || companyDto.name() == null) return null;
 
         return companyRepository.findByName(companyDto.name())
+                .map(existing -> {
+                    // 이전 크롤링에선 not_found/name_mismatch였다가 이번엔 enriched로 보강된 경우에만 갱신.
+                    // 공고 처리 루프에서 오는 얕은 회사 정보(enrichmentStatus=null)로는 절대 덮어쓰지 않는다.
+                    if (!ENRICHED.equals(existing.getEnrichmentStatus()) && ENRICHED.equals(companyDto.enrichmentStatus())) {
+                        existing.enrich(
+                                companyDto.jobkoreaGnoRef(),
+                                companyDto.employeeCount(),
+                                companyDto.companyType(),
+                                companyDto.industry(),
+                                companyDto.stockStatus(),
+                                companyDto.hqAddress(),
+                                companyDto.enrichmentStatus(),
+                                companyDto.nameMatch(),
+                                companyDto.rejectedName(),
+                                companyDto.rawJobkorea()
+                        );
+                    }
+                    return existing;
+                })
                 .orElseGet(() -> {
                     log.info("저장할 회사 정보: name={}, source={}, logo={}",
                             companyDto.name(), "wanted", companyDto.logoUrl());
