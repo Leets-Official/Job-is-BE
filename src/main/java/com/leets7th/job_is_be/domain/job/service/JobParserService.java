@@ -95,7 +95,7 @@ public class JobParserService {
                         jobDto.requirements(),
                         jobDto.preferredPoints(),
                         jobDto.skills(),
-                        null,
+                        false,
                         null,  // embedding은 별도 배치로 계산
                         jobDto.categoryChild(),
                         jobDto.locationCity(),
@@ -126,6 +126,7 @@ public class JobParserService {
                         .source(jobDto.source())
                         .externalId(jobDto.externalId())
                         .skillTags(jobDto.skills())
+                        .skillsInferred(false)
                         .categories(jobDto.categoryChild() != null ? String.join(",", jobDto.categoryChild()) : null)
                         .categoryChild(jobDto.categoryChild())
                         .locationCity(jobDto.locationCity())
