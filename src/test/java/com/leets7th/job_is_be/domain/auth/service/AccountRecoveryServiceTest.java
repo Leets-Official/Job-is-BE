@@ -83,7 +83,7 @@ class AccountRecoveryServiceTest {
                 WithdrawalStatus.PENDING
         )).thenReturn(Optional.of(withdrawal));
         when(userProfileRepository.findByUserId(1L)).thenReturn(Optional.empty());
-        when(tokenProvider.issueTokenPair(1L)).thenReturn(new JwtTokenProvider.TokenPair(
+        when(tokenProvider.issueTokenPair(1L, "USER")).thenReturn(new JwtTokenProvider.TokenPair(
                 "access",
                 "refresh",
                 "session",

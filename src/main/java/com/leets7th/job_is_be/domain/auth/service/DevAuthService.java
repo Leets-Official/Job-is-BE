@@ -1,6 +1,7 @@
 package com.leets7th.job_is_be.domain.auth.service;
 
 import com.leets7th.job_is_be.domain.auth.dto.DevLoginResponse;
+import com.leets7th.job_is_be.domain.user.entity.User;
 import com.leets7th.job_is_be.domain.user.repository.UserRepository;
 import com.leets7th.job_is_be.global.exception.GeneralException;
 import com.leets7th.job_is_be.global.jwt.JwtTokenProvider;
@@ -33,11 +34,10 @@ public class DevAuthService {
             throw new GeneralException(ErrorStatus.DEV_LOGIN_USER_ID_REQUIRED);
         }
 
-        if (!userRepository.existsById(userId)) {
-            throw new GeneralException(ErrorStatus.USER_NOT_FOUND);
-        }
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new GeneralException(ErrorStatus.USER_NOT_FOUND));
 
-        JwtTokenProvider.TokenPair tokenPair = tokenProvider.issueTokenPair(userId);
+        JwtTokenProvider.TokenPair tokenPair = tokenProvider.issueTokenPair(userId, user.getRole().name());
         sessionStore.save(
                 tokenPair.refreshSessionId(),
                 userId,

@@ -7,7 +7,6 @@ import com.leets7th.job_is_be.global.status.SuccessStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -24,7 +23,6 @@ public class JobCrawlerController implements JobCrawlerControllerDocs {
      * 전체 수집 및 DB 적재 파이프라인을 즉시 수동 실행.
      * 관리자용 엔드포인트.
      */
-    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/run")
     public ResponseEntity<ApiResponse<String>> triggerCrawlerPipeline() {
         log.info("관리자 요청: 전체 수집 파이프라인 수동 실행 API 호출됨");

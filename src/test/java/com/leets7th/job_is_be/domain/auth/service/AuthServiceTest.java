@@ -67,7 +67,7 @@ class AuthServiceTest {
 
         when(tokenProvider.decodeRefreshToken(oldRefreshToken)).thenReturn(claims);
         when(userRepository.findById(1L)).thenReturn(Optional.of(user(1L)));
-        when(tokenProvider.issueTokenPair(1L)).thenReturn(newPair);
+        when(tokenProvider.issueTokenPair(1L, "USER")).thenReturn(newPair);
         when(sessionStore.rotate(
                 "old-session",
                 1L,
@@ -104,7 +104,7 @@ class AuthServiceTest {
                 900,
                 Duration.ofDays(14)
         );
-        when(tokenProvider.issueTokenPair(1L)).thenReturn(newPair);
+        when(tokenProvider.issueTokenPair(1L, "USER")).thenReturn(newPair);
         when(sessionStore.rotate(
                 "session",
                 1L,
