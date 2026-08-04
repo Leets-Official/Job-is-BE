@@ -92,7 +92,12 @@ public class JobParserService {
             } else {
                 job = Job.builder()
                         .title(jobDto.title())
+                        .careerLevel(jobDto.careerLevel())
+                        .employmentType(jobDto.employmentType())
+                        .remoteAvailable(jobDto.remoteAvailable())
                         .sourceUrl(jobDto.detailUrl())
+                        .postedAt(jobDto.postedAt())
+                        .deadlineAt(jobDto.deadlineAt())
                         .rewardTotal(jobDto.reward())
                         .company(company)
                         .intro(jobDto.intro())
@@ -106,7 +111,7 @@ public class JobParserService {
                         .region(region)
                         .source(jobDto.source())
                         .externalId(jobDto.externalId())
-                        .skills(jobDto.skills() != null ? String.join(",", jobDto.skills()) : null)
+                        .skillTags(jobDto.skills())
                         .categories(jobDto.categories() != null ? String.join(",", jobDto.categories()) : null)
                         .build();
             }
