@@ -87,11 +87,15 @@ springdoc:
     enabled: true
 
 crawler:
-  python-path: "YOUR_PYTHON_PATH_HERE"
-  script-path: "YOUR_SCRIPT_PATH_HERE"
+  python-path: "python"
+  script-path: "database/scripts/run_pipeline.py"
 
-  company-output-path: "YOUR_COMPANY_OUTPUT_PATH_HERE"
-  job-output-path: "YOUR_JOB_OUTPUT_PATH_HERE"
+  company-output-path: "database/data/companies.jsonl"
+  job-output-path: "database/data/jobs.jsonl"
 
 matching:
   database-url: ${MATCHING_DATABASE_URL:}
+
+openai:
+  api-key: ${OPENAI_API_KEY}
+  model: gpt-5.5
