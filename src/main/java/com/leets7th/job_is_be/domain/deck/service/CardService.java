@@ -96,7 +96,7 @@ public class CardService {
                 .user(card.getDeck().getUser())
                 .job(card.getJob())
                 .actionType(ActionType.DISMISSED)
-                .reasonCode(request.reason())
+                .reasonCode(request.reason().name())
                 .comment(request.comment())
                 .build());
         try {
