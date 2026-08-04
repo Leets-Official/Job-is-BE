@@ -50,7 +50,7 @@ public class AuthService {
             throw new GeneralException(ErrorStatus.WITHDRAWN_ACCOUNT_TOKEN_REISSUE);
         }
 
-        JwtTokenProvider.TokenPair tokenPair = tokenProvider.issueTokenPair(claims.userId());
+        JwtTokenProvider.TokenPair tokenPair = tokenProvider.issueTokenPair(claims.userId(), user.getRole().name());
         if (!sessionStore.rotate(
                 claims.sessionId(),
                 claims.userId(),

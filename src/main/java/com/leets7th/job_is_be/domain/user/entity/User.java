@@ -1,5 +1,6 @@
 package com.leets7th.job_is_be.domain.user.entity;
 
+import com.leets7th.job_is_be.domain.user.enums.Role;
 import com.leets7th.job_is_be.domain.user.enums.SocialType;
 import com.leets7th.job_is_be.domain.user.enums.UserStatus;
 import com.leets7th.job_is_be.global.base.BaseEntity;
@@ -42,6 +43,10 @@ public class User extends BaseEntity {
     @Column(nullable = false, length = 20)
     private UserStatus status;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private Role role;
+
     // TODO: LocalDateTime → OffsetDateTime으로 통일 필요 (BaseEntity와 타입 불일치)
     @Column(name = "withdrawn_at")
     private LocalDateTime withdrawnAt;
@@ -52,6 +57,7 @@ public class User extends BaseEntity {
         this.socialType = socialType;
         this.email = email;
         this.status = UserStatus.ACTIVE;
+        this.role = Role.USER;
     }
 
     public void withdraw(LocalDateTime withdrawnAt) {

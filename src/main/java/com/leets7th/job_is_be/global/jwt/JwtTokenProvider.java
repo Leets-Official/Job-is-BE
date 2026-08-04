@@ -49,7 +49,7 @@ public class JwtTokenProvider {
         this.clock = clock;
     }
 
-    public TokenPair issueTokenPair(Long userId) {
+    public TokenPair issueTokenPair(Long userId, String role) {
         Instant issuedAt = clock.instant();
         String refreshSessionId = UUID.randomUUID().toString();
 
@@ -58,14 +58,16 @@ public class JwtTokenProvider {
                 UUID.randomUUID().toString(),
                 ACCESS_TOKEN_TYPE,
                 issuedAt,
-                properties.accessTokenExpiration()
+                properties.accessTokenExpiration(),
+                role
         );
         String refreshToken = encode(
                 userId,
                 refreshSessionId,
                 REFRESH_TOKEN_TYPE,
                 issuedAt,
-                properties.refreshTokenExpiration()
+                properties.refreshTokenExpiration(),
+                role
         );
 
         return new TokenPair(
@@ -94,7 +96,8 @@ public class JwtTokenProvider {
             String tokenId,
             String tokenType,
             Instant issuedAt,
-            Duration expiration
+            Duration expiration,
+            String role
     ) {
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuer(properties.issuer())
@@ -103,6 +106,7 @@ public class JwtTokenProvider {
                 .expiresAt(issuedAt.plus(expiration))
                 .id(tokenId)
                 .claim("tokenType", tokenType)
+                .claim("role", role)
                 .build();
         JwsHeader header = JwsHeader.with(MacAlgorithm.HS256).build();
 

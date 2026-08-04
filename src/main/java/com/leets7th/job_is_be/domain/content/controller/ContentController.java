@@ -1,5 +1,6 @@
 package com.leets7th.job_is_be.domain.content.controller;
 
+import com.leets7th.job_is_be.domain.content.controller.docs.ContentControllerDocs;
 import com.leets7th.job_is_be.domain.content.dto.ContentDetailResponse;
 import com.leets7th.job_is_be.domain.content.dto.ContentSummaryResponse;
 import com.leets7th.job_is_be.domain.content.service.ContentService;
@@ -15,7 +16,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/contents")
-public class ContentController {
+public class ContentController implements ContentControllerDocs {
 
     private final ContentService contentService;
 

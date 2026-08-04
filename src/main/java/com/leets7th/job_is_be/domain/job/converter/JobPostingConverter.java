@@ -33,6 +33,11 @@ public class JobPostingConverter {
                 .preferredPoints(posting.getPreferredPoints())
                 .skillTags(posting.getSkillTags())
                 .skillsInferred(posting.getSkillsInferred())
+                .categoryChild(posting.getCategoryChild())
+                .locationCity(posting.getLocationCity())
+                .locationDistrict(posting.getLocationDistrict())
+                .isNewbie(posting.getIsNewbie())
+                .thumbnailUrl(posting.getThumbnailUrl())
                 .build();
         applyStatus(job, resolveStatus(posting));
         return job;
@@ -45,7 +50,9 @@ public class JobPostingConverter {
                 resolveStatus(posting),
                 posting.getLocationFull(), posting.getMainTasks(), posting.getRequirements(),
                 posting.getPreferredPoints(), posting.getSkillTags(), posting.getSkillsInferred(),
-                job.getEmbedding());  // ← null 대신 기존 embedding 유지
+                job.getEmbedding(),  // ← null 대신 기존 embedding 유지
+                posting.getCategoryChild(), posting.getLocationCity(), posting.getLocationDistrict(),
+                posting.getIsNewbie(), posting.getThumbnailUrl());
     }
 
     private void applyStatus(Job job, JobStatus status) {

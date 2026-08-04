@@ -10,7 +10,10 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
@@ -18,6 +21,7 @@ import org.springframework.security.web.util.matcher.RequestMatcher;
 import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
+import java.util.List;
 
 @Configuration
 public class SecurityConfig {
@@ -56,10 +60,28 @@ public class SecurityConfig {
         return repository;
     }
 
+    /**
+     * Access Token의 "role" claim을 ROLE_* 권한으로 변환한다.
+     * (기본 컨버터는 scope/scp claim만 읽으므로 커스텀 변환이 필요하다.)
+     */
+    @Bean
+    public JwtAuthenticationConverter jwtAuthenticationConverter() {
+        JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
+        converter.setJwtGrantedAuthoritiesConverter(jwt -> {
+            String role = jwt.getClaimAsString("role");
+            if (role == null || role.isBlank()) {
+                return List.of();
+            }
+            return List.<GrantedAuthority>of(new SimpleGrantedAuthority("ROLE_" + role));
+        });
+        return converter;
+    }
+
     @Bean
     public SecurityFilterChain filterChain(
             HttpSecurity http,
             @Qualifier("accessTokenDecoder") JwtDecoder accessTokenDecoder,
+            JwtAuthenticationConverter jwtAuthenticationConverter,
             CookieCsrfTokenRepository csrfTokenRepository,
             ObjectMapper objectMapper
     ) throws Exception {
@@ -104,7 +126,9 @@ public class SecurityConfig {
 
                 // JWT(Resource Server) 인증 설정
                 .oauth2ResourceServer(oauth2 -> oauth2
-                        .jwt(jwt -> jwt.decoder(accessTokenDecoder))
+                        .jwt(jwt -> jwt
+                                .decoder(accessTokenDecoder)
+                                .jwtAuthenticationConverter(jwtAuthenticationConverter))
 
                         // 인증 실패(401)
                         .authenticationEntryPoint((request, response, exception) ->

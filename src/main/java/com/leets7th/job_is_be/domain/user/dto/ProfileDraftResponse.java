@@ -9,6 +9,7 @@ public record ProfileDraftResponse(
         OnboardingStep onboardingStep,
         List<ProfileJobCategoryResponse> jobCategories,
         ProfileRegionResponse region,
+        boolean remoteOk,
         CareerLevel careerLevel,
         List<String> preferenceNotes,
         List<String> excludeKeywords,

@@ -85,7 +85,7 @@ public class OAuthLoginService {
             String restoreCode = restoreCodeStore.create(userId, loginUser.restorableUntil());
             return OAuthLoginResult.restoration(restoreCode, loginUser.restorableUntil());
         }
-        JwtTokenProvider.TokenPair tokenPair = tokenProvider.issueTokenPair(userId);
+        JwtTokenProvider.TokenPair tokenPair = tokenProvider.issueTokenPair(userId, loginUser.user().getRole().name());
         boolean onboardingCompleted = userProfileRepository.findByUserId(userId)
                 .map(profile -> profile.isOnboardingCompleted())
                 .orElse(false);
