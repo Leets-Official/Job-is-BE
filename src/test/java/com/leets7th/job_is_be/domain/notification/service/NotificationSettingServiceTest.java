@@ -66,7 +66,7 @@ class NotificationSettingServiceTest {
 
         NotificationSettingResponse response = notificationSettingService.getSetting(1L);
 
-        assertThat(response.sendSlot()).isEqualTo("07:30");
+        assertThat(response.sendSlot()).isEqualTo("18:30");
         assertThat(response.briefingEnabled()).isTrue();
         assertThat(response.marketingSubscribed()).isFalse();
         assertThat(response.snooze().snoozed()).isFalse();
@@ -114,7 +114,7 @@ class NotificationSettingServiceTest {
 
         NotificationSettingResponse response = notificationSettingService.getSetting(1L);
 
-        assertThat(response.sendSlot()).isEqualTo("07:30");
+        assertThat(response.sendSlot()).isEqualTo("18:30");
         verify(notificationSettingRepository).saveAndFlush(any(NotificationSetting.class));
         verify(notificationSettingRepository, times(2)).findByUser(user);
     }
@@ -141,11 +141,11 @@ class NotificationSettingServiceTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(notificationSettingRepository.findByUser(user)).thenReturn(Optional.of(setting));
 
-        NotificationSettingUpdateRequest request = new NotificationSettingUpdateRequest(false, "12:30", true);
+        NotificationSettingUpdateRequest request = new NotificationSettingUpdateRequest(false, "18:30", true);
         NotificationSettingResponse response = notificationSettingService.updateSetting(1L, request);
 
         assertThat(response.briefingEnabled()).isFalse();
-        assertThat(response.sendSlot()).isEqualTo("12:30");
+        assertThat(response.sendSlot()).isEqualTo("18:30");
         assertThat(response.marketingSubscribed()).isTrue();
     }
 

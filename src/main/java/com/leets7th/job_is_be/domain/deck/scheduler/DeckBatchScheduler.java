@@ -16,7 +16,7 @@ public class DeckBatchScheduler {
     private final RecommendationService recommendationService;
 
     // 매일 06:00 — 전체 사용자 덱 자동 생성 (REC §0.5)
-    @Scheduled(cron = "0 0 6 * * *")
+    @Scheduled(cron = "0 0 6 * * *", zone = "Asia/Seoul")
     public void generateDailyDecks() {
         var userIds = userRepository.findAll().stream()
                 .map(u -> u.getId())

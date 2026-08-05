@@ -51,7 +51,7 @@ public class NotificationSetting extends BaseEntity {
     private boolean marketingSubscribed;
 
     @Column(name = "send_slot", nullable = false, length = 10)
-    private String sendSlot; // 07:30, 12:30, 18:30
+    private String sendSlot; // 현재 정책은 18:30 고정
 
     @Column(name = "snooze_until")
     private LocalDate snoozeUntil; // 스누즈 재개 예정일 (무기한 스누즈면 null)

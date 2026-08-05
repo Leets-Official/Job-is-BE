@@ -4,6 +4,7 @@ import com.leets7th.job_is_be.domain.job.entity.JobCategory;
 import com.leets7th.job_is_be.domain.job.entity.Region;
 import com.leets7th.job_is_be.domain.job.repository.JobCategoryRepository;
 import com.leets7th.job_is_be.domain.job.repository.RegionRepository;
+import com.leets7th.job_is_be.domain.mail.event.OnboardingCompletedEvent;
 import com.leets7th.job_is_be.domain.user.dto.ProfileDraftRequest;
 import com.leets7th.job_is_be.domain.user.dto.ProfileDraftResponse;
 import com.leets7th.job_is_be.domain.user.dto.ProfileJobCategoryResponse;
@@ -22,6 +23,7 @@ import com.leets7th.job_is_be.domain.user.enums.OnboardingStep;
 import com.leets7th.job_is_be.global.exception.GeneralException;
 import com.leets7th.job_is_be.global.status.ErrorStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
@@ -45,6 +47,7 @@ public class ProfileService {
     private final RegionRepository regionRepository;
     private final ProfileValueCodec valueCodec;
     private final UserTechStackService userTechStackService;
+    private final ApplicationEventPublisher eventPublisher;
 
     public ProfileService(
             UserRepository userRepository,
@@ -54,7 +57,8 @@ public class ProfileService {
             JobCategoryRepository jobCategoryRepository,
             RegionRepository regionRepository,
             ProfileValueCodec valueCodec,
-            UserTechStackService userTechStackService
+            UserTechStackService userTechStackService,
+            ApplicationEventPublisher eventPublisher
     ) {
         this.userRepository = userRepository;
         this.userProfileRepository = userProfileRepository;
@@ -64,6 +68,7 @@ public class ProfileService {
         this.regionRepository = regionRepository;
         this.valueCodec = valueCodec;
         this.userTechStackService = userTechStackService;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional
@@ -161,6 +166,7 @@ public class ProfileService {
         }
 
         profile.completeOnboarding(OffsetDateTime.now());
+        eventPublisher.publishEvent(new OnboardingCompletedEvent(userId));
     }
 
     @Transactional(readOnly = true)
