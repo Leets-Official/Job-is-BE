@@ -90,6 +90,12 @@ public class JobSimilarService {
 
             pb.environment().put("DATABASE_URL", databaseUrl);
             pb.environment().put("PYTHONIOENCODING", "utf-8");
+            // fastembed(ONNX Runtime)가 t3.small(2 vCPU)보다 많은 스레드를 잡으려다
+            // 스레드 오버서브스크립션으로 300건 임베딩이 11분 넘게 멈추는 문제가 있었음(2026-08-06).
+            // 스레드 수를 1로 제한하니 300건이 1분 22초로 끝남.
+            pb.environment().put("OMP_NUM_THREADS", "1");
+            pb.environment().put("ORT_INTRA_OP_NUM_THREADS", "1");
+            pb.environment().put("ORT_INTER_OP_NUM_THREADS", "1");
             if (openAiProperties.apiKey() != null && !openAiProperties.apiKey().isBlank()) {
                 pb.environment().put("OPENAI_API_KEY", openAiProperties.apiKey());
                 pb.environment().put("OPENAI_MODEL", openAiProperties.model());
