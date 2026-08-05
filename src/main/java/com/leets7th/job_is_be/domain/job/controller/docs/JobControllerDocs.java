@@ -57,7 +57,8 @@ public interface JobControllerDocs {
     })
     ResponseEntity<ApiResponse<PageResponse<JobSummaryResponse>>> searchJobs(
             JobSearchRequest condition,
-            Pageable pageable
+            Pageable pageable,
+            @Parameter(hidden = true) Jwt jwt
     );
 
     @Operation(

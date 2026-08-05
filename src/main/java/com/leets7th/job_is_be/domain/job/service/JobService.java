@@ -6,34 +6,47 @@ import com.leets7th.job_is_be.domain.deck.repository.UserActionRepository;
 import com.leets7th.job_is_be.domain.job.dto.SavedJobListResponse;
 import com.leets7th.job_is_be.domain.job.dto.SavedJobResponse;
 import com.leets7th.job_is_be.domain.job.dto.JobDetailResponse;
+import com.leets7th.job_is_be.domain.job.dto.JobFitSignalsDto;
 import com.leets7th.job_is_be.domain.job.dto.JobSearchRequest;
 import com.leets7th.job_is_be.domain.job.dto.JobSummaryResponse;
+import com.leets7th.job_is_be.domain.job.dto.SimilarJobItemDto;
 import com.leets7th.job_is_be.domain.job.entity.Job;
 import com.leets7th.job_is_be.domain.job.entity.SavedJob;
+import com.leets7th.job_is_be.domain.job.enums.JobSortType;
 import com.leets7th.job_is_be.domain.job.enums.JobStatus;
 import com.leets7th.job_is_be.domain.job.enums.SavedJobSortType;
 import com.leets7th.job_is_be.domain.job.repository.JobRepository;
 import com.leets7th.job_is_be.domain.job.repository.SavedJobRepository;
 import com.leets7th.job_is_be.domain.user.entity.User;
+import com.leets7th.job_is_be.domain.user.entity.UserProfile;
+import com.leets7th.job_is_be.domain.user.repository.UserJobCategoryRepository;
+import com.leets7th.job_is_be.domain.user.repository.UserProfileRepository;
+import com.leets7th.job_is_be.domain.user.repository.UserRegionRepository;
 import com.leets7th.job_is_be.domain.user.repository.UserRepository;
+import com.leets7th.job_is_be.domain.user.repository.UserTechStackRepository;
 import com.leets7th.job_is_be.global.exception.GeneralException;
 import com.leets7th.job_is_be.global.response.PageResponse;
 import com.leets7th.job_is_be.global.status.ErrorStatus;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.OffsetDateTime;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.hibernate.dialect.SybaseASEDialect.MAX_PAGE_SIZE;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class JobService {
@@ -43,6 +56,12 @@ public class JobService {
     private final UserRepository userRepository;
     private final UserActionRepository userActionRepository;
     private final JobMatchingService jobMatchingService;
+    private final UserProfileRepository userProfileRepository;
+    private final UserJobCategoryRepository userJobCategoryRepository;
+    private final UserRegionRepository userRegionRepository;
+    private final UserTechStackRepository userTechStackRepository;
+    private final JobSimilarService jobSimilarService;
+    private final TransactionTemplate transactionTemplate;
 
     @Transactional
     public void saveJob(Long userId, Long jobId) {
@@ -150,11 +169,74 @@ public class JobService {
     /**
      * 채용공고 탐색 및 검색
      */
-    @Transactional(readOnly = true)
-    public Page<JobSummaryResponse> searchJobs(JobSearchRequest condition, Pageable pageable) {
+    public Page<JobSummaryResponse> searchJobs(JobSearchRequest condition, Pageable pageable, Long userId) {
         // 정렬은 Pageable 이 아니라 condition.sort(추천순/최신순/마감임박순)로 결정한다(EXP §3.4)
         Pageable fixedPageable = PageRequest.of(pageable.getPageNumber(), 24);
-        return jobRepository.searchJobs(condition, fixedPageable);
+
+        // 추천순(FIT)이면 파이썬 매칭 엔진을 트랜잭션 밖에서 먼저 호출한다.
+        // RecommendationService와 같은 이유 — 트랜잭션이 열린 채로 최대 300초 걸리는 Python을 기다리면
+        // 커넥션 풀이 고갈될 수 있다.
+        Map<Long, Integer> pythonFitScores = condition.sortOrDefault() == JobSortType.FIT
+                ? fetchPythonFitScores(userId)
+                : Map.of();
+
+        return transactionTemplate.execute(status ->
+                jobRepository.searchJobs(condition, fixedPageable, buildFitSignals(userId), pythonFitScores));
+    }
+
+    /**
+     * 파이썬 매칭 엔진을 호출해 추천순 정렬용 점수(externalId → 0~100)를 만든다.
+     * 성향 퀴즈 미완료이거나 엔진 호출이 실패하면 빈 맵을 돌려줘서 자바 규칙 기반 점수로 대체되게 한다
+     * (검색 자체가 이 호출 하나 때문에 통째로 실패하면 안 된다).
+     */
+    private Map<Long, Integer> fetchPythonFitScores(Long userId) {
+        if (userId == null) {
+            return Map.of();
+        }
+        try {
+            List<SimilarJobItemDto> items = jobSimilarService.getRecommendedJobsByPersonality(userId).items();
+            Map<Long, Integer> scores = new HashMap<>();
+            for (SimilarJobItemDto item : items) {
+                try {
+                    scores.put(Long.valueOf(item.jobId().trim()), item.fitScore());
+                } catch (NumberFormatException ignored) {
+                    // 엔진이 external_id 형식이 아닌 값을 준 경우는 건너뛴다
+                }
+            }
+            return scores;
+        } catch (Exception e) {
+            log.warn("[JobService] 추천순 정렬용 파이썬 매칭 엔진 호출 실패. 자바 규칙 기반 점수로 대체합니다. userId={}", userId, e);
+            return Map.of();
+        }
+    }
+
+    /**
+     * 추천순 정렬용 유저 신호 조회(§2.1). 프로필/희망직무/희망지역/기술스택 중 하나라도 없으면
+     * 그 항목만 비워두고, 전부 없거나 userId가 null이면 null을 돌려줘서 최신순으로 대체되게 한다.
+     */
+    private JobFitSignalsDto buildFitSignals(Long userId) {
+        if (userId == null) {
+            return null;
+        }
+
+        List<Long> jobCategoryIds = userJobCategoryRepository.findAllByUserId(userId).stream()
+                .map(uc -> uc.getJobCategory().getId())
+                .toList();
+        String regionName = userRegionRepository.findFirstByUserIdOrderByIdDesc(userId)
+                .map(ur -> ur.getRegion().getName())
+                .orElse(null);
+        List<String> techStacks = userTechStackRepository.findAllByUserIdOrderByIdAsc(userId).stream()
+                .map(ts -> ts.getTechStack().getName())
+                .toList();
+        UserProfile profile = userProfileRepository.findByUserId(userId).orElse(null);
+
+        return new JobFitSignalsDto(
+                jobCategoryIds,
+                regionName,
+                profile != null && profile.isRemoteOk(),
+                profile != null ? profile.getCareerLevel() : null,
+                techStacks
+        );
     }
 
     /**
