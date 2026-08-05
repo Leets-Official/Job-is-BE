@@ -43,6 +43,7 @@ public enum SuccessStatus implements BaseStatus {
     /**
      * Deck
      */
+    DECK_GENERATE_SUCCESS(HttpStatus.OK, "DECK_200_2", "오늘의 추천 덱을 생성했습니다."),
     CARD_DISMISS_SUCCESS(HttpStatus.OK, "DECK_200_3", "카드를 관심없음으로 처리했습니다."),
     CARD_DISMISS_CANCEL_SUCCESS(HttpStatus.OK, "DECK_200_4", "카드의 관심없음 처리를 취소했습니다."),
     CARD_DISMISS_REASON_SUCCESS(HttpStatus.OK, "DECK_200_5", "관심없음 사유를 제출했습니다."),

@@ -1,5 +1,7 @@
 package com.leets7th.job_is_be.domain.job.controller;
 
+import com.leets7th.job_is_be.domain.deck.dto.CardResponse;
+import com.leets7th.job_is_be.domain.deck.service.RecommendationService;
 import com.leets7th.job_is_be.domain.job.controller.docs.JobCrawlerControllerDocs;
 import com.leets7th.job_is_be.domain.job.dto.SyncJobExecution;
 import com.leets7th.job_is_be.domain.job.service.JobCrawlerManager;
@@ -13,12 +15,15 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.task.TaskRejectedException;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.UUID;
 
 @Slf4j
@@ -30,6 +35,7 @@ public class JobCrawlerController implements JobCrawlerControllerDocs {
     private final JobCrawlerManager jobCrawlerManager;
     private final JobPostingSyncService jobPostingSyncService;
     private final SyncExecutionStore syncExecutionStore;
+    private final RecommendationService recommendationService;
 
     @PostMapping("/run")
     public ResponseEntity<ApiResponse<String>> triggerCrawlerPipeline() {
@@ -62,5 +68,13 @@ public class JobCrawlerController implements JobCrawlerControllerDocs {
         SyncJobExecution execution = syncExecutionStore.get(executionId)
                 .orElseThrow(() -> new GeneralException(ErrorStatus.SYNC_EXECUTION_NOT_FOUND));
         return ApiResponse.success(SuccessStatus.JOB_POSTING_SYNC_STATUS_SUCCESS, execution);
+    }
+
+    @PostMapping("/generate")
+    public ResponseEntity<ApiResponse<List<CardResponse>>> generateTodayDeck(
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        List<CardResponse> response = recommendationService.generateTodayDeck(Long.valueOf(jwt.getSubject()));
+        return ApiResponse.success(SuccessStatus.DECK_GENERATE_SUCCESS, response);
     }
 }
