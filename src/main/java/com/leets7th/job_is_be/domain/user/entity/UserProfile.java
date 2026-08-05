@@ -10,7 +10,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 /**
  * 사용자 프로필. User와 1:1 관계
@@ -62,16 +62,14 @@ public class UserProfile extends BaseEntity {
     @Column(name = "is_job_test_completed", nullable = false)
     private boolean jobTestCompleted;
 
-    // TODO: LocalDateTime → OffsetDateTime으로 통일 필요 (BaseEntity와 타입 불일치)
     @Column(name = "job_test_completed_at")
-    private LocalDateTime jobTestCompletedAt;
+    private OffsetDateTime jobTestCompletedAt;
 
     @Column(name = "onboarding_completed", nullable = false)
     private boolean onboardingCompleted;
 
-    // TODO: LocalDateTime → OffsetDateTime으로 통일 필요 (BaseEntity와 타입 불일치)
     @Column(name = "onboarding_completed_at")
-    private LocalDateTime onboardingCompletedAt;
+    private OffsetDateTime onboardingCompletedAt;
 
     @Builder
     public UserProfile(User user, CareerLevel careerLevel, OnboardingStep onboardingStep,
@@ -86,7 +84,7 @@ public class UserProfile extends BaseEntity {
         this.onboardingCompleted = false;
     }
 
-    public void completeOnboarding(LocalDateTime now) {
+    public void completeOnboarding(OffsetDateTime now) {
         this.onboardingCompleted = true;
         this.onboardingCompletedAt = now;
     }
@@ -125,12 +123,12 @@ public class UserProfile extends BaseEntity {
         this.onboardingStep = onboardingStep;
     }
 
-    public void completeJobTest(LocalDateTime now) {
+    public void completeJobTest(OffsetDateTime now) {
         this.jobTestCompleted = true;
         this.jobTestCompletedAt = now;
     }
 
-    public void applyPersonalityTags(String personalityTags, LocalDateTime now) {
+    public void applyPersonalityTags(String personalityTags, OffsetDateTime now) {
         this.personalityTags = personalityTags;
         completeJobTest(now);
     }

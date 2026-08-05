@@ -16,7 +16,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Entity
 @Table(
@@ -48,7 +48,7 @@ public class UserConsent extends BaseEntity {
     private boolean marketingAgreed;
 
     @Column(name = "agreed_at", nullable = false)
-    private LocalDateTime agreedAt;
+    private OffsetDateTime agreedAt;
 
     @Builder
     public UserConsent(
@@ -57,7 +57,7 @@ public class UserConsent extends BaseEntity {
             boolean privacyAgreed,
             boolean ageOver14Agreed,
             boolean marketingAgreed,
-            LocalDateTime agreedAt
+            OffsetDateTime agreedAt
     ) {
         this.user = user;
         update(termsAgreed, privacyAgreed, ageOver14Agreed, marketingAgreed, agreedAt);
@@ -68,7 +68,7 @@ public class UserConsent extends BaseEntity {
             boolean privacyAgreed,
             boolean ageOver14Agreed,
             boolean marketingAgreed,
-            LocalDateTime agreedAt
+            OffsetDateTime agreedAt
     ) {
         this.termsAgreed = termsAgreed;
         this.privacyAgreed = privacyAgreed;

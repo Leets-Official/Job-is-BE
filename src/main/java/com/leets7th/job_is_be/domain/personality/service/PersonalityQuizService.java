@@ -22,7 +22,6 @@ import com.leets7th.job_is_be.global.status.ErrorStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
@@ -106,7 +105,7 @@ public class PersonalityQuizService {
         questionCatalog.find(request.questionNo())
                 .orElseThrow(() -> new GeneralException(ErrorStatus.QUIZ_QUESTION_INVALID));
 
-        LocalDateTime now = LocalDateTime.now();
+        OffsetDateTime now = OffsetDateTime.now();
         PersonalityTestAnswer answer = answerRepository
                 .findByTestIdAndQuestionNo(test.getId(), request.questionNo())
                 .orElseGet(() -> PersonalityTestAnswer.builder()
@@ -171,7 +170,7 @@ public class PersonalityQuizService {
         PersonalityResultCalculator.Result calculatedResult = calculate(test.getId());
         PersonalityResultType resultType = resolveResultType(test, calculatedResult);
         List<String> tags = resolveResultTags(test, calculatedResult);
-        profile.applyPersonalityTags(tagCodec.encode(tags), LocalDateTime.now());
+        profile.applyPersonalityTags(tagCodec.encode(tags), OffsetDateTime.now());
         if (test.getSource() == PersonalityTestSource.ONBOARDING
                 && profile.getOnboardingStep() == OnboardingStep.QUIZ) {
             profile.moveOnboardingStep(OnboardingStep.REVIEW);

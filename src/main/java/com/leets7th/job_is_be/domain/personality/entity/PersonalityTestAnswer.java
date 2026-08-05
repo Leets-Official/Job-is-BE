@@ -8,7 +8,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 /**
  * 퀴즈 문항별 응답. PersonalityTest 하위 엔티티.
@@ -39,19 +39,18 @@ public class PersonalityTestAnswer extends BaseEntity {
     @Column(name = "choice_value", nullable = false, length = 50)
     private String choiceValue; // 선택한 카드 값
 
-    // TODO: LocalDateTime → OffsetDateTime으로 통일 필요 (BaseEntity와 타입 불일치)
     @Column(name = "answered_at", nullable = false)
-    private LocalDateTime answeredAt;
+    private OffsetDateTime answeredAt;
 
     @Builder
-    public PersonalityTestAnswer(PersonalityTest test, Integer questionNo, String choiceValue, LocalDateTime answeredAt) {
+    public PersonalityTestAnswer(PersonalityTest test, Integer questionNo, String choiceValue, OffsetDateTime answeredAt) {
         this.test = test;
         this.questionNo = questionNo;
         this.choiceValue = choiceValue;
         this.answeredAt = answeredAt;
     }
 
-    public void updateChoice(String choiceValue, LocalDateTime answeredAt) {
+    public void updateChoice(String choiceValue, OffsetDateTime answeredAt) {
         this.choiceValue = choiceValue;
         this.answeredAt = answeredAt;
     }

@@ -20,7 +20,8 @@ import org.springframework.http.ResponseEntity;
 
 import java.net.URI;
 import java.time.Duration;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -84,7 +85,7 @@ class OAuthControllerTest {
         when(oauthLoginService.login("kakao", "provider-code", "state", "state-cookie"))
                 .thenReturn(OAuthLoginService.OAuthLoginResult.restoration(
                         "restore-code",
-                        LocalDateTime.of(2026, 8, 25, 12, 0)
+                        OffsetDateTime.of(2026, 8, 25, 12, 0, 0, 0, ZoneOffset.ofHours(9))
                 ));
 
         ResponseEntity<Void> response = controller.callback(
@@ -98,7 +99,7 @@ class OAuthControllerTest {
         assertEquals(HttpStatus.FOUND, response.getStatusCode());
         assertEquals(
                 "http://localhost:5173/oauth/callback"
-                        + "#restoreCode=restore-code&restorableUntil=2026-08-25T12:00",
+                        + "#restoreCode=restore-code&restorableUntil=2026-08-25T12:00+09:00",
                 response.getHeaders().getLocation().toString()
         );
     }

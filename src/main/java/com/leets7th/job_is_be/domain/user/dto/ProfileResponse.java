@@ -2,7 +2,7 @@ package com.leets7th.job_is_be.domain.user.dto;
 
 import com.leets7th.job_is_be.domain.user.enums.CareerLevel;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 public record ProfileResponse(
@@ -17,6 +17,6 @@ public record ProfileResponse(
         List<String> personalityTags,
         boolean jobTestCompleted,
         boolean onboardingCompleted,
-        LocalDateTime onboardingCompletedAt
+        OffsetDateTime onboardingCompletedAt
 ) {
 }
