@@ -39,7 +39,7 @@ class RefreshTokenCookieManagerTest {
         return new JwtProperties(
                 "test-secret-key-must-be-at-least-32-bytes-long",
                 "job-is-be-test",
-                Duration.ofMinutes(15),
+                Duration.ofMinutes(30),
                 Duration.ofDays(14),
                 "refreshToken",
                 "/api/auth",

@@ -1,13 +1,21 @@
 package com.leets7th.job_is_be.domain.job.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class JobPostingSyncService {
 
     private final JobSyncPageProcessor pageProcessor;
+    private final SyncExecutionStore executionStore;
+
+    @Value("${app.sync.timeout-minutes:30}")
+    private int timeoutMinutes;
 
     public void syncOnStartup() {
         sync();
@@ -22,6 +30,27 @@ public class JobPostingSyncService {
     public void sync() {
         int page = 0;
         while (pageProcessor.processPage(page++)) {
+        }
+    }
+
+    @Async("syncTaskExecutor")
+    public void syncAsync(String executionId) {
+        executionStore.markRunning(executionId);
+        long deadline = System.currentTimeMillis() + (long) timeoutMinutes * 60 * 1_000;
+        int page = 0;
+        try {
+            while (pageProcessor.processPage(page++)) {
+                if (System.currentTimeMillis() > deadline) {
+                    log.warn("동기화 타임아웃: executionId={}, 처리 페이지 수={}", executionId, page);
+                    executionStore.markTimedOut(executionId, page);
+                    return;
+                }
+            }
+            executionStore.markCompleted(executionId, page);
+            log.info("동기화 완료: executionId={}, 처리 페이지 수={}", executionId, page);
+        } catch (Exception e) {
+            log.error("동기화 실패: executionId={}, 처리 페이지 수={}, 원인={}", executionId, page, e.getMessage(), e);
+            executionStore.markFailed(executionId, page, e.getMessage());
         }
     }
 }
