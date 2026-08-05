@@ -78,7 +78,7 @@ class OAuthLoginCodeStoreTest {
                 "access",
                 "refresh",
                 "session",
-                900,
+                1800,
                 Duration.ofDays(14).toSeconds()
         );
     }

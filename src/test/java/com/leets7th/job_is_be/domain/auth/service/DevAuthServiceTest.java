@@ -46,7 +46,7 @@ class DevAuthServiceTest {
                 "access-token",
                 "refresh-token",
                 "refresh-session",
-                900,
+                1800,
                 Duration.ofDays(14)
         );
         when(userRepository.findById(1L)).thenReturn(Optional.of(user(1L)));
@@ -58,7 +58,7 @@ class DevAuthServiceTest {
         assertEquals("access-token", response.accessToken());
         assertEquals("refresh-token", response.refreshToken());
         assertEquals("Bearer", response.tokenType());
-        assertEquals(900, response.expiresIn());
+        assertEquals(1800, response.expiresIn());
         verify(sessionStore).save(
                 "refresh-session",
                 1L,
