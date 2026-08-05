@@ -1,16 +1,25 @@
 package com.leets7th.job_is_be.domain.job.controller;
 
 import com.leets7th.job_is_be.domain.job.controller.docs.JobCrawlerControllerDocs;
+import com.leets7th.job_is_be.domain.job.dto.SyncJobExecution;
 import com.leets7th.job_is_be.domain.job.service.JobCrawlerManager;
 import com.leets7th.job_is_be.domain.job.service.JobPostingSyncService;
+import com.leets7th.job_is_be.domain.job.service.SyncExecutionStore;
+import com.leets7th.job_is_be.global.exception.GeneralException;
 import com.leets7th.job_is_be.global.response.ApiResponse;
+import com.leets7th.job_is_be.global.status.ErrorStatus;
 import com.leets7th.job_is_be.global.status.SuccessStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.task.TaskRejectedException;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.UUID;
 
 @Slf4j
 @RestController
@@ -20,6 +29,7 @@ public class JobCrawlerController implements JobCrawlerControllerDocs {
 
     private final JobCrawlerManager jobCrawlerManager;
     private final JobPostingSyncService jobPostingSyncService;
+    private final SyncExecutionStore syncExecutionStore;
 
     @PostMapping("/run")
     public ResponseEntity<ApiResponse<String>> triggerCrawlerPipeline() {
@@ -32,12 +42,25 @@ public class JobCrawlerController implements JobCrawlerControllerDocs {
     }
 
     @PostMapping("/sync")
-    public ResponseEntity<ApiResponse<String>> syncJobPostings() {
-        log.info("관리자 요청: job_postings → jobs 수동 동기화 시작");
-        jobPostingSyncService.sync();
+    public ResponseEntity<ApiResponse<SyncJobExecution>> syncJobPostings() {
+        String executionId = UUID.randomUUID().toString();
+        syncExecutionStore.register(executionId);
+        try {
+            jobPostingSyncService.syncAsync(executionId);
+        } catch (TaskRejectedException e) {
+            throw new GeneralException(ErrorStatus.SYNC_ALREADY_RUNNING);
+        }
+        log.info("관리자 요청: job_postings → jobs 비동기 동기화 시작, executionId={}", executionId);
         return ApiResponse.success(
-                SuccessStatus.JOB_POSTING_SYNC_SUCCESS,
-                "job_postings → jobs 동기화가 완료되었습니다. 서버 로그를 확인하세요."
+                SuccessStatus.JOB_POSTING_SYNC_ACCEPTED,
+                syncExecutionStore.get(executionId).orElseThrow()
         );
+    }
+
+    @GetMapping("/sync/{executionId}")
+    public ResponseEntity<ApiResponse<SyncJobExecution>> getSyncStatus(@PathVariable String executionId) {
+        SyncJobExecution execution = syncExecutionStore.get(executionId)
+                .orElseThrow(() -> new GeneralException(ErrorStatus.SYNC_EXECUTION_NOT_FOUND));
+        return ApiResponse.success(SuccessStatus.JOB_POSTING_SYNC_STATUS_SUCCESS, execution);
     }
 }

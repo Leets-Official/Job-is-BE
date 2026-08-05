@@ -60,7 +60,7 @@ SELECT
     jp.confirm_time,
     jp.due_time,
     CASE
-        WHEN LOWER(jp.status) <> 'active'                          THEN 'REMOVED'
+        WHEN COALESCE(LOWER(jp.status), '') <> 'active'            THEN 'REMOVED'
         WHEN jp.due_time IS NOT NULL AND jp.due_time < NOW()        THEN 'EXPIRED'
         ELSE 'ACTIVE'
     END,

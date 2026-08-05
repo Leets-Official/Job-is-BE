@@ -14,12 +14,14 @@ class JobPostingSyncServiceTest {
 
     @Mock
     private JobSyncPageProcessor pageProcessor;
+    @Mock
+    private SyncExecutionStore executionStore;
 
     private JobPostingSyncService syncService;
 
     @BeforeEach
     void setUp() {
-        syncService = new JobPostingSyncService(pageProcessor);
+        syncService = new JobPostingSyncService(pageProcessor, executionStore);
     }
 
     @Test

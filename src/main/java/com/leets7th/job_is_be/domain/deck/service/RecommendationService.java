@@ -19,7 +19,7 @@ import com.leets7th.job_is_be.global.status.ErrorStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -36,14 +36,16 @@ import java.util.stream.Collectors;
  * 추천 파이프라인 — 오늘의 Deck을 만들고 Card로 채운다.
  * 후보 선별·적합도 산출은 {@link JobSimilarService}(pgvector 코사인 유사도 기반 파이썬 엔진)에 위임한다.
  * 카드 요약(summary)은 화면설계서 REC §0.3에 따라 JD 필드를 조합한 규칙 기반 템플릿(≤90자)으로 생성한다.
+ *
+ * <p>트랜잭션 분리 전략:
+ * Phase 1(짧은 쓰기 TX) → Phase 2(Python, 트랜잭션 없음) → Phase 3(짧은 쓰기 TX).
+ * Python 실행이 최대 300초 걸리므로, 열린 트랜잭션 안에서 기다리면 커넥션 풀이 고갈될 수 있다.
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class RecommendationService {
 
-    // 하루 덱 크기 — 화면설계서 REC-01 ③ 기준 3~6건
     private static final int DECK_SIZE = 5;
     private static final int SUMMARY_MAX_LENGTH = 90;
     private static final int SUMMARY_SKILL_LIMIT = 3;
@@ -55,69 +57,84 @@ public class RecommendationService {
     private final CardRepository cardRepository;
     private final CardService cardService;
     private final JobSimilarService jobSimilarService;
+    private final TransactionTemplate transactionTemplate;
 
     // 오늘 덱이 없으면 추천엔진을 돌려 생성하고, 이미 있으면 그대로 반환
     public List<CardResponse> generateTodayDeck(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new GeneralException(ErrorStatus.USER_NOT_FOUND));
+        // Phase 1: 짧은 TX — 사용자·프로필 검증, 덱 헤더 생성
+        Long deckId = transactionTemplate.execute(status -> {
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new GeneralException(ErrorStatus.USER_NOT_FOUND));
 
-        UserProfile profile = userProfileRepository.findByUserId(userId)
-                .orElseThrow(() -> new GeneralException(ErrorStatus.DECK_ONBOARDING_INCOMPLETE));
-        if (!profile.isOnboardingCompleted()) {
-            throw new GeneralException(ErrorStatus.DECK_ONBOARDING_INCOMPLETE);
+            UserProfile profile = userProfileRepository.findByUserId(userId)
+                    .orElseThrow(() -> new GeneralException(ErrorStatus.DECK_ONBOARDING_INCOMPLETE));
+            if (!profile.isOnboardingCompleted()) {
+                throw new GeneralException(ErrorStatus.DECK_ONBOARDING_INCOMPLETE);
+            }
+
+            LocalDate today = OffsetDateTime.now().toLocalDate();
+            Deck deck = deckRepository.findByUserIdAndDeckDate(userId, today)
+                    .orElseGet(() -> deckRepository.save(
+                            Deck.builder().user(user).deckDate(today).build()));
+            return deck.getId();
+        });
+
+        // Phase 2: Python 실행 — TX 없음
+        // cardRepository는 자체 TX를 사용하므로 외부 트랜잭션 없이 호출 가능
+        if (cardRepository.findByDeckId(deckId).isEmpty()) {
+            fillFromRecommendationEngine(deckId, userId);
         }
 
-        LocalDate today = OffsetDateTime.now().toLocalDate();
-        Deck deck = deckRepository.findByUserIdAndDeckDate(userId, today)
-                .orElseGet(() -> deckRepository.save(Deck.builder().user(user).deckDate(today).build()));
-
-        if (cardRepository.findByDeckId(deck.getId()).isEmpty()) {
-            fillFromRecommendationEngine(deck, userId);
-        }
-
-        return cardService.getDeckCards(deck.getId(), userId);
+        return cardService.getDeckCards(deckId, userId);
     }
 
     /**
-     * 추천엔진 결과로 카드를 채운다.
-     * 후보가 없거나 성향 퀴즈가 없으면 카드를 만들지 않고 빈 상태 원인만 기록한다(REC-07).
+     * Python을 호출한 뒤 짧은 쓰기 TX로 카드를 저장한다.
+     * 이 메서드 자체는 트랜잭션 밖에서 실행된다.
      */
-    private void fillFromRecommendationEngine(Deck deck, Long userId) {
+    private void fillFromRecommendationEngine(Long deckId, Long userId) {
+        // Python 호출 — 트랜잭션 없음
         List<SimilarJobItemDto> items = jobSimilarService.getRecommendedJobsByPersonality(userId).items();
 
-        if (items == null || items.isEmpty()) {
-            deck.markEmpty(DeckState.NO_CANDIDATES.getCode());
-            return;
-        }
+        // Phase 3: 짧은 쓰기 TX — 참조 Job 조회 및 카드 저장
+        transactionTemplate.execute(status -> {
+            Deck deck = deckRepository.findById(deckId)
+                    .orElseThrow(() -> new GeneralException(ErrorStatus.DECK_NOT_FOUND));
 
-        Map<Long, Job> jobsByExternalId = findJobsByExternalId(items);
-
-        List<Card> cards = new ArrayList<>();
-        for (SimilarJobItemDto item : items) {
-            if (cards.size() >= DECK_SIZE) {
-                break;
+            if (items == null || items.isEmpty()) {
+                deck.markEmpty(DeckState.NO_CANDIDATES.getCode());
+                return null;
             }
-            Job job = resolveJob(item, jobsByExternalId);
-            if (job == null) {
-                continue;
-            }
-            cards.add(Card.builder()
-                    .deck(deck)
-                    .job(job)
-                    .position(cards.size() + 1)
-                    .fitScore(BigDecimal.valueOf(item.fitScore()))
-                    .reason(resolveReason(item, job))
-                    .summary(buildSummary(job))
-                    .build());
-        }
 
-        if (cards.isEmpty()) {
-            // 엔진은 후보를 냈지만 서빙용 Job으로 되돌리지 못한 경우(원문 미동기화 등)
-            log.warn("[Deck] 추천 후보 {}건을 Job으로 매칭하지 못했습니다. userId={}", items.size(), userId);
-            deck.markEmpty(DeckState.NO_CANDIDATES.getCode());
-            return;
-        }
-        cardRepository.saveAll(cards);
+            Map<Long, Job> jobsByExternalId = findJobsByExternalId(items);
+
+            List<Card> cards = new ArrayList<>();
+            for (SimilarJobItemDto item : items) {
+                if (cards.size() >= DECK_SIZE) {
+                    break;
+                }
+                Job job = resolveJob(item, jobsByExternalId);
+                if (job == null) {
+                    continue;
+                }
+                cards.add(Card.builder()
+                        .deck(deck)
+                        .job(job)
+                        .position(cards.size() + 1)
+                        .fitScore(BigDecimal.valueOf(item.fitScore()))
+                        .reason(resolveReason(item, job))
+                        .summary(buildSummary(job))
+                        .build());
+            }
+
+            if (cards.isEmpty()) {
+                log.warn("[Deck] 추천 후보 {}건을 Job으로 매칭하지 못했습니다. userId={}", items.size(), userId);
+                deck.markEmpty(DeckState.NO_CANDIDATES.getCode());
+                return null;
+            }
+            cardRepository.saveAll(cards);
+            return null;
+        });
     }
 
     /**

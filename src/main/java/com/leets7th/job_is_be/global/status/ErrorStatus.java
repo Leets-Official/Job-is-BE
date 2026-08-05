@@ -108,6 +108,12 @@ public enum ErrorStatus implements BaseStatus {
     JOB_LINK_CONNECT_FAILED(HttpStatus.BAD_REQUEST, "JOB_400_7", "연결 실패 또는 타임아웃이 발생했습니다."),
 
     /**
+     * Crawler (Admin)
+     */
+    SYNC_ALREADY_RUNNING(HttpStatus.CONFLICT, "CRAWLER_409_1", "동기화 작업이 이미 실행 중입니다. 잠시 후 다시 시도해 주세요."),
+    SYNC_EXECUTION_NOT_FOUND(HttpStatus.NOT_FOUND, "CRAWLER_404_1", "해당 실행 ID를 찾을 수 없습니다."),
+
+    /**
      * Content
      */
     CONTENT_NOT_FOUND(HttpStatus.NOT_FOUND, "CONTENT_404_1", "뉴스/혜택 콘텐츠를 찾을 수 없습니다."),
