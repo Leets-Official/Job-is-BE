@@ -57,9 +57,10 @@ server:
 app:
   mail:
     enabled: ${MAIL_ENABLED:false}
+    daily-briefing-cron: "${MAIL_DAILY_BRIEFING_CRON:0 30 18 * * *}"
     from-address: ${MAIL_FROM_ADDRESS:}
     from-name: ${MAIL_FROM_NAME:Job.is}
-    frontend-base-url: ${MAIL_FRONTEND_BASE_URL:http://localhost:5173}
+    frontend-base-url: ${MAIL_FRONTEND_BASE_URL:https://jobis-app.com}
     welcome-path: ${MAIL_WELCOME_PATH:/recommendations}
     briefing-path: ${MAIL_BRIEFING_PATH:/recommendations/deck}
     profile-path: ${MAIL_PROFILE_PATH:/profile}

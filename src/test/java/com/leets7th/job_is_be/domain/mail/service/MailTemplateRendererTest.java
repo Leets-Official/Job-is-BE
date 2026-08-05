@@ -15,19 +15,22 @@ class MailTemplateRendererTest {
         properties.setFrontendBaseUrl("https://jobis-app.com/");
         MailTemplateRenderer renderer = new MailTemplateRenderer(properties);
 
-        String welcome = renderer.welcome();
+        String welcome = renderer.welcome("welcome-token");
         String daily = renderer.dailyBriefing(List.of(
                 new MailTemplateRenderer.BriefingItem("백엔드 개발자", "Job.is", 92, "관심 직무와 맞아요")
         ), "unsubscribe-token");
 
-        assertThat(welcome).contains("Job.is에 오신 걸 환영해요", "https://jobis-app.com/recommendations");
+        assertThat(welcome).contains(
+                "Job.is에 오신 걸 환영해요",
+                "첫 레터는 내일 오후 6시 30분에 도착해요",
+                "https://jobis-app.com/recommendations",
+                "https://jobis-app.com/settings/notifications"
+        );
         assertThat(daily).contains(
                 "백엔드 개발자",
                 "적합도 92%",
                 "https://jobis-app.com/recommendations/deck",
-                "https://jobis-app.com/profile",
-                "https://jobis-app.com/settings/notifications",
-                "https://jobis-app.com/unsubscribe?token=unsubscribe-token"
+                "https://jobis-app.com/settings/notifications"
         );
     }
 

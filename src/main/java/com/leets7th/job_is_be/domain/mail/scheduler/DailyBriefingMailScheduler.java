@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Component
@@ -35,7 +36,7 @@ public class DailyBriefingMailScheduler {
     private final MailDispatchService dispatchService;
     private final MailTemplateRenderer templateRenderer;
 
-    @Scheduled(cron = "0 30 18 * * *", zone = "Asia/Seoul")
+    @Scheduled(cron = "${app.mail.daily-briefing-cron}", zone = "Asia/Seoul")
     @Transactional(readOnly = true)
     public void sendDailyBriefings() {
         LocalDate today = LocalDate.now(SEOUL);
@@ -79,7 +80,23 @@ public class DailyBriefingMailScheduler {
                 job == null ? "추천 공고" : job.getTitle(),
                 company == null ? "회사 정보 없음" : company.getName(),
                 fitScore,
-                card.getReason() == null ? "프로필과 관심 조건을 바탕으로 추천했어요." : card.getReason()
+                card.getReason() == null ? "프로필과 관심 조건을 바탕으로 추천했어요." : card.getReason(),
+                job == null || job.getCareerLevel() == null ? "경력 무관" : job.getCareerLevel(),
+                job == null || job.getLocationFull() == null ? "지역 정보 없음" : job.getLocationFull(),
+                deadlineLabel(job),
+                job == null ? List.of() : job.getSkillTags()
         );
+    }
+
+    private String deadlineLabel(Job job) {
+        if (job == null || job.getDeadlineAt() == null) {
+            return "상시";
+        }
+        LocalDate deadline = job.getDeadlineAt().atZoneSameInstant(SEOUL).toLocalDate();
+        long days = ChronoUnit.DAYS.between(LocalDate.now(SEOUL), deadline);
+        if (days < 0) {
+            return "마감";
+        }
+        return days == 0 ? "D-Day" : "D-" + days;
     }
 }
