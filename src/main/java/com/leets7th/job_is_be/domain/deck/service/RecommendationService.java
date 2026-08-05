@@ -11,6 +11,8 @@ import com.leets7th.job_is_be.domain.job.entity.Job;
 import com.leets7th.job_is_be.domain.job.repository.JobRepository;
 import com.leets7th.job_is_be.domain.job.service.JobSimilarService;
 import com.leets7th.job_is_be.domain.user.entity.User;
+import com.leets7th.job_is_be.domain.user.entity.UserProfile;
+import com.leets7th.job_is_be.domain.user.repository.UserProfileRepository;
 import com.leets7th.job_is_be.domain.user.repository.UserRepository;
 import com.leets7th.job_is_be.global.exception.GeneralException;
 import com.leets7th.job_is_be.global.status.ErrorStatus;
@@ -47,6 +49,7 @@ public class RecommendationService {
     private static final int SUMMARY_SKILL_LIMIT = 3;
 
     private final UserRepository userRepository;
+    private final UserProfileRepository userProfileRepository;
     private final JobRepository jobRepository;
     private final DeckRepository deckRepository;
     private final CardRepository cardRepository;
@@ -57,6 +60,12 @@ public class RecommendationService {
     public List<CardResponse> generateTodayDeck(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new GeneralException(ErrorStatus.USER_NOT_FOUND));
+
+        UserProfile profile = userProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new GeneralException(ErrorStatus.DECK_ONBOARDING_INCOMPLETE));
+        if (!profile.isOnboardingCompleted()) {
+            throw new GeneralException(ErrorStatus.DECK_ONBOARDING_INCOMPLETE);
+        }
 
         LocalDate today = OffsetDateTime.now().toLocalDate();
         Deck deck = deckRepository.findByUserIdAndDeckDate(userId, today)
@@ -74,17 +83,7 @@ public class RecommendationService {
      * 후보가 없거나 성향 퀴즈가 없으면 카드를 만들지 않고 빈 상태 원인만 기록한다(REC-07).
      */
     private void fillFromRecommendationEngine(Deck deck, Long userId) {
-        List<SimilarJobItemDto> items;
-        try {
-            items = jobSimilarService.getRecommendedJobsByPersonality(userId).items();
-        } catch (GeneralException e) {
-            if (ErrorStatus.PERSONALITY_NOT_FOUND.equals(e.getErrorStatus())) {
-                // 성향 퀴즈 미완료 = 첫 레터를 만들 근거가 없음
-                deck.markEmpty(DeckState.ONBOARDING_INCOMPLETE.getCode());
-                return;
-            }
-            throw e;
-        }
+        List<SimilarJobItemDto> items = jobSimilarService.getRecommendedJobsByPersonality(userId).items();
 
         if (items == null || items.isEmpty()) {
             deck.markEmpty(DeckState.NO_CANDIDATES.getCode());
@@ -107,7 +106,7 @@ public class RecommendationService {
                     .job(job)
                     .position(cards.size() + 1)
                     .fitScore(BigDecimal.valueOf(item.fitScore()))
-                    .reason(resolveReason(item))
+                    .reason(resolveReason(item, job))
                     .summary(buildSummary(job))
                     .build());
         }
@@ -157,11 +156,15 @@ public class RecommendationService {
     }
 
     /**
-     * 추천 이유(REC-03 ③). 엔진 문장이 비면 근거 배열로 대체하고, 그것도 없으면 null(줄 생략).
+     * 추천 이유(REC-03 ③). 엔진 문장 → editor's note → fitPoints 순으로 폴백.
      */
-    private String resolveReason(SimilarJobItemDto item) {
+    private String resolveReason(SimilarJobItemDto item, Job job) {
         if (item.reason() != null && !item.reason().isBlank()) {
             return item.reason();
+        }
+        if (job != null && job.getEditorNote() != null && !job.getEditorNote().isBlank()) {
+            String note = job.getEditorNote().trim();
+            return note.length() <= 300 ? note : note.substring(0, 299) + "…";
         }
         if (item.fitPoints() != null && !item.fitPoints().isEmpty()) {
             return String.join(" · ", item.fitPoints());

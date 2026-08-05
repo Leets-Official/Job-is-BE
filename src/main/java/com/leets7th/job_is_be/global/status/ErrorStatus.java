@@ -72,6 +72,7 @@ public enum ErrorStatus implements BaseStatus {
     /**
      * Deck
      */
+    DECK_ONBOARDING_INCOMPLETE(HttpStatus.FORBIDDEN, "DECK_403_1", "온보딩을 완료한 후 추천 덱을 받을 수 있습니다."),
     DECK_NOT_FOUND(HttpStatus.NOT_FOUND, "DECK_404_1", "덱을 찾을 수 없습니다."),
     CARD_NOT_FOUND(HttpStatus.NOT_FOUND, "DECK_404_2", "카드를 찾을 수 없습니다."),
     CARD_NOT_DISMISSED(HttpStatus.BAD_REQUEST, "DECK_400_1", "관심없음 처리되지 않은 카드입니다."),

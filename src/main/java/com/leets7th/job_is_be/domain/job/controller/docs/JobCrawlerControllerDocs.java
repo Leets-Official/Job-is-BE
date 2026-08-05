@@ -21,4 +21,15 @@ public interface JobCrawlerControllerDocs {
             @ApiResponse(responseCode = "403", description = "ADMIN 권한 필요")
     })
     ResponseEntity<com.leets7th.job_is_be.global.response.ApiResponse<String>> triggerCrawlerPipeline();
+
+    @Operation(
+            summary = "job_postings → jobs 수동 동기화",
+            description = "job_postings 테이블의 데이터를 jobs 테이블로 upsert 합니다. ADMIN 권한이 필요합니다."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "동기화 성공"),
+            @ApiResponse(responseCode = "401", description = "인증 필요"),
+            @ApiResponse(responseCode = "403", description = "ADMIN 권한 필요")
+    })
+    ResponseEntity<com.leets7th.job_is_be.global.response.ApiResponse<String>> syncJobPostings();
 }

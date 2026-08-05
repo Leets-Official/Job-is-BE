@@ -10,6 +10,12 @@ spring:
     username: ${SPRING_DATASOURCE_USERNAME:}
     password: ${SPRING_DATASOURCE_PASSWORD:}
 
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    baseline-version: 0
+
   jpa:
     open-in-view: false
     properties:
@@ -97,8 +103,8 @@ crawler:
   job-output-path: ${JOB_OUTPUT_PATH:database/data/job_postings.jsonl}
 
 matching:
-  database-url: ${MATCHING_DATABASE_URL:}
+  database-url: postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}
 
 openai:
   api-key: ${OPENAI_API_KEY:}
-  model: ${OPENAI_MODEL:gpt-5.5}
+  model: ${OPENAI_MODEL:gpt-4o-mini}
