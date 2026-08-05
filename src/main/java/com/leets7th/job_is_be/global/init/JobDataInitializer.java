@@ -27,7 +27,7 @@ import java.io.FileReader;
  * app.data-init.enabled=true 를 준 환경(주로 로컬)에서만 빈으로 등록된다.
  */
 @Slf4j
-@Component
+// @Component
 @ConditionalOnProperty(name = "app.data-init.enabled", havingValue = "true")
 @RequiredArgsConstructor
 public class JobDataInitializer implements CommandLineRunner {
