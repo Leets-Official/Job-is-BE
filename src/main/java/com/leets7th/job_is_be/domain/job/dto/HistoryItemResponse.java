@@ -2,7 +2,7 @@ package com.leets7th.job_is_be.domain.job.dto;
 
 import com.leets7th.job_is_be.domain.job.enums.HistoryActionType;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 public record HistoryItemResponse(
         Long jobId,
@@ -11,7 +11,7 @@ public record HistoryItemResponse(
         HistoryActionType actionType,
         String reasonCode,
         String comment,
-        LocalDateTime actionAt,
+        OffsetDateTime actionAt,
         boolean expired
 ) {
 }

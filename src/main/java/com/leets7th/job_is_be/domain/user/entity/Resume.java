@@ -9,7 +9,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 /**
  * 이력서/자소서 파일 (S3 Presigned URL 업로드, 유형별 1슬롯)
@@ -47,16 +47,14 @@ public class Resume extends BaseEntity {
     @Column(name = "s3_key", nullable = false, length = 500)
     private String s3Key;
 
-    // TODO: LocalDateTime → OffsetDateTime으로 통일 필요 (BaseEntity와 타입 불일치)
     @Column(name = "uploaded_at", nullable = false)
-    private LocalDateTime uploadedAt;
+    private OffsetDateTime uploadedAt;
 
-    // TODO: LocalDateTime → OffsetDateTime으로 통일 필요 (BaseEntity와 타입 불일치)
     @Column(name = "deleted_at")
-    private LocalDateTime deletedAt;
+    private OffsetDateTime deletedAt;
 
     @Builder
-    public Resume(User user, ResumeCategory category, String fileName, ResumeFileFormat fileFormat, String s3Key, LocalDateTime uploadedAt) {
+    public Resume(User user, ResumeCategory category, String fileName, ResumeFileFormat fileFormat, String s3Key, OffsetDateTime uploadedAt) {
         this.user = user;
         this.category = category;
         this.fileName = fileName;
@@ -68,7 +66,7 @@ public class Resume extends BaseEntity {
     /**
      * 같은 유형(user+category) 재업로드 시 기존 row를 새 파일 정보로 갱신 (S3 오브젝트 키는 고정이라 그대로 유지)
      */
-    public void replace(String fileName, ResumeFileFormat fileFormat, LocalDateTime uploadedAt) {
+    public void replace(String fileName, ResumeFileFormat fileFormat, OffsetDateTime uploadedAt) {
         this.fileName = fileName;
         this.fileFormat = fileFormat;
         this.uploadedAt = uploadedAt;

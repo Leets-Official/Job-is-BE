@@ -11,7 +11,6 @@ import com.leets7th.job_is_be.domain.deck.repository.CardRepository;
 import com.leets7th.job_is_be.domain.deck.repository.DeckRepository;
 import com.leets7th.job_is_be.domain.deck.repository.UserActionRepository;
 import com.leets7th.job_is_be.domain.job.entity.Job;
-import com.leets7th.job_is_be.domain.job.repository.JobPostingRepository;
 import com.leets7th.job_is_be.global.exception.GeneralException;
 import com.leets7th.job_is_be.global.status.ErrorStatus;
 import lombok.RequiredArgsConstructor;
@@ -28,7 +27,6 @@ public class CardService {
 
     private final DeckRepository deckRepository;
     private final CardRepository cardRepository;
-    private final JobPostingRepository jobPostingRepository;
     private final UserActionRepository userActionRepository;
 
     // 추천 파이프라인(recall/precision)이 채운 덱의 카드 목록을 그대로 조회
@@ -44,15 +42,11 @@ public class CardService {
                 .toList();
     }
 
-    // 기술 스택은 서빙용 jobs가 아닌 원문 job_postings의 skill_tags에만 있어 (source, externalId)로 역참조
     private List<String> resolveTechStack(Job job) {
-        if (job == null || job.getSource() == null || job.getExternalId() == null) {
+        if (job == null || job.getSkillTags() == null) {
             return List.of();
         }
-        return jobPostingRepository
-                .findFirstBySourceAndExternalIdOrderByCollectedAtDesc(job.getSource(), job.getExternalId())
-                .map(posting -> posting.getSkillTags() != null ? posting.getSkillTags() : List.<String>of())
-                .orElse(List.of());
+        return job.getSkillTags();
     }
 
     // 관심없음: 카드 상태를 DISMISSED로 전환하고 이벤트 로그를 남김

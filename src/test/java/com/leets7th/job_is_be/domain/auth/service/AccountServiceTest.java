@@ -23,7 +23,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -77,7 +78,7 @@ class AccountServiceTest {
     @Test
     void 계정_정보를_조회한다() {
         User user = kakaoUser();
-        LocalDateTime createdAt = LocalDateTime.of(2026, 1, 15, 10, 30);
+        OffsetDateTime createdAt = OffsetDateTime.of(2026, 1, 15, 10, 30, 0, 0, ZoneOffset.UTC);
         ReflectionTestUtils.setField(user, "createdAt", createdAt);
         NotificationSetting setting = NotificationSetting.builder().user(user).sendSlot("07:30").build();
         ReflectionTestUtils.setField(setting, "emailVerified", true);
@@ -115,14 +116,14 @@ class AccountServiceTest {
                 1L,
                 WithdrawalStatus.PENDING
         )).thenReturn(Optional.empty());
-        LocalDateTime before = LocalDateTime.now().plusDays(30).minusSeconds(1);
+        OffsetDateTime before = OffsetDateTime.now().plusDays(30).minusSeconds(1);
 
         var response = accountService.withdraw(
                 1L,
                 new WithdrawalRequest(WithdrawalReasonCode.OTHER, "  직접 입력 사유  ")
         );
 
-        LocalDateTime after = LocalDateTime.now().plusDays(30).plusSeconds(1);
+        OffsetDateTime after = OffsetDateTime.now().plusDays(30).plusSeconds(1);
         assertThat(user.getStatus()).isEqualTo(UserStatus.WITHDRAWN);
         assertThat(response.restorableUntil()).isBetween(before, after);
 

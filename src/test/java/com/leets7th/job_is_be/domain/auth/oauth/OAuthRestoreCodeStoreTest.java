@@ -12,7 +12,8 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.net.URI;
 import java.time.Duration;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -42,7 +43,7 @@ class OAuthRestoreCodeStoreTest {
 
     @Test
     void storesAndConsumesRestoreCodeOnce() throws Exception {
-        LocalDateTime deadline = LocalDateTime.of(2026, 8, 25, 12, 0);
+        OffsetDateTime deadline = OffsetDateTime.of(2026, 8, 25, 12, 0, 0, 0, ZoneOffset.ofHours(9));
         String restoreCode = restoreCodeStore.create(1L, deadline);
         verify(valueOperations).set(
                 org.mockito.ArgumentMatchers.eq("auth:oauth:restore-code:" + restoreCode),

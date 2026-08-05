@@ -57,10 +57,21 @@ public record CardResponse(
         if (job.getCareerLevel() != null) {
             tags.add(job.getCareerLevel());
         }
-        if (job.getRegion() != null) {
-            tags.add(job.getRegion().getName());
+        String location = resolveLocationTag(job);
+        if (location != null) {
+            tags.add(location);
         }
         tags.add((job.getSalaryDisclosed() != null && job.getSalaryDisclosed()) ? "연봉 공개" : "연봉 비공개");
         return tags;
+    }
+
+    // Job.region(연관관계)은 크롤러가 못 채워 항상 비어 있어, 실제로 채워지는 평문 컬럼을 쓴다.
+    private static String resolveLocationTag(Job job) {
+        String city = job.getLocationCity();
+        String district = job.getLocationDistrict();
+        if (city != null && district != null) {
+            return city + " " + district;
+        }
+        return city != null ? city : district;
     }
 }

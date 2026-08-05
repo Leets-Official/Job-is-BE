@@ -20,11 +20,11 @@ import java.util.List;
  */
 @Entity
 @Table(
-        name = "job_postings",
-        uniqueConstraints = @UniqueConstraint(name = "uk_jobs_source_external_id", columnNames = {"source", "external_id"}),
-        indexes = {
-                @Index(name = "idx_created_at_id", columnList = "created_at DESC, id DESC")
-        }
+        name = "jobs",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_jobs_source_external_id",
+                columnNames = {"source", "external_id"}
+        )
 )
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -108,7 +108,7 @@ public class Job extends BaseEntity {
     @Column(name = "career_max")
     private Integer careerMax; // 경력 최대 연수
 
-    @Column(name = "reward_total")
+    @Column(name = "reward_total", columnDefinition = "TEXT")
     private String rewardTotal; // 추천 보상금
 
     @JsonProperty("thumbnail_url")
@@ -131,19 +131,17 @@ public class Job extends BaseEntity {
     @Column(name = "embedding", columnDefinition = "TEXT")
     private String embedding;  // pgvector 형식 (JSON 배열 문자열로 저장)
 
-    // 아래 4개는 크롤러 원문(JobPosting)이 채우는 컬럼을 탐색 필터/카드 표시용으로 읽기만 한다.
-    // insertable/updatable=false 로 두어 Job 쪽 쓰기(동기화)가 원문 값을 덮어쓰지 않도록 한다.
-    @Column(name = "location_city", length = 100, insertable = false, updatable = false)
+    @Column(name = "location_city", length = 100)
     private String locationCity;
 
-    @Column(name = "location_district", length = 100, insertable = false, updatable = false)
+    @Column(name = "location_district", length = 100)
     private String locationDistrict;
 
-    @Column(name = "is_newbie", insertable = false, updatable = false)
+    @Column(name = "is_newbie")
     private Boolean isNewbie;
 
     @JdbcTypeCode(SqlTypes.ARRAY)
-    @Column(name = "category_child", insertable = false, updatable = false)
+    @Column(name = "category_child")
     private List<String> categoryChild;
 
     @Builder
@@ -154,7 +152,9 @@ public class Job extends BaseEntity {
                String locationFull, String intro, String mainTasks, String requirements,
                String preferredPoints, String benefits, Integer careerMin, Integer careerMax,
                String rewardTotal, String thumbnailUrl, String skills, String categories,
-               List<String> skillTags, Boolean skillsInferred, String embedding) {
+               List<String> skillTags, Boolean skillsInferred, String embedding,
+               List<String> categoryChild, String locationCity, String locationDistrict,
+               Boolean isNewbie) {
         this.company = company;
         this.jobCategory = jobCategory;
         this.region = region;
@@ -184,6 +184,10 @@ public class Job extends BaseEntity {
         this.skillTags = skillTags;
         this.skillsInferred = skillsInferred;
         this.embedding = embedding;
+        this.categoryChild = categoryChild;
+        this.locationCity = locationCity;
+        this.locationDistrict = locationDistrict;
+        this.isNewbie = isNewbie;
         this.status = JobStatus.ACTIVE;
     }
 
@@ -204,7 +208,9 @@ public class Job extends BaseEntity {
                          Boolean remoteAvailable, String sourceUrl,
                          OffsetDateTime postedAt, OffsetDateTime deadlineAt, JobStatus status,
                          String locationFull, String mainTasks, String requirements,
-                         String preferredPoints, List<String> skillTags, Boolean skillsInferred, String embedding) {
+                         String preferredPoints, List<String> skillTags, Boolean skillsInferred, String embedding,
+                         List<String> categoryChild, String locationCity, String locationDistrict,
+                         Boolean isNewbie, String thumbnailUrl) {
         if (embedding != null) {
             this.embedding = embedding;  // ← null이 아닐 때만 업데이트
         }
@@ -223,5 +229,10 @@ public class Job extends BaseEntity {
         this.preferredPoints = preferredPoints;
         this.skillTags = skillTags;
         this.skillsInferred = skillsInferred;
+        this.categoryChild = categoryChild;
+        this.locationCity = locationCity;
+        this.locationDistrict = locationDistrict;
+        this.isNewbie = isNewbie;
+        this.thumbnailUrl = thumbnailUrl;
     }
 }

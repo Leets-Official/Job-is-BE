@@ -15,7 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Duration;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.Optional;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -61,7 +61,7 @@ class AuthServiceTest {
                 "new-access-token",
                 "new-refresh-token",
                 "new-session",
-                900,
+                1800,
                 Duration.ofDays(14)
         );
 
@@ -80,6 +80,7 @@ class AuthServiceTest {
         AuthService.ReissueResult result = authService.reissue(oldRefreshToken);
 
         assertEquals("new-access-token", result.response().accessToken());
+        assertEquals(1800, result.response().expiresIn());
         assertEquals("new-refresh-token", result.refreshToken());
         verify(sessionStore).rotate(
                 "old-session",
@@ -101,7 +102,7 @@ class AuthServiceTest {
                 "new-access-token",
                 "new-refresh-token",
                 "new-session",
-                900,
+                1800,
                 Duration.ofDays(14)
         );
         when(tokenProvider.issueTokenPair(1L, "USER")).thenReturn(newPair);
@@ -154,7 +155,7 @@ class AuthServiceTest {
     void rejectsTokenReissueForWithdrawnAccount() {
         String refreshToken = "refresh-token";
         User user = user(1L);
-        user.withdraw(LocalDateTime.now());
+        user.withdraw(OffsetDateTime.now());
         when(tokenProvider.decodeRefreshToken(refreshToken))
                 .thenReturn(new JwtTokenProvider.RefreshTokenClaims(1L, "session"));
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));

@@ -72,6 +72,7 @@ public enum ErrorStatus implements BaseStatus {
     /**
      * Deck
      */
+    DECK_ONBOARDING_INCOMPLETE(HttpStatus.FORBIDDEN, "DECK_403_1", "온보딩을 완료한 후 추천 덱을 받을 수 있습니다."),
     DECK_NOT_FOUND(HttpStatus.NOT_FOUND, "DECK_404_1", "덱을 찾을 수 없습니다."),
     CARD_NOT_FOUND(HttpStatus.NOT_FOUND, "DECK_404_2", "카드를 찾을 수 없습니다."),
     CARD_NOT_DISMISSED(HttpStatus.BAD_REQUEST, "DECK_400_1", "관심없음 처리되지 않은 카드입니다."),
@@ -105,6 +106,12 @@ public enum ErrorStatus implements BaseStatus {
     JOB_LINK_INVALID_FORMAT(HttpStatus.BAD_REQUEST, "JOB_400_5", "올바른 URL 형식이 아닙니다. (http/https 필요)"),
     JOB_LINK_UNREACHABLE(HttpStatus.BAD_REQUEST, "JOB_400_6", "HTTP 오류 응답 수신"),
     JOB_LINK_CONNECT_FAILED(HttpStatus.BAD_REQUEST, "JOB_400_7", "연결 실패 또는 타임아웃이 발생했습니다."),
+
+    /**
+     * Crawler (Admin)
+     */
+    SYNC_ALREADY_RUNNING(HttpStatus.CONFLICT, "CRAWLER_409_1", "동기화 작업이 이미 실행 중입니다. 잠시 후 다시 시도해 주세요."),
+    SYNC_EXECUTION_NOT_FOUND(HttpStatus.NOT_FOUND, "CRAWLER_404_1", "해당 실행 ID를 찾을 수 없습니다."),
 
     /**
      * Content

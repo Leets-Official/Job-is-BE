@@ -27,7 +27,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -165,7 +165,7 @@ public class ProfileService {
             throw new GeneralException(ErrorStatus.PROFILE_REQUIRED_FIELDS_MISSING);
         }
 
-        profile.completeOnboarding(LocalDateTime.now());
+        profile.completeOnboarding(OffsetDateTime.now());
         eventPublisher.publishEvent(new OnboardingCompletedEvent(userId));
     }
 

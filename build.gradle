@@ -63,6 +63,10 @@ dependencies {
 	// JSONL 파일 파싱을 위해 사용한 ObjectMapper용 Jackson 라이브러리
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 
+	// Flyway — DB 마이그레이션 관리
+	implementation 'org.flywaydb:flyway-core'
+	implementation 'org.flywaydb:flyway-database-postgresql'
+
 }
 
 tasks.named('test') {

@@ -22,7 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.net.URI;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.Locale;
 
 @Service
@@ -170,7 +170,7 @@ public class OAuthLoginService {
         UserWithdrawal withdrawal = userWithdrawalRepository
                 .findFirstByUserIdAndStatusOrderByRequestedAtDesc(user.getId(), WithdrawalStatus.PENDING)
                 .orElseThrow(() -> new GeneralException(ErrorStatus.WITHDRAWAL_RESTORE_EXPIRED));
-        LocalDateTime now = LocalDateTime.now();
+        OffsetDateTime now = OffsetDateTime.now();
         if (withdrawal.getScheduledDeletionAt() == null
                 || !now.isBefore(withdrawal.getScheduledDeletionAt())) {
             throw new GeneralException(ErrorStatus.WITHDRAWAL_RESTORE_EXPIRED);
@@ -182,14 +182,14 @@ public class OAuthLoginService {
     private record LoginUser(
             User user,
             boolean newUser,
-            LocalDateTime restorableUntil
+            OffsetDateTime restorableUntil
     ) {
     }
 
     public record OAuthLoginResult(
             String loginCode,
             String restoreCode,
-            LocalDateTime restorableUntil
+            OffsetDateTime restorableUntil
     ) {
         public static OAuthLoginResult login(String loginCode) {
             return new OAuthLoginResult(loginCode, null, null);
@@ -197,7 +197,7 @@ public class OAuthLoginService {
 
         public static OAuthLoginResult restoration(
                 String restoreCode,
-                LocalDateTime restorableUntil
+                OffsetDateTime restorableUntil
         ) {
             return new OAuthLoginResult(null, restoreCode, restorableUntil);
         }

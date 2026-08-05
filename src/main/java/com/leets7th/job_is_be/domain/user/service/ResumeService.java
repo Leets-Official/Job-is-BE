@@ -35,7 +35,7 @@ import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignReques
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -139,7 +139,7 @@ public class ResumeService {
             throw new GeneralException(ErrorStatus.RESUME_FILE_TOO_LARGE);
         }
 
-        LocalDateTime uploadedAt = LocalDateTime.now();
+        OffsetDateTime uploadedAt = OffsetDateTime.now();
         Optional<Resume> existingResume = resumeRepository.findByUserAndCategory(user, request.category());
         boolean created = existingResume.isEmpty();
 

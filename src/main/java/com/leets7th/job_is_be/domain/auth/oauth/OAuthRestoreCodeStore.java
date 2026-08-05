@@ -7,7 +7,7 @@ import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
 
 import java.security.SecureRandom;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.Base64;
 import java.util.Optional;
 
@@ -32,7 +32,7 @@ public class OAuthRestoreCodeStore {
         this.properties = properties;
     }
 
-    public String create(Long userId, LocalDateTime restorableUntil) {
+    public String create(Long userId, OffsetDateTime restorableUntil) {
         byte[] bytes = new byte[CODE_BYTES];
         secureRandom.nextBytes(bytes);
         String restoreCode = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
@@ -76,8 +76,8 @@ public class OAuthRestoreCodeStore {
             Long userId,
             String restorableUntilText
     ) {
-        public LocalDateTime restorableUntil() {
-            return LocalDateTime.parse(restorableUntilText);
+        public OffsetDateTime restorableUntil() {
+            return OffsetDateTime.parse(restorableUntilText);
         }
     }
 }
