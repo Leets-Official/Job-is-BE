@@ -25,7 +25,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.Duration;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -113,11 +113,11 @@ class OAuthLoginServiceTest {
     @Test
     void issuesRestoreCodeWithoutRestoringWithdrawnUser() {
         User user = user("social-id", SocialType.KAKAO, "user@example.com", 1L);
-        user.withdraw(LocalDateTime.now().minusDays(1));
+        user.withdraw(OffsetDateTime.now().minusDays(1));
         UserWithdrawal withdrawal = UserWithdrawal.builder()
                 .user(user)
-                .requestedAt(LocalDateTime.now().minusDays(1))
-                .scheduledDeletionAt(LocalDateTime.now().plusDays(29))
+                .requestedAt(OffsetDateTime.now().minusDays(1))
+                .scheduledDeletionAt(OffsetDateTime.now().plusDays(29))
                 .build();
         prepareOAuth(new OAuthUserInfo("social-id", SocialType.KAKAO, "user@example.com"));
         when(userRepository.findBySocialIdAndSocialType("social-id", SocialType.KAKAO))
@@ -126,7 +126,7 @@ class OAuthLoginServiceTest {
                 1L, WithdrawalStatus.PENDING)).thenReturn(Optional.of(withdrawal));
         when(restoreCodeStore.create(
                 org.mockito.ArgumentMatchers.eq(1L),
-                org.mockito.ArgumentMatchers.any(LocalDateTime.class)
+                org.mockito.ArgumentMatchers.any(OffsetDateTime.class)
         )).thenReturn("restore-code");
 
         OAuthLoginService.OAuthLoginResult result = loginService.login("kakao", "code", "state", "state");

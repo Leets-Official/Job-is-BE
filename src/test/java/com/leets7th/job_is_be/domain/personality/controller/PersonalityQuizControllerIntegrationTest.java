@@ -151,6 +151,68 @@ class PersonalityQuizControllerIntegrationTest {
                 .andExpect(jsonPath("$.code").value("QUIZ_409_1"));
     }
 
+    @Test
+    void createsDraftProfileWhenApplyingOnboardingResultWithoutProfile() throws Exception {
+        userProfileRepository.deleteAll();
+        userProfileRepository.flush();
+
+        mockMvc.perform(get("/api/quiz/questions")
+                        .queryParam("source", "ONBOARDING")
+                        .with(userJwt()))
+                .andExpect(status().isOk());
+        PersonalityTest test = personalityTestRepository.findAll().getFirst();
+
+        for (int questionNo = 1; questionNo <= 10; questionNo++) {
+            saveAnswer(test.getId(), questionNo, 2)
+                    .andExpect(status().isOk());
+        }
+
+        mockMvc.perform(post("/api/quiz/result/apply")
+                        .with(userJwt())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "testId": %d
+                                }
+                                """.formatted(test.getId())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value("QUIZ_200_4"))
+                .andExpect(jsonPath("$.data.jobTestCompleted").value(true));
+
+        UserProfile profile = userProfileRepository.findByUserId(userId).orElseThrow();
+        assertThat(profile.isOnboardingCompleted()).isFalse();
+        assertThat(profile.isJobTestCompleted()).isTrue();
+        assertThat(profile.getOnboardingStep()).isEqualTo(OnboardingStep.REVIEW);
+    }
+
+    @Test
+    void rejectsProfileRetestResultWhenProfileDoesNotExist() throws Exception {
+        userProfileRepository.deleteAll();
+        userProfileRepository.flush();
+
+        mockMvc.perform(get("/api/quiz/questions")
+                        .queryParam("source", "PROFILE")
+                        .with(userJwt()))
+                .andExpect(status().isOk());
+        PersonalityTest test = personalityTestRepository.findAll().getFirst();
+
+        for (int questionNo = 1; questionNo <= 10; questionNo++) {
+            saveAnswer(test.getId(), questionNo, 2)
+                    .andExpect(status().isOk());
+        }
+
+        mockMvc.perform(post("/api/quiz/result/apply")
+                        .with(userJwt())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "testId": %d
+                                }
+                                """.formatted(test.getId())))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("PROFILE_404_1"));
+    }
+
     private org.springframework.test.web.servlet.ResultActions saveAnswer(
             Long testId,
             int questionNo,

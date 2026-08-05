@@ -18,7 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.Duration;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -65,11 +65,11 @@ class AccountRecoveryServiceTest {
                 .email("user@example.com")
                 .build();
         ReflectionTestUtils.setField(user, "id", 1L);
-        user.withdraw(LocalDateTime.now().minusDays(1));
+        user.withdraw(OffsetDateTime.now().minusDays(1));
         UserWithdrawal withdrawal = UserWithdrawal.builder()
                 .user(user)
-                .requestedAt(LocalDateTime.now().minusDays(1))
-                .scheduledDeletionAt(LocalDateTime.now().plusDays(29))
+                .requestedAt(OffsetDateTime.now().minusDays(1))
+                .scheduledDeletionAt(OffsetDateTime.now().plusDays(29))
                 .build();
         when(restoreCodeStore.consume("restore-code")).thenReturn(Optional.of(
                 new OAuthRestoreCodeStore.RestorePayload(
@@ -115,11 +115,11 @@ class AccountRecoveryServiceTest {
                 .email("user@example.com")
                 .build();
         ReflectionTestUtils.setField(user, "id", 1L);
-        user.withdraw(LocalDateTime.now().minusDays(1));
+        user.withdraw(OffsetDateTime.now().minusDays(1));
         UserWithdrawal withdrawal = UserWithdrawal.builder()
                 .user(user)
-                .requestedAt(LocalDateTime.now().minusDays(1))
-                .scheduledDeletionAt(LocalDateTime.now().plusDays(29))
+                .requestedAt(OffsetDateTime.now().minusDays(1))
+                .scheduledDeletionAt(OffsetDateTime.now().plusDays(29))
                 .build();
         when(restoreCodeStore.consume("restore-code")).thenReturn(Optional.of(
                 new OAuthRestoreCodeStore.RestorePayload(

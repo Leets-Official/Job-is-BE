@@ -57,7 +57,7 @@ class HistoryServiceTest {
                 .reasonCode(reasonCode)
                 .comment(comment)
                 .build();
-        ReflectionTestUtils.setField(action, "createdAt", java.time.LocalDateTime.now());
+        ReflectionTestUtils.setField(action, "createdAt", java.time.OffsetDateTime.now());
         return action;
     }
 

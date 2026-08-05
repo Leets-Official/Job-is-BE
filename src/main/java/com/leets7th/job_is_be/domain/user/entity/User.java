@@ -10,7 +10,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 
 @Entity
@@ -47,9 +47,8 @@ public class User extends BaseEntity {
     @Column(nullable = false, length = 20)
     private Role role;
 
-    // TODO: LocalDateTime → OffsetDateTime으로 통일 필요 (BaseEntity와 타입 불일치)
     @Column(name = "withdrawn_at")
-    private LocalDateTime withdrawnAt;
+    private OffsetDateTime withdrawnAt;
 
     @Builder
     public User(String socialId, SocialType socialType, String email) {
@@ -60,7 +59,7 @@ public class User extends BaseEntity {
         this.role = Role.USER;
     }
 
-    public void withdraw(LocalDateTime withdrawnAt) {
+    public void withdraw(OffsetDateTime withdrawnAt) {
         this.status = UserStatus.WITHDRAWN;
         this.withdrawnAt = withdrawnAt;
     }
@@ -70,4 +69,3 @@ public class User extends BaseEntity {
         this.withdrawnAt = null;
     }
 }
-

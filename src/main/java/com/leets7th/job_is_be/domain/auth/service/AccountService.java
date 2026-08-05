@@ -21,7 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Service
 public class AccountService {
@@ -67,7 +67,7 @@ public class AccountService {
     public void saveConsent(Long userId, ConsentRequest request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new GeneralException(ErrorStatus.USER_NOT_FOUND));
-        LocalDateTime now = LocalDateTime.now();
+        OffsetDateTime now = OffsetDateTime.now();
         boolean marketingAgreed = Boolean.TRUE.equals(request.marketingAgreed());
 
         UserConsent consent = userConsentRepository.findByUserId(userId)
@@ -94,8 +94,8 @@ public class AccountService {
             throw new GeneralException(ErrorStatus.WITHDRAWAL_ALREADY_REQUESTED);
         }
 
-        LocalDateTime now = LocalDateTime.now();
-        LocalDateTime restorableUntil = now.plusDays(30);
+        OffsetDateTime now = OffsetDateTime.now();
+        OffsetDateTime restorableUntil = now.plusDays(30);
         WithdrawalRequest safeRequest = request == null
                 ? new WithdrawalRequest(null, null)
                 : request;

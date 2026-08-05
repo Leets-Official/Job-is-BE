@@ -9,7 +9,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 /**
  * 회원 탈퇴 요청 및 30일 복구 유예
@@ -35,17 +35,14 @@ public class UserWithdrawal extends BaseEntity {
     @Column(name = "reason_detail", length = 500)
     private String reasonDetail;
 
-    // TODO: LocalDateTime → OffsetDateTime으로 통일 필요 (BaseEntity와 타입 불일치)
     @Column(name = "requested_at", nullable = false)
-    private LocalDateTime requestedAt;
+    private OffsetDateTime requestedAt;
 
-    // TODO: LocalDateTime → OffsetDateTime으로 통일 필요 (BaseEntity와 타입 불일치)
     @Column(name = "scheduled_deletion_at")
-    private LocalDateTime scheduledDeletionAt; // 신청일 + 30일
+    private OffsetDateTime scheduledDeletionAt; // 신청일 + 30일
 
-    // TODO: LocalDateTime → OffsetDateTime으로 통일 필요 (BaseEntity와 타입 불일치)
     @Column(name = "restored_at")
-    private LocalDateTime restoredAt;
+    private OffsetDateTime restoredAt;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
@@ -56,8 +53,8 @@ public class UserWithdrawal extends BaseEntity {
             User user,
             WithdrawalReasonCode reasonCode,
             String reasonDetail,
-            LocalDateTime requestedAt,
-            LocalDateTime scheduledDeletionAt
+            OffsetDateTime requestedAt,
+            OffsetDateTime scheduledDeletionAt
     ) {
         this.user = user;
         this.reasonCode = reasonCode;
@@ -67,7 +64,7 @@ public class UserWithdrawal extends BaseEntity {
         this.status = WithdrawalStatus.PENDING;
     }
 
-    public void restore(LocalDateTime now) {
+    public void restore(OffsetDateTime now) {
         this.status = WithdrawalStatus.RESTORED;
         this.restoredAt = now;
     }

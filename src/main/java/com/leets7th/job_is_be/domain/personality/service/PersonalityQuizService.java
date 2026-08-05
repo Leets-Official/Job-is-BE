@@ -22,7 +22,6 @@ import com.leets7th.job_is_be.global.status.ErrorStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
@@ -106,7 +105,7 @@ public class PersonalityQuizService {
         questionCatalog.find(request.questionNo())
                 .orElseThrow(() -> new GeneralException(ErrorStatus.QUIZ_QUESTION_INVALID));
 
-        LocalDateTime now = LocalDateTime.now();
+        OffsetDateTime now = OffsetDateTime.now();
         PersonalityTestAnswer answer = answerRepository
                 .findByTestIdAndQuestionNo(test.getId(), request.questionNo())
                 .orElseGet(() -> PersonalityTestAnswer.builder()
@@ -159,19 +158,18 @@ public class PersonalityQuizService {
         if (request == null || request.testId() == null) {
             throw new GeneralException(ErrorStatus.QUIZ_REQUEST_INVALID);
         }
-        userRepository.findByIdForUpdate(userId)
+        User user = userRepository.findByIdForUpdate(userId)
                 .orElseThrow(() -> new GeneralException(ErrorStatus.USER_NOT_FOUND));
         PersonalityTest test = findOwnedTestForUpdate(userId, request.testId());
         if (!test.isCompleted()) {
             throw new GeneralException(ErrorStatus.QUIZ_TEST_INCOMPLETE);
         }
-        UserProfile profile = userProfileRepository.findByUserId(userId)
-                .orElseThrow(() -> new GeneralException(ErrorStatus.PROFILE_NOT_FOUND));
+        UserProfile profile = findOrCreateProfileForApply(user, test);
 
         PersonalityResultCalculator.Result calculatedResult = calculate(test.getId());
         PersonalityResultType resultType = resolveResultType(test, calculatedResult);
         List<String> tags = resolveResultTags(test, calculatedResult);
-        profile.applyPersonalityTags(tagCodec.encode(tags), LocalDateTime.now());
+        profile.applyPersonalityTags(tagCodec.encode(tags), OffsetDateTime.now());
         if (test.getSource() == PersonalityTestSource.ONBOARDING
                 && profile.getOnboardingStep() == OnboardingStep.QUIZ) {
             profile.moveOnboardingStep(OnboardingStep.REVIEW);
@@ -184,6 +182,19 @@ public class PersonalityQuizService {
                 profile.isJobTestCompleted(),
                 true
         );
+    }
+
+    private UserProfile findOrCreateProfileForApply(User user, PersonalityTest test) {
+        return userProfileRepository.findByUserId(user.getId())
+                .orElseGet(() -> {
+                    if (test.getSource() != PersonalityTestSource.ONBOARDING) {
+                        throw new GeneralException(ErrorStatus.PROFILE_NOT_FOUND);
+                    }
+                    return userProfileRepository.save(UserProfile.builder()
+                            .user(user)
+                            .onboardingStep(OnboardingStep.QUIZ)
+                            .build());
+                });
     }
 
     private void validateAnswerRequest(QuizAnswerRequest request) {
