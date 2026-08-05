@@ -15,7 +15,7 @@ import com.leets7th.job_is_be.global.status.ErrorStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Service
 public class AccountRecoveryService {
@@ -59,7 +59,7 @@ public class AccountRecoveryService {
                 )
                 .orElseThrow(() -> new GeneralException(ErrorStatus.WITHDRAWAL_RESTORE_EXPIRED));
 
-        LocalDateTime now = LocalDateTime.now();
+        OffsetDateTime now = OffsetDateTime.now();
         if (user.getStatus() != UserStatus.WITHDRAWN
                 || payload.restorableUntil() == null
                 || withdrawal.getScheduledDeletionAt() == null

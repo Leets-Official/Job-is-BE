@@ -169,7 +169,7 @@ class ResumeServiceTest {
                 .fileName("resume.pdf")
                 .fileFormat(ResumeFileFormat.PDF)
                 .s3Key("profile/1/RESUME")
-                .uploadedAt(java.time.LocalDateTime.now())
+                .uploadedAt(java.time.OffsetDateTime.now())
                 .build();
         ReflectionTestUtils.setField(savedResume, "id", 10L);
         when(resumeRepository.save(any(Resume.class))).thenReturn(savedResume);
@@ -195,7 +195,7 @@ class ResumeServiceTest {
                 .fileName("old.pdf")
                 .fileFormat(ResumeFileFormat.PDF)
                 .s3Key("profile/1/RESUME")
-                .uploadedAt(java.time.LocalDateTime.now().minusDays(1))
+                .uploadedAt(java.time.OffsetDateTime.now().minusDays(1))
                 .build();
         ReflectionTestUtils.setField(existing, "id", 5L);
         when(resumeRepository.findByUserAndCategory(user, ResumeCategory.RESUME)).thenReturn(Optional.of(existing));
@@ -228,7 +228,7 @@ class ResumeServiceTest {
                 .fileName("cover.hwp")
                 .fileFormat(ResumeFileFormat.HWP)
                 .s3Key("profile/1/COVER_LETTER")
-                .uploadedAt(java.time.LocalDateTime.now())
+                .uploadedAt(java.time.OffsetDateTime.now())
                 .build();
         when(resumeRepository.findAllByUser(user)).thenReturn(List.of(resume));
 
@@ -267,7 +267,7 @@ class ResumeServiceTest {
                 .fileName("resume.pdf")
                 .fileFormat(ResumeFileFormat.PDF)
                 .s3Key("profile/1/RESUME")
-                .uploadedAt(java.time.LocalDateTime.now())
+                .uploadedAt(java.time.OffsetDateTime.now())
                 .build();
         ReflectionTestUtils.setField(resume, "id", 7L);
         when(resumeRepository.findByIdAndUser(7L, user)).thenReturn(Optional.of(resume));

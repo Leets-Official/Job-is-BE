@@ -3,7 +3,7 @@ package com.leets7th.job_is_be.domain.auth.dto;
 import com.leets7th.job_is_be.domain.user.enums.SocialType;
 import com.leets7th.job_is_be.domain.user.enums.UserStatus;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 public record SessionResponse(
         Long userId,
@@ -11,6 +11,6 @@ public record SessionResponse(
         SocialType socialType,
         UserStatus status,
         boolean onboardingCompleted,
-        LocalDateTime restorableUntil
+        OffsetDateTime restorableUntil
 ) {
 }
