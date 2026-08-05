@@ -61,7 +61,7 @@ class AuthServiceTest {
                 "new-access-token",
                 "new-refresh-token",
                 "new-session",
-                900,
+                1800,
                 Duration.ofDays(14)
         );
 
@@ -80,6 +80,7 @@ class AuthServiceTest {
         AuthService.ReissueResult result = authService.reissue(oldRefreshToken);
 
         assertEquals("new-access-token", result.response().accessToken());
+        assertEquals(1800, result.response().expiresIn());
         assertEquals("new-refresh-token", result.refreshToken());
         verify(sessionStore).rotate(
                 "old-session",
@@ -101,7 +102,7 @@ class AuthServiceTest {
                 "new-access-token",
                 "new-refresh-token",
                 "new-session",
-                900,
+                1800,
                 Duration.ofDays(14)
         );
         when(tokenProvider.issueTokenPair(1L, "USER")).thenReturn(newPair);

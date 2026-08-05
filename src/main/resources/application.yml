@@ -77,7 +77,7 @@ app:
 jwt:
   secret: ${JWT_SECRET:}
   issuer: ${JWT_ISSUER:job-is-be}
-  access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:15m}
+  access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:30m}
   refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:14d}
   cookie-name: ${JWT_COOKIE_NAME:refreshToken}
   cookie-path: ${JWT_COOKIE_PATH:/api/auth}

@@ -148,7 +148,7 @@ class OAuthLoginServiceTest {
                 "access",
                 "refresh",
                 "session",
-                900,
+                1800,
                 Duration.ofDays(14).toSeconds()
         );
         when(loginCodeStore.consume("login-code")).thenReturn(Optional.of(payload));
@@ -235,7 +235,7 @@ class OAuthLoginServiceTest {
 
     private JwtTokenProvider.TokenPair tokenPair() {
         return new JwtTokenProvider.TokenPair(
-                "access", "refresh", "session", 900, Duration.ofDays(14)
+                "access", "refresh", "session", 1800, Duration.ofDays(14)
         );
     }
 }
