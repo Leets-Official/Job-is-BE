@@ -6,7 +6,6 @@ import com.leets7th.job_is_be.domain.deck.repository.UserActionRepository;
 import com.leets7th.job_is_be.domain.job.dto.SavedJobListResponse;
 import com.leets7th.job_is_be.domain.job.dto.SavedJobResponse;
 import com.leets7th.job_is_be.domain.job.dto.JobDetailResponse;
-import com.leets7th.job_is_be.domain.job.dto.JobFitSignalsDto;
 import com.leets7th.job_is_be.domain.job.dto.JobSearchRequest;
 import com.leets7th.job_is_be.domain.job.dto.JobSummaryResponse;
 import com.leets7th.job_is_be.domain.job.dto.SimilarJobItemDto;
@@ -18,12 +17,7 @@ import com.leets7th.job_is_be.domain.job.enums.SavedJobSortType;
 import com.leets7th.job_is_be.domain.job.repository.JobRepository;
 import com.leets7th.job_is_be.domain.job.repository.SavedJobRepository;
 import com.leets7th.job_is_be.domain.user.entity.User;
-import com.leets7th.job_is_be.domain.user.entity.UserProfile;
-import com.leets7th.job_is_be.domain.user.repository.UserJobCategoryRepository;
-import com.leets7th.job_is_be.domain.user.repository.UserProfileRepository;
-import com.leets7th.job_is_be.domain.user.repository.UserRegionRepository;
 import com.leets7th.job_is_be.domain.user.repository.UserRepository;
-import com.leets7th.job_is_be.domain.user.repository.UserTechStackRepository;
 import com.leets7th.job_is_be.global.exception.GeneralException;
 import com.leets7th.job_is_be.global.response.PageResponse;
 import com.leets7th.job_is_be.global.status.ErrorStatus;
@@ -56,10 +50,6 @@ public class JobService {
     private final UserRepository userRepository;
     private final UserActionRepository userActionRepository;
     private final JobMatchingService jobMatchingService;
-    private final UserProfileRepository userProfileRepository;
-    private final UserJobCategoryRepository userJobCategoryRepository;
-    private final UserRegionRepository userRegionRepository;
-    private final UserTechStackRepository userTechStackRepository;
     private final JobSimilarService jobSimilarService;
     private final TransactionTemplate transactionTemplate;
 
@@ -181,12 +171,12 @@ public class JobService {
                 : Map.of();
 
         return transactionTemplate.execute(status ->
-                jobRepository.searchJobs(condition, fixedPageable, buildFitSignals(userId), pythonFitScores));
+                jobRepository.searchJobs(condition, fixedPageable, pythonFitScores));
     }
 
     /**
      * 파이썬 매칭 엔진을 호출해 추천순 정렬용 점수(externalId → 0~100)를 만든다.
-     * 성향 퀴즈 미완료이거나 엔진 호출이 실패하면 빈 맵을 돌려줘서 자바 규칙 기반 점수로 대체되게 한다
+     * 성향 퀴즈 미완료이거나 엔진 호출이 실패하면 빈 맵을 돌려줘서 최신순과 동일하게 대체되게 한다
      * (검색 자체가 이 호출 하나 때문에 통째로 실패하면 안 된다).
      */
     private Map<Long, Integer> fetchPythonFitScores(Long userId) {
@@ -205,38 +195,9 @@ public class JobService {
             }
             return scores;
         } catch (Exception e) {
-            log.warn("[JobService] 추천순 정렬용 파이썬 매칭 엔진 호출 실패. 자바 규칙 기반 점수로 대체합니다. userId={}", userId, e);
+            log.warn("[JobService] 추천순 정렬용 파이썬 매칭 엔진 호출 실패. 최신순으로 대체합니다. userId={}", userId, e);
             return Map.of();
         }
-    }
-
-    /**
-     * 추천순 정렬용 유저 신호 조회(§2.1). 프로필/희망직무/희망지역/기술스택 중 하나라도 없으면
-     * 그 항목만 비워두고, 전부 없거나 userId가 null이면 null을 돌려줘서 최신순으로 대체되게 한다.
-     */
-    private JobFitSignalsDto buildFitSignals(Long userId) {
-        if (userId == null) {
-            return null;
-        }
-
-        List<Long> jobCategoryIds = userJobCategoryRepository.findAllByUserId(userId).stream()
-                .map(uc -> uc.getJobCategory().getId())
-                .toList();
-        String regionName = userRegionRepository.findFirstByUserIdOrderByIdDesc(userId)
-                .map(ur -> ur.getRegion().getName())
-                .orElse(null);
-        List<String> techStacks = userTechStackRepository.findAllByUserIdOrderByIdAsc(userId).stream()
-                .map(ts -> ts.getTechStack().getName())
-                .toList();
-        UserProfile profile = userProfileRepository.findByUserId(userId).orElse(null);
-
-        return new JobFitSignalsDto(
-                jobCategoryIds,
-                regionName,
-                profile != null && profile.isRemoteOk(),
-                profile != null ? profile.getCareerLevel() : null,
-                techStacks
-        );
     }
 
     /**

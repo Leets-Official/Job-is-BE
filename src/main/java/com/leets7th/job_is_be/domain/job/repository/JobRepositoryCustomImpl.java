@@ -1,6 +1,5 @@
 package com.leets7th.job_is_be.domain.job.repository;
 
-import com.leets7th.job_is_be.domain.job.dto.JobFitSignalsDto;
 import com.leets7th.job_is_be.domain.job.dto.JobSearchRequest;
 import com.leets7th.job_is_be.domain.job.dto.JobSummaryResponse;
 import com.leets7th.job_is_be.domain.job.entity.Job;
@@ -10,14 +9,9 @@ import com.leets7th.job_is_be.domain.job.entity.QRegion;
 import com.leets7th.job_is_be.domain.job.enums.CareerRange;
 import com.leets7th.job_is_be.domain.job.enums.JobSortType;
 import com.leets7th.job_is_be.domain.job.enums.JobStatus;
-import com.leets7th.job_is_be.domain.user.enums.CareerLevel;
-import com.querydsl.core.Tuple;
-import com.querydsl.core.types.Expression;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;
-import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.core.types.dsl.Expressions;
-import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -40,12 +34,8 @@ public class JobRepositoryCustomImpl implements JobRepositoryCustom {
 
     private final JPAQueryFactory queryFactory;
 
-    /** fitScore()가 줄 수 있는 최대 원점수(직무3 + 지역/원격2 + 스킬2 + 경력1). 배지 0~100 환산 기준. */
-    private static final int MAX_FIT_SCORE = 8;
-
     @Override
-    public Page<JobSummaryResponse> searchJobs(JobSearchRequest request, Pageable pageable, JobFitSignalsDto fitSignals,
-                                                Map<Long, Integer> pythonFitScores) {
+    public Page<JobSummaryResponse> searchJobs(JobSearchRequest request, Pageable pageable, Map<Long, Integer> pythonFitScores) {
         QCompany company = QCompany.company;
         QRegion region = QRegion.region;
         QJobCategory jobCategory = QJobCategory.jobCategory;
@@ -81,27 +71,21 @@ public class JobRepositoryCustomImpl implements JobRepositoryCustom {
             return searchJobsRankedByPython(company, region, jobCategory, conditions, pageable, pythonFitScores, totalCount);
         }
 
-        // 정렬에 쓰는 점수를 화면 노출용 배지(§3.3)로도 같이 뽑는다. 신호가 없으면 SQL NULL로 통일한다.
-        // NumberExpression과 NullExpression의 공통 상위 타입인 Expression으로 받아야 삼항연산자 타입 추론이 된다.
-        NumberExpression<Integer> rawFitScore = fitScore(fitSignals);
-        Expression<Integer> fitScoreColumn =
-                rawFitScore != null ? rawFitScore : Expressions.nullExpression(Integer.class);
-
-        // 공고 목록 조회 (LEFT JOIN & FETCH JOIN으로 N+1 방지 및 NULL 허용)
-        List<Tuple> rows = queryFactory
-                .select(job, fitScoreColumn)
-                .from(job)
+        // 파이썬 점수가 없으면(성향 퀴즈 미완료·엔진 실패·비-FIT 정렬) 최신순/마감임박순과 동일하게 SQL로 조회한다.
+        // 이 경우 fitScore 배지는 산출 근거가 없으므로 항상 null(§3.3 — 산출 불가 시 배지 생략).
+        List<Job> jobs = queryFactory
+                .selectFrom(job)
                 .leftJoin(job.company, company).fetchJoin()
                 .leftJoin(job.region, region).fetchJoin()
                 .leftJoin(job.jobCategory, jobCategory).fetchJoin()
                 .where(conditions)
-                .orderBy(orderBy(request, fitSignals))
+                .orderBy(orderBy(request))
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();
 
-        List<JobSummaryResponse> content = rows.stream()
-                .map(row -> JobSummaryResponse.from(row.get(job), toDisplayScore(row.get(fitScoreColumn))))
+        List<JobSummaryResponse> content = jobs.stream()
+                .map(JobSummaryResponse::from)
                 .toList();
 
         return new PageImpl<>(content, pageable, totalCount);
@@ -243,91 +227,17 @@ public class JobRepositoryCustomImpl implements JobRepositoryCustom {
 
     /**
      * 정렬(§3.4). 상시채용(마감일 NULL)은 마감임박순에서 항상 뒤로 보낸다.
-     * 추천순(FIT)은 로그인 사용자의 프로필 신호(fitSignals)가 있을 때만 점수 기반으로 정렬하고,
-     * 비로그인이거나 신호가 없으면 최신순과 동일하게 동작한다(§2.1 — 후보 범위는 안 좁히고 랭킹에만 반영).
+     * 추천순(FIT)은 파이썬 매칭 엔진 점수로만 랭킹하며(searchJobsRankedByPython), 그 점수가 없을 때는
+     * 여기서 최신순과 동일하게 처리한다(§2.1 — 후보 범위는 안 좁히고 랭킹에만 반영).
      */
-    private OrderSpecifier<?>[] orderBy(JobSearchRequest request, JobFitSignalsDto fitSignals) {
+    private OrderSpecifier<?>[] orderBy(JobSearchRequest request) {
         OrderSpecifier<?> latest = job.postedAt.desc().nullsLast();
 
         return switch (request.sortOrDefault()) {
             case DEADLINE -> new OrderSpecifier<?>[]{
                     job.deadlineAt.asc().nullsLast(), latest, job.id.desc()
             };
-            case RECENT -> new OrderSpecifier<?>[]{latest, job.id.desc()};
-            case FIT -> {
-                NumberExpression<Integer> score = fitScore(fitSignals);
-                yield score == null
-                        ? new OrderSpecifier<?>[]{latest, job.id.desc()}
-                        : new OrderSpecifier<?>[]{score.desc(), latest, job.id.desc()};
-            }
+            case RECENT, FIT -> new OrderSpecifier<?>[]{latest, job.id.desc()};
         };
-    }
-
-    /**
-     * 추천순 점수(§2.1 개인화 원칙 — 하드필터 아님, 랭킹 가중치로만 반영).
-     * 신호가 없으면(비로그인 등) null을 돌려줘서 최신순으로 대체되게 한다.
-     */
-    private NumberExpression<Integer> fitScore(JobFitSignalsDto signals) {
-        if (signals == null) {
-            return null;
-        }
-
-        NumberExpression<Integer> score = Expressions.asNumber(0);
-
-        if (!CollectionUtils.isEmpty(signals.jobCategoryIds())) {
-            score = score.add(new CaseBuilder()
-                    .when(job.jobCategory.id.in(signals.jobCategoryIds())).then(3)
-                    .otherwise(0));
-        }
-
-        // 지역 일치와 원격 선호는 서로 독립적인 조건이라, 지역을 안 골랐어도 원격 선호만으로 매칭돼야 한다.
-        BooleanExpression regionOrRemoteMatch = StringUtils.hasText(signals.regionName())
-                ? job.locationCity.eq(signals.regionName())
-                : null;
-        if (signals.remoteOk()) {
-            BooleanExpression remoteMatch = job.remoteAvailable.isTrue();
-            regionOrRemoteMatch = regionOrRemoteMatch == null ? remoteMatch : regionOrRemoteMatch.or(remoteMatch);
-        }
-        if (regionOrRemoteMatch != null) {
-            score = score.add(new CaseBuilder().when(regionOrRemoteMatch).then(2).otherwise(0));
-        }
-
-        if (!CollectionUtils.isEmpty(signals.techStacks())) {
-            BooleanExpression skillOverlap = signals.techStacks().stream()
-                    .filter(StringUtils::hasText)
-                    .map(value -> (BooleanExpression) Expressions.booleanTemplate(
-                            "array_position({0}, {1}) is not null", job.skillTags, value))
-                    .reduce(BooleanExpression::or)
-                    .orElse(null);
-            if (skillOverlap != null) {
-                score = score.add(new CaseBuilder().when(skillOverlap).then(2).otherwise(0));
-            }
-        }
-
-        if (signals.careerLevel() != null) {
-            score = score.add(new CaseBuilder().when(careerLevelMatch(signals.careerLevel())).then(1).otherwise(0));
-        }
-
-        return score;
-    }
-
-    /** §4.2 경력 구간 판정과 동일한 기준을 CareerLevel(신입/주니어/시니어)에 맞춰 재사용한다. */
-    private BooleanExpression careerLevelMatch(CareerLevel careerLevel) {
-        return switch (careerLevel) {
-            case ENTRY -> job.isNewbie.isTrue().or(job.careerMin.eq(0));
-            case JUNIOR -> job.careerMin.loe(3).and(job.careerMax.goe(1));
-            case EXPERIENCED -> job.careerMax.goe(4);
-        };
-    }
-
-    /**
-     * 정렬용 원점수(0~MAX_FIT_SCORE)를 배지 노출용 0~100 점으로 환산한다(§3.3).
-     * 원점수가 없으면(비로그인/신호없음) null 그대로 돌려줘서 배지를 생략하게 한다.
-     */
-    private Integer toDisplayScore(Integer rawScore) {
-        if (rawScore == null) {
-            return null;
-        }
-        return Math.round(rawScore * 100f / MAX_FIT_SCORE);
     }
 }
