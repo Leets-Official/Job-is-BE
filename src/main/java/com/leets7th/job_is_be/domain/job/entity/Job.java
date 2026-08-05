@@ -108,7 +108,7 @@ public class Job extends BaseEntity {
     @Column(name = "career_max")
     private Integer careerMax; // 경력 최대 연수
 
-    @Column(name = "reward_total")
+    @Column(name = "reward_total", columnDefinition = "TEXT")
     private String rewardTotal; // 추천 보상금
 
     @JsonProperty("thumbnail_url")

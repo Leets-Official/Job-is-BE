@@ -36,25 +36,29 @@ public class JobPosting {
     @Column(name = "external_id")
     private Long externalId;
 
-    @Column(name = "source_url")
+    @Column(name = "source_url", columnDefinition = "TEXT")
     private String sourceUrl;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "company_id")
     private Company company;
 
+    @Column(columnDefinition = "TEXT")
     private String position;
 
+    @Column(columnDefinition = "TEXT")
     private String intro;
 
-    @Column(name = "main_tasks")
+    @Column(name = "main_tasks", columnDefinition = "TEXT")
     private String mainTasks;
 
+    @Column(columnDefinition = "TEXT")
     private String requirements;
 
-    @Column(name = "preferred_points")
+    @Column(name = "preferred_points", columnDefinition = "TEXT")
     private String preferredPoints;
 
+    @Column(columnDefinition = "TEXT")
     private String benefits;
 
     @Column(name = "category_parent", length = 50)
@@ -88,7 +92,7 @@ public class JobPosting {
     @Column(name = "location_district", length = 100)
     private String locationDistrict;
 
-    @Column(name = "location_full")
+    @Column(name = "location_full", columnDefinition = "TEXT")
     private String locationFull;
 
     @Column(name = "geo_lat")
@@ -109,7 +113,7 @@ public class JobPosting {
     @Column(length = 20)
     private String status;
 
-    @Column(name = "hire_rounds")
+    @Column(name = "hire_rounds", columnDefinition = "TEXT")
     private String hireRounds;
 
     @JdbcTypeCode(SqlTypes.ARRAY)
@@ -123,7 +127,7 @@ public class JobPosting {
     @Column(name = "skills_inferred")
     private Boolean skillsInferred;
 
-    @Column(name = "thumbnail_url")
+    @Column(name = "thumbnail_url", columnDefinition = "TEXT")
     private String thumbnailUrl;
 
     @JdbcTypeCode(SqlTypes.ARRAY)
