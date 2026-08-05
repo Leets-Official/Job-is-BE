@@ -33,7 +33,6 @@ public record JobDetailResponse (
 
         List<String> skillTags,
         String locationFull,
-
         JobMatchingResponse matching
 ) {
     public static JobDetailResponse from(Job job) {
@@ -68,6 +67,7 @@ public record JobDetailResponse (
                 .stockStatus(company != null ? company.getStockStatus() : null)
                 .skillTags(job.getSkillTags())
                 .locationFull(job.getLocationFull())
+                .editorNote(job.getEditorNote())
                 .build();
     }
 }

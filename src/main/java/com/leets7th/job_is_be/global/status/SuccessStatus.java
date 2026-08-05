@@ -93,6 +93,9 @@ public enum SuccessStatus implements BaseStatus {
      * Crawler (Admin)
      */
     CRAWLER_PIPELINE_RUN_SUCCESS(HttpStatus.OK, "CRAWLER_200_1", "크롤링 및 DB 적재 파이프라인을 실행했습니다."),
+    JOB_POSTING_SYNC_SUCCESS(HttpStatus.OK, "CRAWLER_200_2", "job_postings → jobs 동기화가 완료되었습니다."),
+    JOB_POSTING_SYNC_ACCEPTED(HttpStatus.ACCEPTED, "CRAWLER_202_1", "동기화 작업이 시작되었습니다."),
+    JOB_POSTING_SYNC_STATUS_SUCCESS(HttpStatus.OK, "CRAWLER_200_3", "동기화 작업 상태를 조회했습니다."),
 
     /**
      * History

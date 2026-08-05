@@ -20,11 +20,11 @@ import java.util.List;
  */
 @Entity
 @Table(
-        name = "job_postings",
-        uniqueConstraints = @UniqueConstraint(name = "uk_jobs_source_external_id", columnNames = {"source", "external_id"}),
-        indexes = {
-                @Index(name = "idx_created_at_id", columnList = "created_at DESC, id DESC")
-        }
+        name = "jobs",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_jobs_source_external_id",
+                columnNames = {"source", "external_id"}
+        )
 )
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)

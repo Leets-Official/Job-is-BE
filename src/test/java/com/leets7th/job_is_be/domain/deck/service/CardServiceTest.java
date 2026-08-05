@@ -9,8 +9,6 @@ import com.leets7th.job_is_be.domain.deck.repository.CardRepository;
 import com.leets7th.job_is_be.domain.deck.repository.DeckRepository;
 import com.leets7th.job_is_be.domain.deck.repository.UserActionRepository;
 import com.leets7th.job_is_be.domain.job.entity.Job;
-import com.leets7th.job_is_be.domain.job.entity.JobPosting;
-import com.leets7th.job_is_be.domain.job.repository.JobPostingRepository;
 import com.leets7th.job_is_be.domain.user.entity.User;
 import com.leets7th.job_is_be.domain.user.enums.SocialType;
 import com.leets7th.job_is_be.global.exception.GeneralException;
@@ -38,8 +36,6 @@ class CardServiceTest {
     @Mock
     private CardRepository cardRepository;
     @Mock
-    private JobPostingRepository jobPostingRepository;
-    @Mock
     private UserActionRepository userActionRepository;
 
     @InjectMocks
@@ -65,6 +61,7 @@ class CardServiceTest {
                 .careerLevel("신입")
                 .source("wanted")
                 .externalId(10L)
+                .skillTags(List.of("Java", "Spring"))
                 .build();
         Card card = Card.builder()
                 .deck(deck)
@@ -75,14 +72,6 @@ class CardServiceTest {
                 .summary("백엔드, 3년 이상, 서울")
                 .build();
         when(cardRepository.findByDeckId(1L)).thenReturn(List.of(card));
-
-        JobPosting posting = JobPosting.builder()
-                .source("wanted")
-                .externalId(10L)
-                .skillTags(List.of("Java", "Spring"))
-                .build();
-        when(jobPostingRepository.findFirstBySourceAndExternalIdOrderByCollectedAtDesc("wanted", 10L))
-                .thenReturn(Optional.of(posting));
 
         List<CardResponse> response = cardService.getDeckCards(1L, 1L);
 

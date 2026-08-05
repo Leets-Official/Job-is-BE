@@ -8,12 +8,13 @@ import com.leets7th.job_is_be.domain.job.dto.SimilarJobsResponseDto;
 import com.leets7th.job_is_be.domain.job.enums.FitCriteriaStatus;
 import com.leets7th.job_is_be.domain.personality.entity.PersonalityTest;
 import com.leets7th.job_is_be.domain.personality.repository.PersonalityTestRepository;
+import com.leets7th.job_is_be.global.ai.OpenAiProperties;
 import com.leets7th.job_is_be.global.exception.GeneralException;
 import com.leets7th.job_is_be.global.status.ErrorStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -22,16 +23,17 @@ import java.util.List;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class JobSimilarService {
 
-    // 임베딩 모델 최초 로딩 + 신규 공고 벡터 계산까지 감안한 여유값
-    private static final long PYTHON_TIMEOUT_SECONDS = 120;
+    // 임베딩(120s) + LLM 선별(90s) 합산 여유값
+    private static final long PYTHON_TIMEOUT_SECONDS = 300;
 
     // 본문 임베딩 유사도가 이 값 이상이면 관심 직무와 유사하다고 본다
     private static final double COSINE_SIMILAR_THRESHOLD = 0.6;
 
     private final PersonalityTestRepository personalityTestRepository;
+    private final OpenAiProperties openAiProperties;
+    private final TransactionTemplate transactionTemplate;
 
     @org.springframework.beans.factory.annotation.Value("${crawler.python-path:python}")
     private String pythonPath;
@@ -41,21 +43,23 @@ public class JobSimilarService {
 
     /**
      * 사용자의 성향 퀴즈 결과를 기반으로 맞춤 공고를 추천합니다.
+     *
+     * <p>호출 시점에 트랜잭션이 없어야 합니다(커넥션 풀 고갈 방지).
+     * 성향 조회(짧은 읽기 TX) → Python 실행(트랜잭션 없음) 순서로 실행됩니다.
      */
     public SimilarJobsResponseDto getRecommendedJobsByPersonality(Long userId) {
-        // 사용자 성향 존재 여부 검증 및 조회
-        PersonalityTest personality = personalityTestRepository
-                .findFirstByUserIdAndCompletedTrueOrderByStartedAtDesc(userId)
-                .orElseThrow(() -> new GeneralException(ErrorStatus.PERSONALITY_NOT_FOUND));
+        // 짧은 읽기 TX: 성향 결과만 로드하고 바로 커밋
+        String persona = transactionTemplate.execute(status -> {
+            PersonalityTest personality = personalityTestRepository
+                    .findFirstByUserIdAndCompletedTrueOrderByStartedAtDesc(userId)
+                    .orElseThrow(() -> new GeneralException(ErrorStatus.PERSONALITY_NOT_FOUND));
+            return personality.getResultType() != null
+                    ? personality.getResultType().name().toLowerCase()
+                    : "p2-senior-backend";
+        });
 
-        // 엔티티에 정의된 페르소나 필드 메서드명으로 변경 필요 (예: getPersona(), getExtRef() 등)
-        String persona = personality.getResultType() != null
-                ? personality.getResultType().name().toLowerCase()
-                : "p2-senior-backend";
-
-        // 파이썬 리트리브 스크립트 실행 및 결과 파싱
+        // Python 실행 — 트랜잭션 없음
         List<SimilarJobItemDto> items = executePythonRetrieve(persona);
-
         return SimilarJobsResponseDto.of(items);
     }
 
@@ -84,9 +88,12 @@ public class JobSimilarService {
             pb.redirectOutput(stdoutFile);
             pb.redirectError(stderrFile);
 
-            // DATABASE_URL 환경 변수 설정 (파이썬이 DB 연결 가능하도록)
             pb.environment().put("DATABASE_URL", databaseUrl);
             pb.environment().put("PYTHONIOENCODING", "utf-8");
+            if (openAiProperties.apiKey() != null && !openAiProperties.apiKey().isBlank()) {
+                pb.environment().put("OPENAI_API_KEY", openAiProperties.apiKey());
+                pb.environment().put("OPENAI_MODEL", openAiProperties.model());
+            }
 
             Process process = pb.start();
 
@@ -129,17 +136,34 @@ public class JobSimilarService {
             List<SimilarJobItemDto> items = new ArrayList<>();
             if (candidatesNode != null && candidatesNode.isArray()) {
                 for (JsonNode node : candidatesNode) {
-                    double scoreRaw = node.get("score_final").asDouble() * 100;
-                    int fitScore = (int) Math.max(0, Math.min(100, scoreRaw));
+                    // score_final 최대값은 1.2(코사인 1.0 + 스킬 0.15 + 규모 0.05).
+                    // 최솟값 65 보장(A) + sqrt 비선형 스케일링으로 낮은 점수 구간을 추가 보정(B).
+                    double scoreFinal = node.get("score_final").asDouble();
+                    int fitScore = (int) Math.max(65, Math.min(100, Math.round(65 + Math.sqrt(scoreFinal / 1.2) * 35)));
 
-                    List<String> fitPoints = buildFitPoints(node, personaNode);
+                    // LLM이 생성한 fit_points 우선, 없으면 Java 규칙 기반
+                    List<String> fitPoints;
+                    JsonNode llmFitPoints = node.get("fit_points");
+                    if (llmFitPoints != null && llmFitPoints.isArray() && llmFitPoints.size() > 0) {
+                        fitPoints = new ArrayList<>();
+                        llmFitPoints.forEach(fp -> fitPoints.add(fp.asText()));
+                    } else {
+                        fitPoints = buildFitPoints(node, personaNode);
+                    }
+
+                    // LLM이 생성한 reason 우선, 없으면 fitPoints 첫 항목
+                    JsonNode llmReasonNode = node.get("reason");
+                    String reason = (llmReasonNode != null && !llmReasonNode.isNull()
+                            && !llmReasonNode.asText().isBlank())
+                            ? llmReasonNode.asText()
+                            : buildReason(fitPoints);
 
                     items.add(new SimilarJobItemDto(
                             node.get("external_id").asText(),
                             node.get("position").asText(),
                             node.get("company").asText(),
                             fitScore,
-                            buildReason(fitPoints),
+                            reason,
                             fitPoints,
                             buildCriteriaMatrix(node, personaNode)
                     ));
@@ -184,8 +208,10 @@ public class JobSimilarService {
     }
 
     private String buildReason(List<String> fitPoints) {
-        // 근거가 하나도 없으면 단정하지 않는다(§9 추정 금지)
-        return fitPoints.isEmpty() ? "관심 직무와 일부 유사한 공고입니다" : fitPoints.get(0);
+        if (fitPoints.isEmpty()) {
+            return "관심 직무와 유사한 공고입니다";
+        }
+        return String.join(" · ", fitPoints);
     }
 
     /**
