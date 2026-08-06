@@ -12,6 +12,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -37,7 +38,7 @@ class JobRepositoryCustomImplTest {
                 .cities(List.of("서울"))
                 .build();
 
-        Page<JobSummaryResponse> result = jobRepository.searchJobs(request, PageRequest.of(0, 10));
+        Page<JobSummaryResponse> result = jobRepository.searchJobs(request, PageRequest.of(0, 10), Map.of());
 
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getContent().get(0).position()).isEqualTo("서울 공고");

@@ -7,6 +7,7 @@ import com.leets7th.job_is_be.domain.job.entity.QCompany;
 import com.leets7th.job_is_be.domain.job.entity.QJobCategory;
 import com.leets7th.job_is_be.domain.job.entity.QRegion;
 import com.leets7th.job_is_be.domain.job.enums.CareerRange;
+import com.leets7th.job_is_be.domain.job.enums.JobSortType;
 import com.leets7th.job_is_be.domain.job.enums.JobStatus;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;
@@ -21,7 +22,9 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.time.OffsetDateTime;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 
 import static com.leets7th.job_is_be.domain.job.entity.QJob.job;
 
@@ -32,7 +35,7 @@ public class JobRepositoryCustomImpl implements JobRepositoryCustom {
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public Page<JobSummaryResponse> searchJobs(JobSearchRequest request, Pageable pageable) {
+    public Page<JobSummaryResponse> searchJobs(JobSearchRequest request, Pageable pageable, Map<Long, Integer> pythonFitScores) {
         QCompany company = QCompany.company;
         QRegion region = QRegion.region;
         QJobCategory jobCategory = QJobCategory.jobCategory;
@@ -51,7 +54,25 @@ public class JobRepositoryCustomImpl implements JobRepositoryCustom {
                 remoteOnly(request)
         };
 
-        // 공고 목록 조회 (LEFT JOIN & FETCH JOIN으로 N+1 방지 및 NULL 허용)
+        // 전체 카운트 조회 (목록 조회와 동일한 LEFT JOIN 적용)
+        Long total = queryFactory
+                .select(job.count())
+                .from(job)
+                .leftJoin(job.company, company)
+                .leftJoin(job.region, region)
+                .leftJoin(job.jobCategory, jobCategory)
+                .where(conditions)
+                .fetchOne();
+        long totalCount = total != null ? total : 0L;
+
+        // 추천순 + 파이썬 매칭 엔진 점수가 있으면, SQL 정렬/페이징 대신 파이썬 점수 기준으로 정렬한다
+        // (파이썬 엔진은 검색 필터·페이지네이션을 모르는 전체 후보 목록을 주기 때문).
+        if (request.sortOrDefault() == JobSortType.FIT && !CollectionUtils.isEmpty(pythonFitScores)) {
+            return searchJobsRankedByPython(company, region, jobCategory, conditions, pageable, pythonFitScores, totalCount);
+        }
+
+        // 파이썬 점수가 없으면(성향 퀴즈 미완료·엔진 실패·비-FIT 정렬) 최신순/마감임박순과 동일하게 SQL로 조회한다.
+        // 이 경우 fitScore 배지는 산출 근거가 없으므로 항상 null(§3.3 — 산출 불가 시 배지 생략).
         List<Job> jobs = queryFactory
                 .selectFrom(job)
                 .leftJoin(job.company, company).fetchJoin()
@@ -67,17 +88,38 @@ public class JobRepositoryCustomImpl implements JobRepositoryCustom {
                 .map(JobSummaryResponse::from)
                 .toList();
 
-        // 전체 카운트 조회 (목록 조회와 동일한 LEFT JOIN 적용)
-        Long total = queryFactory
-                .select(job.count())
-                .from(job)
-                .leftJoin(job.company, company)
-                .leftJoin(job.region, region)
-                .leftJoin(job.jobCategory, jobCategory)
-                .where(conditions)
-                .fetchOne();
+        return new PageImpl<>(content, pageable, totalCount);
+    }
 
-        long totalCount = total != null ? total : 0L;
+    /**
+     * 파이썬 매칭 엔진 점수(externalId → 0~100) 기준 정렬 경로.
+     * 엔진이 필터링·페이징을 모르므로, 필터를 통과한 공고를 전부 가져와 자바 메모리에서 정렬 후 페이지를 자른다.
+     * 엔진 점수가 없는 공고(엔진이 후보로 안 준 경우)는 맨 뒤로 보낸다.
+     */
+    private Page<JobSummaryResponse> searchJobsRankedByPython(QCompany company, QRegion region, QJobCategory jobCategory,
+                                                                BooleanExpression[] conditions, Pageable pageable,
+                                                                Map<Long, Integer> pythonFitScores, long totalCount) {
+        List<Job> allJobs = queryFactory
+                .selectFrom(job)
+                .leftJoin(job.company, company).fetchJoin()
+                .leftJoin(job.region, region).fetchJoin()
+                .leftJoin(job.jobCategory, jobCategory).fetchJoin()
+                .where(conditions)
+                .fetch();
+
+        Comparator<Job> byPythonScoreThenLatest = Comparator
+                .comparing((Job j) -> pythonFitScores.getOrDefault(j.getExternalId(), -1), Comparator.reverseOrder())
+                .thenComparing(j -> j.getPostedAt() == null ? OffsetDateTime.MIN : j.getPostedAt(), Comparator.reverseOrder());
+
+        List<Job> sorted = allJobs.stream().sorted(byPythonScoreThenLatest).toList();
+
+        int fromIndex = Math.min((int) pageable.getOffset(), sorted.size());
+        int toIndex = Math.min(fromIndex + pageable.getPageSize(), sorted.size());
+
+        List<JobSummaryResponse> content = sorted.subList(fromIndex, toIndex).stream()
+                .map(j -> JobSummaryResponse.from(j, pythonFitScores.get(j.getExternalId())))
+                .toList();
+
         return new PageImpl<>(content, pageable, totalCount);
     }
 
@@ -185,7 +227,8 @@ public class JobRepositoryCustomImpl implements JobRepositoryCustom {
 
     /**
      * 정렬(§3.4). 상시채용(마감일 NULL)은 마감임박순에서 항상 뒤로 보낸다.
-     * 추천순은 적합도 파이프라인이 붙기 전까지 "산출 불가 → 최신순 tie-break" 규칙으로 동작한다.
+     * 추천순(FIT)은 파이썬 매칭 엔진 점수로만 랭킹하며(searchJobsRankedByPython), 그 점수가 없을 때는
+     * 여기서 최신순과 동일하게 처리한다(§2.1 — 후보 범위는 안 좁히고 랭킹에만 반영).
      */
     private OrderSpecifier<?>[] orderBy(JobSearchRequest request) {
         OrderSpecifier<?> latest = job.postedAt.desc().nullsLast();
@@ -194,7 +237,7 @@ public class JobRepositoryCustomImpl implements JobRepositoryCustom {
             case DEADLINE -> new OrderSpecifier<?>[]{
                     job.deadlineAt.asc().nullsLast(), latest, job.id.desc()
             };
-            case FIT, RECENT -> new OrderSpecifier<?>[]{latest, job.id.desc()};
+            case RECENT, FIT -> new OrderSpecifier<?>[]{latest, job.id.desc()};
         };
     }
 }

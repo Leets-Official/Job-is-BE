@@ -48,13 +48,16 @@ public class JobController implements JobControllerDocs {
         return ApiResponse.success(SuccessStatus.JOB_UNSAVE_SUCCESS);
     }
 
-    // 공고 탐색 및 검색
+    // 공고 탐색 및 검색 — 탐색은 로그인 필수 경로(EXP §2.1)라 jwt는 항상 존재한다.
+    // 추천순(FIT) 정렬은 이 유저 식별값으로 프로필 신호를 조회해 점수화한다.
     @GetMapping("/search")
     public ResponseEntity<ApiResponse<PageResponse<JobSummaryResponse>>> searchJobs(
             @Valid @ModelAttribute @ParameterObject JobSearchRequest condition,
-            @PageableDefault(page = 0, size = 24) @ParameterObject Pageable pageable
+            @PageableDefault(page = 0, size = 24) @ParameterObject Pageable pageable,
+            @AuthenticationPrincipal Jwt jwt
     ) {
-        Page<JobSummaryResponse> response = jobService.searchJobs(condition, pageable);
+        Long userId = Long.valueOf(jwt.getSubject());
+        Page<JobSummaryResponse> response = jobService.searchJobs(condition, pageable, userId);
         return ApiResponse.success(SuccessStatus.JOB_SEARCH_SUCCESS, PageResponse.from(response));
     }
 
